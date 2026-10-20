@@ -1,0 +1,11 @@
+# FitzHugh-Nagumo excitable membrane
+dv/dt=v-v^3/3-w+i
+dw/dt=eps*(v+a-b*w)
+par i=0.2,a=0.7,b=0.8,eps=0.08
+init v=-1.2,w=-0.6
+#@range i 0 1.6
+#@range eps 0.005 0.3
+#@range a 0 1.5
+@ total=200,dt=0.05,xp=v,yp=w
+@ xlo=-2.6,xhi=2.6,ylo=-1,yhi=2
+done

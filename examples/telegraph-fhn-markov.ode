@@ -1,0 +1,16 @@
+# FitzHugh-Nagumo whose input switches on and off at random: s is a two-state Markov variable
+# rates: off->on kon, on->off koff. With the input on the cell oscillates; with it off it rests.
+markov s 2
+{0} {kon}
+{koff} {0}
+v'=v-v^3/3-w+i0+di*s
+w'=eps*(v+a-b*w)
+aux input=i0+di*s
+par i0=0,di=0.8,kon=0.02,koff=0.02,eps=0.08,a=0.7,b=0.8
+init v=-1.2,w=-0.62,s=0
+#@range kon 0 0.2
+#@range koff 0 0.2
+#@range di 0 1.5
+@ total=600,dt=0.05,xp=v,yp=w
+@ xlo=-2.5,xhi=2.5,ylo=-1,yhi=2
+done

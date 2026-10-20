@@ -1,0 +1,8 @@
+# Logistic map (period doubling at r=3, chaos near r=3.57)
+x(t+1)=r*x*(1-x)
+par r=3.7
+init x=0.5
+#@range r 2.5 4
+@ total=300,meth=discrete,xp=x,yp=x
+@ xlo=0,xhi=1,ylo=0,yhi=1
+done

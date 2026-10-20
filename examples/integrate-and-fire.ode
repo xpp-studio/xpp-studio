@@ -1,0 +1,11 @@
+# Leaky integrate-and-fire neuron with spike-frequency adaptation.
+# When v reaches threshold 1 (sign 1) it is reset to 0 and the adaptation w jumps by b.
+v'=(-v+i-w)/tau
+w'=-w/tauw
+global 1 v-1 {v=0;w=w+b}
+par i=1.6,tau=1,tauw=20,b=0.2
+init v=0,w=0
+#@range i 0.5 3
+#@range b 0 1
+@ total=100,dt=0.01,xp=v,yp=w,xlo=-0.1,xhi=1.1,ylo=-0.05,yhi=1
+done

@@ -1,0 +1,9 @@
+# Van der Pol relaxation oscillator with mu=1000: stiff, so it uses the Rosenbrock solver
+x'=mu*(x-x^3/3-y)
+y'=x/mu
+par mu=1000
+init x=2,y=0.6667
+#@range mu 1 2000
+@ meth=stiff,total=4000,dt=20,toler=1e-6,xp=x,yp=y
+@ xlo=-2.5,xhi=2.5,ylo=-1,yhi=1
+done

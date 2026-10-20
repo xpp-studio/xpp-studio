@@ -1,0 +1,18 @@
+# A cable of 20 diffusively coupled FitzHugh-Nagumo cells, written with arrays.
+# Cell 1 is driven by i1 and fires repeatedly; each spike travels down the chain.
+# %[1..20] ... % repeats the lines for j=1..20, and [j] in a line becomes 1, 2, ...
+%[1..20]
+v[j]'=v[j]-v[j]^3/3-w[j]+i1*heav(1.5-[j])+d*(v[j+1]-2*v[j]+v[j-1])
+%
+w[1..20]'=eps*(v[j]+a-b*w[j])
+# no-flux ends
+v0=v1
+v21=v20
+par i1=1,d=1,eps=0.08,a=0.7,b=0.8
+init v[1..20]=-1.2
+init w[1..20]=-0.62
+#@range i1 0 1.5
+#@range d 0 3
+@ total=200,dt=0.05,xp=v1,yp=v20
+@ xlo=-2.5,xhi=2.5,ylo=-2.5,yhi=2.5
+done

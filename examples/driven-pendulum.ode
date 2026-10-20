@@ -1,0 +1,11 @@
+# Damped driven pendulum on a cylinder: theta is a periodic (folded) variable
+th'=v
+v'=i-b*v-sin(th)
+par i=0.5,b=0.3
+init th=0,v=2.5
+#@range i 0 1.5
+#@range b 0.05 1
+@ fold=th,tor_per=6.283185307
+@ total=100,dt=0.05,xp=th,yp=v
+@ xlo=0,xhi=6.2832,ylo=-2,yhi=4
+done

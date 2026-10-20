@@ -1,0 +1,18 @@
+# Morris-Lecar neuron, Hopf regime (Rinzel & Ermentrout)
+dv/dt=(i+gl*(vl-v)+gk*w*(vk-v)+gca*minf(v)*(vca-v))/c
+dw/dt=phi*(winf(v)-w)/tauw(v)
+minf(v)=.5*(1+tanh((v-v1)/v2))
+winf(v)=.5*(1+tanh((v-v3)/v4))
+tauw(v)=1/cosh((v-v3)/(2*v4))
+aux ica=gca*minf(v)*(v-vca)
+param i=60,c=20
+param vk=-84,vl=-60,vca=120
+param gk=8,gl=2,gca=4.4
+param v1=-1.2,v2=18,v3=2,v4=30,phi=.04
+init v=-60,w=0.015
+#@range i 0 300
+#@range phi 0.01 0.12
+#@range gca 2 8
+@ total=400,dt=0.25,meth=rk4,xp=v,yp=w
+@ xlo=-75,xhi=45,ylo=-0.1,yhi=0.55
+done

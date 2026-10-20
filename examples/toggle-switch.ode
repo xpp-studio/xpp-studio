@@ -1,0 +1,12 @@
+# Genetic toggle switch (Gardner, Cantor & Collins 2000)
+u'=a1/(1+v^beta)-u
+v'=a2/(1+u^gamma)-v
+par a1=3,a2=3,beta=2,gamma=2
+init u=2.5,v=0.4
+#@range a1 0.5 6
+#@range a2 0.5 6
+#@range beta 1 4
+#@range gamma 1 4
+@ total=30,dt=0.05,xp=u,yp=v
+@ xlo=-0.2,xhi=3.6,ylo=-0.2,yhi=3.6
+done

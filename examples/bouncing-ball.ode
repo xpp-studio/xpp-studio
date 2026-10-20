@@ -1,0 +1,10 @@
+# A ball falling under gravity. The global flag fires when x crosses 0 downwards (sign -1),
+# puts the ball on the floor and reverses its velocity with restitution e.
+x'=v
+v'=-g
+global -1 x {x=0;v=-e*v}
+par g=9.81,e=0.85
+init x=2,v=0
+#@range e 0.3 1
+@ total=6,dt=0.005,xp=x,yp=v,xlo=-0.2,xhi=2.2,ylo=-7,yhi=7
+done

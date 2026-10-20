@@ -1,0 +1,9 @@
+# Logistic growth regulated by the population's past, through a gamma kernel
+# K(s) = s exp(-s/tau)/tau^2 with mean delay 2*tau.  int{K#x} is the convolution
+# of K with x over 0..t. The equilibrium x=1 loses stability at r*tau = 2 (Hopf).
+x'=r*x*(1-int{t*exp(-t/tau)/tau^2#x})
+par r=1,tau=2.5
+init x=0.5
+#@range tau 0.5 4
+@ total=200,dt=0.05,vmaxpts=1000
+done

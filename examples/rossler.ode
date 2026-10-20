@@ -1,0 +1,12 @@
+# Rossler system (period-doubling route to chaos in c)
+x'=-y-z
+y'=x+a*y
+z'=b+z*(x-c)
+par a=0.2,b=0.2,c=5.7
+init x=1,y=1,z=0
+#@range c 2 6.5
+#@range a 0.05 0.4
+#@range b 0.05 1
+@ total=300,dt=0.02,meth=rk4,xp=x,yp=y
+@ xlo=-12,xhi=14,ylo=-14,yhi=10,bound=1000
+done

@@ -1,0 +1,9 @@
+# Delayed logistic map (Neimark-Sacker bifurcation at a=2)
+x(t+1)=y
+y(t+1)=a*y*(1-x)
+par a=2.1
+init x=0.6,y=0.6
+#@range a 1.5 2.27
+@ total=4000,meth=discrete,xp=x,yp=y
+@ xlo=0.1,xhi=0.95,ylo=0.1,yhi=0.95
+done

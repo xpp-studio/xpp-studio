@@ -1,0 +1,12 @@
+# FitzHugh-Nagumo in the excitable regime, driven by white noise
+# w is a Wiener variable: integrated with Euler-Maruyama
+wiener w
+v'=(v-v^3/3-u)/eps
+u'=v+a+sig*w
+par eps=0.05,a=1.05,sig=0.2
+init v=-1.05,u=-0.664
+#@range sig 0 0.6
+#@range a 0.8 1.3
+@ meth=euler,dt=0.002,total=60,xp=v,yp=u
+@ xlo=-2.5,xhi=2.5,ylo=-1,yhi=1.5
+done

@@ -1,0 +1,11 @@
+# Hutchinson's delayed logistic equation  x' = r x (1 - x(t-tau))
+# The equilibrium x=1 loses stability in a Hopf bifurcation at r*tau = pi/2.
+# x(0)=... with t gives the history for t<0; xlag is the delayed value, for the phase plane.
+x'=r*x*(1-delay(x,tau))
+aux xlag=delay(x,tau)
+par r=1.8,tau=1
+x(0)=0.5+0.2*cos(3*t)
+#@range r 0.5 3
+#@range tau 0.2 2
+@ total=100,dt=0.02,xp=x,yp=xlag,xlo=0,xhi=3,ylo=0,yhi=3
+done

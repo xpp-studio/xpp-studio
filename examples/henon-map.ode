@@ -1,0 +1,10 @@
+# Henon map (strange attractor at a=1.4, b=0.3)
+x(t+1)=1-a*x^2+y
+y(t+1)=b*x
+par a=1.4,b=0.3
+init x=0,y=0
+#@range a -0.2 1.45
+#@range b -0.4 0.4
+@ total=10000,meth=discrete,xp=x,yp=y
+@ xlo=-1.6,xhi=1.6,ylo=-0.5,yhi=0.5,bound=100
+done

@@ -1,0 +1,14 @@
+# Two phase oscillators coupled through a tabulated interaction function h (XPP % table)
+# h is sampled at 101 points on [0, 2pi]; both phases live on the torus (fold)
+table h % 101 0 6.283185 sin(t)+.6+.4*cos(t)+.2*sin(2*t)
+x1'=w1+a*h(mod(x2-x1,6.283185))
+x2'=w2+a*h(mod(x1-x2,6.283185))
+aux phi=mod(x2-x1,6.283185)
+par w1=1,w2=1.1,a=0.15
+init x1=0,x2=2
+#@range w2 0.6 1.4
+#@range a 0 0.5
+@ fold=x1,fold=x2,tor_per=6.283185
+@ total=200,dt=0.05,xp=x1,yp=x2
+@ xlo=0,xhi=6.2832,ylo=0,yhi=6.2832
+done

@@ -1,0 +1,9 @@
+# Mackey-Glass equation: production depends on the population tau time units ago.
+# Periodic for small tau, period-doubling and chaos as tau grows (chaotic at tau=17).
+x'=b*delay(x,tau)/(1+delay(x,tau)^pw)-g*x
+aux xlag=delay(x,tau)
+par b=0.2,g=0.1,pw=10,tau=17
+x(0)=0.5
+#@range tau 2 30
+@ total=1000,dt=0.1,trans=300,xp=xlag,yp=x,xlo=0.2,xhi=1.5,ylo=0.2,yhi=1.5
+done
