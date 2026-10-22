@@ -26,7 +26,7 @@ A browser workbench for differential equations, maps and stochastic models that 
 
 Open `index.html` in any recent browser, or use the GitHub Pages link above. Choose a model from the **Model** menu or paste or open your own `.ode` file in the **Equations** tab. The `examples/` folder has the example models as `.ode` files.
 
-A 22-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
+A 22-page introduction and tutorial is in [`docs/xpp_studio_intro-2.pdf`](docs/xpp_studio_intro-2.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
 
 ## Credits
 
