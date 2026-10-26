@@ -1,0 +1,9 @@
+# Wilson-Cowan Model
+f(u)=1/(1+exp(-u))
+u'=(-u+f(aee*u-aei*v-te))/taue
+v'=(-v+f(aie*u-aii*v-ti))/taui
+par aee=13,aei=10,te=2,taue=2
+par aie=16,aii=4,ti=5,taui=6
+@ xp=u,yp=v,xlo=-.1,xhi=1.1,ylo=-.1,yhi=1
+@ total=200
+done
