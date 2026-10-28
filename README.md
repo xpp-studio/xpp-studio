@@ -30,6 +30,17 @@ Open `index.html` in any recent browser, or use the GitHub Pages link above. Cho
 
 A 34-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
 
+## Tests
+
+The `tests/` folder checks the numerical core against known results (Hopf, fold and period-doubling points, Bautin and Bogdanov–Takens points, integrator accuracy), loads every example, and runs scripts end to end, including a check that the example script produces identical files twice. They run automatically on every pull request (see the Actions tab). To run them yourself you need [Node.js](https://nodejs.org) 20 or later:
+
+```
+npm install
+npm test
+```
+
+The app itself needs no build step: `index.html` is the whole program.
+
 ## Credits
 
 XPP Studio is inspired by, and reads the model files of, XPPAUT by G. Bard Ermentrout (University of Pittsburgh). Its continuation methods follow the ideas of AUTO (E. J. Doedel and colleagues) and MatCont. No XPPAUT or AUTO source code is included.
