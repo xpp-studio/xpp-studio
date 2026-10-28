@@ -1,0 +1,26 @@
+# Builds the tutorial PDF from docs/tutorial/main.tex whenever the tutorial changes, and keeps the result as a
+# downloadable artifact of the run (Actions tab → the run → Artifacts). The PDF in docs/ is not changed automatically.
+name: Tutorial
+on:
+  pull_request:
+    paths: ['docs/tutorial/**']
+  push:
+    branches: [main]
+    paths: ['docs/tutorial/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: docs/tutorial
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xpp-studio-tutorial
+          path: docs/tutorial/main.pdf

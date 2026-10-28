@@ -1,0 +1,12 @@
+{
+  "name": "xpp-studio-tests",
+  "private": true,
+  "description": "Tests for XPP Studio (index.html). The app itself has no build step and no dependencies.",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 \"tests/*.test.js\""
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
