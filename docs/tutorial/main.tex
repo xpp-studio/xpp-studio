@@ -134,7 +134,7 @@ The window (Figure~\ref{fig:overview}) has three columns.
 \end{description}
 In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export .dat} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
 
-\paragraph{Right: the inspector.} The inspector's contents depend on the view. In the phase plane it lists the equilibria (type, coordinates and eigenvalues, with buttons to make one the initial condition, start continuation from it, or draw its separatrices), the variables in the time course, and the trajectories. In the Bifurcation view it holds the continuation controls and the table of special points. In the Two-parameter view it holds the two-parameter controls.
+\paragraph{Right: the inspector.} The inspector's contents depend on the view. In the phase plane it lists the equilibria (type, coordinates and eigenvalues, with buttons to make one the initial condition, start continuation from it, or draw its separatrices), the variables in the time course, and the trajectories. For large systems, and for boundary value problems, equilibria are not searched for automatically; \ui{Find} next to the list searches the visible window when you want them. In the Bifurcation view it holds the continuation controls and the table of special points. In the Two-parameter view it holds the two-parameter controls.
 
 \begin{table}[!htbp]
 \centering\small
@@ -357,7 +357,7 @@ where $A$ is the Jacobian, $Aq=i\omega q$, $A^{\mathsf T}p=-i\omega p$ and $\lan
 \end{notebox}
 
 \begin{notebox}
-\textbf{What is detected.} For equilibria of flows: folds (LP), Hopf points (HB, tagged sub- or supercritical) and branch points (BP). For periodic orbits: folds of cycles (LPC), period doublings (PD) and torus (Neimark--Sacker) points (TR). For fixed points of maps: LP, PD and Neimark--Sacker (NS). At a PD of cycles, \ui{Double} switches to the period-doubled branch.
+\textbf{What is detected.} For equilibria of flows: folds (LP), Hopf points (HB, tagged sub- or supercritical) and branch points (BP). For periodic orbits: folds of cycles (LPC), period doublings (PD) and torus (Neimark--Sacker) points (TR). For fixed points of maps: LP, PD and Neimark--Sacker (NS). At a PD of cycles, \ui{Double} switches to the period-doubled branch, and at a branch point \ui{Switch} follows the other branch through it. A branch that comes back to its starting point, such as an isola, is closed into a loop and reported as such.
 \end{notebox}
 
 % ==================================================================
@@ -397,6 +397,27 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 \end{figure}
 
 \noindent Curves of period doublings of cycles (PDC) are continued the same way, which gives the classical period-doubling tongues of the Rössler system.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.62\textwidth]{ml-slices.pdf}
+  \caption{Slices: the Hopf curve of Morris--Lecar in $(i,\phi)$ followed at six values of $g_{Ca}$ from 3 to 5.5 and drawn in 3D, each curve at the height of its value of $g_{Ca}$. The generalised Hopf points (GH) and Bogdanov--Takens points (BT) on each slice trace out how they move with the third parameter.}
+  \label{fig:slices}
+\end{figure}
+
+\paragraph{Legends, slices and a third parameter.}
+\begin{itemize}
+  \item \ui{Legend}, above the Bifurcation and Two-parameter plots, adds a key with one line per curve: what it is, where it was started from, and any parameter values that differ between curves. The legend is included in \ui{Export SVG}.
+  \item \textbf{Slices in a third parameter}, at the bottom of the Two-parameter panel, repeat the curve chosen under \ui{Start} at several values of a third parameter. Choose \ui{Parameter 3}, its smallest and largest values and the number of slices, and press \ui{Compute slices}. Each slice starts from the special point on the previous one, so the curves are followed continuously as the third parameter changes. This works for fold and Hopf curves, and for folds of cycles that start from a Hopf point of the diagram.
+  \item \ui{3D}, above the Two-parameter plot, draws the curves in a box with the third parameter as the vertical axis, each curve at the value of that parameter it was computed with (Figure~\ref{fig:slices}). Drag to rotate and scroll to zoom, as in the 3D view of trajectories.
+\end{itemize}
+
+\begin{tryit}
+\begin{enumerate}
+  \item After following HB1 above, set \ui{Parameter 3} to $g_{Ca}$ with values 3 to 5.5 and 6 slices, and press \ui{Compute slices}.
+  \item Turn on \ui{3D} and rotate the box. As $g_{Ca}$ decreases the arch of Hopf points shrinks, and the two GH points move together.
+\end{enumerate}
+\end{tryit}
 
 % ==================================================================
 \section{Tutorial 4: chaos in three dimensions}\label{sec:rossler}
@@ -439,6 +460,31 @@ Load \ui{Rössler system} \cite{rossler1976} and press \key{2}. Drag to rotate t
 \end{figure}
 
 A model is a map when its equations are written \texttt{x(t+1)=\ldots}. Trajectories are then drawn as points, and for a one-variable map the phase plane becomes a cobweb diagram (Figure~\ref{fig:logistic}). For maps, \ui{Sweep max/min} keeps up to 250 iterates after the transient, which gives the familiar orbit diagram. Continuation finds folds, period doublings and Neimark--Sacker points of fixed points. The \ui{Hénon map} example shows a fold at $a\approx-0.1225$ and a PD at $a\approx0.3675$, and the \ui{Delayed logistic map} an NS bifurcation at $a=2$.
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{minipage}[t]{0.5\textwidth}\centering
+    \includegraphics[width=\textwidth]{logistic-cascade.pdf}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.47\textwidth}\centering
+    \includegraphics[width=\textwidth]{henon-pd.pdf}
+  \end{minipage}
+  \caption{Following period doublings of maps. Left: the logistic map, with the fixed point and the orbits of period 2, 4, 8 and 16 continued by pressing \ui{Double} at PD1 to PD4 in turn, over the orbit diagram. Each orbit is drawn at all of its points; stable parts are solid and black. Right: the Hénon map in $(a,b)$, with the fold curve of the fixed point (orange) and the period-doubling curves (crimson) of the fixed point and of the orbits of period 2 and 4, from left to right.}
+  \label{fig:cascade}
+\end{figure}
+
+\subsection*{Period doublings and orbits of higher period}
+An orbit of period $N$ of a map $f$ is a fixed point of the $N$-th iterate $f^N$, and \XS{} continues it as one. Its stability comes from the multipliers of $f^N$, and a period doubling of $f^N$ is where the orbit of period $2N$ is born.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Load \ui{Logistic map}, open the Bifurcation view and press \ui{Continue fixed points}. The fixed point $x=1-1/r$ loses stability at PD1, $r=3$.
+  \item Press \ui{Double} on PD1 in the table of special points. The orbits of period 2 are continued, and each is drawn at both of its points, so the branch splits into two. A new period doubling PD2 is found at $r\approx3.4495$, and the \ui{Period} column of the table gives the period of the orbit it creates, here 4.
+  \item Press \ui{Double} on PD2, then on PD3 and PD4. The doublings come at $r\approx3.5441$ and $3.5644$, closer and closer together, with ratios of successive gaps approaching Feigenbaum's constant $4.669\ldots$ \cite{feigenbaum1978}. Press \ui{Orbit diagram} to compare with the attractor (Figure~\ref{fig:cascade}, left). Where a continued orbit is drawn dotted, it is momentarily an orbit of lower period.
+  \item Orbits that are not born in a period doubling can be followed directly. Set \ui{Period} to 3 in the Continuation panel, set $r=3.84$ and $x=0.15$, and press \ui{Continue fixed points}. The period-3 window opens at a fold, LP1 at $r=1+\sqrt8\approx3.8284$, and its stable orbit doubles at $r\approx3.8415$.
+  \item \ui{Follow} on a period doubling traces its curve in two parameters, for any period. In the \ui{Hénon map} example, continue the fixed point in $a$, press \ui{Double} on PD1 and PD2, set the second parameter to $b$, and follow PD1, PD2 and PD3 (Figure~\ref{fig:cascade}, right). For the fixed point the curve is $a=\tfrac34(1-b)^2$.
+\end{enumerate}
+\end{tryit}
 
 % ==================================================================
 \section{Tutorial 6: noise and random switching}\label{sec:stoch}
@@ -743,19 +789,25 @@ Command & Effect\\
 \texttt{fit} & fit the axes to the data\\
 \texttt{nullclines on}, \texttt{field off} & also \texttt{equilibria}, \texttt{points}, \texttt{equal}\\
 \texttt{tcvars v w} & variables in the time course\\
+\texttt{spectrum on}, \texttt{spacetime off} & also \texttt{logscale}, \texttt{smooth}, \texttt{legend}, \texttt{tp3d}, \texttt{solvebvp}\\
+\texttt{rotate 30 20 [1.5]} & 3D view: azimuth, elevation (degrees) and zoom\\
 \midrule
 \texttt{erase}, \texttt{go [both]} & erase; integrate from the initial values\\
 \texttt{traj v=-40 w=0.2 [backward]} & a trajectory from a given point\\
 \texttt{grid}, \texttt{grid v -60 40 5 w 0 0.5 5} & grid of initial conditions (default $10\times10$ over the window)\\
 \texttt{separatrices [k]} & separatrices of the $k$th saddle\\
+\texttt{findeq} & search the window for equilibria\\
 \midrule
 \texttt{bifpar i 0 300 ds=2} & continuation parameter, range and step\\
 \texttt{continue [eq k]} & continue equilibria\\
-\texttt{cycles HB1}, \texttt{double PD1} & orbits from a Hopf point; period-doubled orbits\\
+\texttt{cycles HB1}, \texttt{double PD1} & orbits from a Hopf point; period-doubled orbits (flows and maps)\\
+\texttt{switch BP1} & the other branch through a branch point\\
+\texttt{period 3} & maps: continue period-3 orbits (also \texttt{bifpar \ldots{} period=3})\\
 \texttt{limitcycle}, \texttt{sweep} & continue the orbit reached by the trajectory; sweep the range\\
 \texttt{plot v}, \texttt{show L2} & variable, and hi-lo, L2, period or frequency\\
 \texttt{pick 1 i=150} & pick an orbit of family 1 (it becomes OR1, OR2, \ldots)\\
 \texttt{tppar phi 0 0.4}, \texttt{follow HB1} & second parameter; follow a special point (OR1: constant period)\\
+\texttt{slices HB1 gca 3 5.5 6} & follow HB1 at 6 values of a third parameter\\
 \texttt{clear bif}, \texttt{clear tp} & clear a diagram\\
 \midrule
 \texttt{export svg|csv|dat [file]} & save the current view or its data\\
@@ -765,7 +817,16 @@ Command & Effect\\
 \end{center}
 If a command fails (an unknown name, a Hopf point that is not there, a continuation that does not start), the script stops and the log gives the line number and the reason. Files exported before then are still saved.
 
-\paragraph{Recording.} You need not type a script. Press \ui{Record}, then work as usual: choosing a model, moving sliders, changing settings, integrating, continuing, following curves and exporting are written into the script as you go. A slider dragged across many values gives a single \texttt{par} line with its final value. Actions are recorded however you start them, from a button, a row of the special-points table, the equilibrium list or a key, and from any view, so \ui{Follow} or \ui{Cycles} in the table gives the same lines as the buttons in the inspector. Clicking an orbit branch to pick an orbit is recorded as \texttt{pick}. Clicking a diagram to load an equilibrium is not recorded, so use \texttt{par} and \texttt{init} for that. Press \ui{Record} again to stop, then edit the result as you like.
+\paragraph{Recording.} You need not type a script. Press \ui{Record}, then work as usual: choosing a model, moving sliders, changing settings, integrating, continuing, following curves and exporting are written into the script as you go. A slider dragged across many values gives a single \texttt{par} line with its final value. Actions are recorded however you start them, from a button, a row of the special-points table, the equilibrium list or a key, and from any view, so \ui{Follow} or \ui{Cycles} in the table gives the same lines as the buttons in the inspector. What you do with the mouse is recorded too:
+\begin{itemize}
+  \item clicking the phase plane gives a \texttt{traj} line with the starting point (and \texttt{both} for a shift-click);
+  \item panning and zooming give a \texttt{window} line once the gesture ends, and rotating or zooming the 3D view a \texttt{rotate} line, so the figure is framed as you left it;
+  \item clicking a diagram to load a point (an equilibrium, a point on a boundary value branch or a two-parameter curve) gives a \texttt{set} line with the parameter values and all the initial values it loads, and clicking an orbit branch gives \texttt{pick};
+  \item switching views, by button or key, gives a \texttt{view} line, and the chips above the plot (spectrum, space-time, legend, 3D) and the variables chosen for the time course are recorded as well.
+\end{itemize}
+Repeated changes of the same thing (dragging a slider, panning in several strokes) give a single line with the final value. Press \ui{Record} again to stop, then edit the result as you like.
+
+If the script box already holds commands when you press \ui{Record}, you are asked whether to clear them or to keep them and start a new block, marked by a dated comment line. A script belongs to a model: loading a different model clears the box, and \ui{Restore old script} brings the old one back.
 
 \paragraph{Scripts inside \texttt{.ode} files.} \ui{Put in .ode} copies the script into the equations as lines starting \texttt{\#@do}, just before \texttt{done}:
 \begin{lstlisting}
@@ -883,6 +944,7 @@ Pressing \ui{Write state} again replaces this block rather than adding another, 
 \bibitem{ermentrout2002} G.~B. Ermentrout, \emph{Simulating, Analyzing, and Animating Dynamical Systems: A Guide to XPPAUT for Researchers and Students}, SIAM, Philadelphia, 2002.
 \bibitem{doedel2007} E.~J. Doedel, A.~R. Champneys, F.~Dercole, T.~F. Fairgrieve, Yu.~A. Kuznetsov, B.~Oldeman, R.~C. Paffenroth, B.~Sandstede, X.~J. Wang and C.~Zhang, \emph{AUTO-07P: Continuation and bifurcation software for ordinary differential equations}, Concordia University, 2007.
 \bibitem{dhooge2003} A.~Dhooge, W.~Govaerts and Yu.~A. Kuznetsov, MATCONT: a MATLAB package for numerical bifurcation analysis of ODEs, \emph{ACM Trans.\ Math.\ Software} \textbf{29} (2003) 141--164.
+\bibitem{feigenbaum1978} M.~J. Feigenbaum, Quantitative universality for a class of nonlinear transformations, \emph{J.\ Stat.\ Phys.} \textbf{19} (1978) 25--52.
 \bibitem{govaerts2000} W.~J.~F. Govaerts, \emph{Numerical Methods for Bifurcations of Dynamical Equilibria}, SIAM, Philadelphia, 2000.
 \bibitem{kuznetsov2004} Yu.~A. Kuznetsov, \emph{Elements of Applied Bifurcation Theory}, 3rd edn, Springer, New York, 2004.
 \bibitem{keller1977} H.~B. Keller, Numerical solution of bifurcation and nonlinear eigenvalue problems, in \emph{Applications of Bifurcation Theory}, ed.\ P.~H. Rabinowitz, Academic Press, 1977, pp.~359--384.

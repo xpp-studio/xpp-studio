@@ -372,6 +372,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button class="btn small" id="scrEx" title="Replace the script with the Morris–Lecar example">Example</button>
         <button class="btn small" id="scrInsert" title="Store the script in the equations as #@do lines, so the .ode file carries its own figures">Put in .ode</button>
         <button class="btn small" id="scrOde" title="Run the #@do lines in the equations text">Run file script</button>
+        <button class="btn small" id="scrRestore" hidden title="Put back the script that was cleared when the model changed">Restore old script</button>
       </div>
       <div class="scrlog" id="scrLog" aria-live="polite"></div>
       <p class="note">A script repeats the same steps as the buttons, so the same script on the same model always gives the same figures. Exports made by a script are saved together at the end, in one zip when there are several.</p>
@@ -392,6 +393,8 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="row" id="styleToggles">
         <button class="chip" id="tgPts" aria-pressed="false" title="Draw orbits as points instead of lines"><i class="dots"></i>Points</button>
         <button class="chip" id="tgEqual" aria-pressed="false" title="Use the same scale on both axes of the phase plane (axis equal)">Equal axes</button>
+        <button class="chip" id="tgTp3" aria-pressed="false" hidden title="Draw the two-parameter curves in a 3D box, with a third parameter as the vertical axis: each curve sits at the value of that parameter it was computed with. Drag to rotate, scroll to zoom.">3D</button>
+        <button class="chip" id="tgLegend" aria-pressed="false" hidden title="Show a legend on the diagram: one line for each curve, with where it came from and any parameter values that differ">Legend</button>
         <button class="chip" id="tgBVP" aria-pressed="false" hidden title="Solve the boundary value problem (b lines) instead of an initial value problem: Newton's method on the initial values, repeated whenever a parameter, an initial value or a numerics setting changes">Solve BVP</button>
         <button class="chip" id="tgSpin" aria-pressed="false" hidden>Spin</button>
         <button class="chip" id="tgSpec" aria-pressed="false" hidden title="Show the power spectrum of the selected variables instead of the time series">Spectrum</button>
@@ -430,7 +433,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
   <aside class="panel insp" aria-label="Inspector">
     <div class="tabbody">
       <section class="sec" id="secEq">
-        <div class="sech"><span class="lbl" id="eqLbl">Equilibria</span><span class="count" id="eqCount"></span></div>
+        <div class="sech"><span class="lbl" id="eqLbl">Equilibria</span><span class="count" id="eqCount"></span><button class="btn small" id="eqFind" hidden style="margin-left:auto" title="Search the visible window for equilibria (Newton's method from a grid of starting points). This can take a while for a large system.">Find equilibria</button></div>
         <div id="eqList" class="sec"></div>
       </section>
       <section class="sec" id="secBif" hidden>
@@ -442,6 +445,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="bMin">Range</label><div class="pair"><input type="number" id="bMin" step="any"><span>to</span><input type="number" id="bMax" step="any"></div>
           <label for="bDs">Step ds</label><input type="number" id="bDs" step="any">
           <label for="bStart">Start</label><select id="bStart"></select>
+          <label for="bPer" id="lblPer" hidden title="Follow orbits of this period: fixed points of the p-th iterate of the map">Period</label><input type="number" id="bPer" min="1" max="24" step="1" hidden>
         </div>
         <div class="row"><button class="btn primary" id="bBvp" hidden title="Follow the solution of the boundary value problem as the parameter changes: pseudo-arclength continuation in the initial values and the parameter, so it turns round folds">Continue BVP</button><button class="btn primary" id="bRun">Continue equilibria</button><button class="btn" id="bSweep" title="XPP-style range integration">Sweep max/min</button><button class="btn" id="bPO" title="Continue the limit cycle that the active trajectory has settled onto">Limit cycle</button><button class="btn" id="bSkip" hidden title="End this direction or branch and carry on with the rest (Esc). Shift+Esc stops everything.">Skip direction</button></div>
         <div class="row"><button class="btn small" id="bClear">Clear diagram</button><button class="btn small" id="bDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button><span class="note" id="bNote"></span></div>
@@ -462,6 +466,13 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="tStart">Start</label><select id="tStart"></select>
         </div>
         <div class="row"><button class="btn primary" id="tRun">Follow curve</button><button class="btn" id="tSkip" hidden title="End this direction and carry on with the other (Esc). Shift+Esc stops everything.">Skip direction</button><button class="btn small" id="tClear">Clear curves</button><button class="btn small" id="tDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button></div>
+        <div class="sech" style="margin-top:10px"><span class="lbl">Slices in a third parameter</span></div>
+        <div class="bgrid">
+          <label for="tP3">Parameter 3</label><select id="tP3"></select>
+          <label for="tMin3">Values</label><div class="pair"><input type="number" id="tMin3" step="any" aria-label="Parameter 3 smallest value"><span>to</span><input type="number" id="tMax3" step="any" aria-label="Parameter 3 largest value"></div>
+          <label for="tN3">Slices</label><input type="number" id="tN3" min="2" max="60" step="1" value="6">
+        </div>
+        <div class="row"><button class="btn" id="tSlices" title="Follow the curve chosen under Start again at each of these values of Parameter 3, moving the starting point from one slice to the next, then show them together in 3D">Compute slices</button></div>
         <p class="note" id="tNote"></p>
         <div class="legend" id="tpLegend"></div>
       </section>
@@ -1483,7 +1494,7 @@ function contRun(M,pi,x0,o,dir){
   if(!tau){const e0=new Float64Array(N);e0[0]=1;tau=augSolve(J,n,e0);}
   if(!tau)return[];
   let nt=norm(tau);tau=Float64Array.from(tau,v=>v/nt);if(tau[n]*dir<0)for(let k=0;k<N;k++)tau[k]=-tau[k];
-  const pts=[mkPt(J,u,M.discrete,M)];
+  const pts=[mkPt(J,u,M.discrete,M)],u0=Float64Array.from(u);
   let ds=o.ds;const dsmin=o.dsmin>0?Math.min(o.dsmin,o.ds):o.ds*1e-4,dsmax=o.dsmax>0?Math.max(o.dsmax,o.ds):o.ds*4,up=new Float64Array(N);let guard=0;
   while(pts.length<o.maxPts&&guard++<o.maxPts*8){
     for(let k=0;k<N;k++)up[k]=u[k]+ds*tau[k];
@@ -1502,7 +1513,9 @@ function contRun(M,pi,x0,o,dir){
     if(tn){nt=norm(tn);tn=Float64Array.from(tn,x=>x/nt);}else tn=tau;
     u=v;tau=tn;M.setParam(pi,u[n]);pts.push(mkPt(r2.J,u,M.discrete,M));
     if(u[n]<o.pmin||u[n]>o.pmax)break;
+    if(o.stopNear&&pts.length>2){let d2=0;for(let k=0;k<N;k++){const q=u[k]-o.stopNear.u[k];d2+=q*q;}if(Math.sqrt(d2)<o.stopNear.r)break;}
     let big=false;for(let k=0;k<n;k++)if(!(Math.abs(u[k])<(o.xmax||1e7)))big=true;if(big)break;
+    if(pts.length>10){let d2=0,dt=0;for(let k=0;k<N;k++){const dk=u0[k]-u[k];d2+=dk*dk;dt+=dk*tau[k];}if(Math.sqrt(d2)<1.5*ds&&dt>0){pts.closed=true;break;}}
     if(its<4)ds=Math.min(ds*1.4,dsmax);
   }
   return pts;
@@ -1510,13 +1523,13 @@ function contRun(M,pi,x0,o,dir){
 function continueBoth(M,pi,x0,o){
   const p0=M.getParam(pi);
   const fw=contRun(M,pi,x0,o,1);M.setParam(pi,p0);
-  const bw=contRun(M,pi,x0,o,-1);M.setParam(pi,p0);
-  const pts=[...bw.reverse(),...fw.slice(1)];
+  const closed=!!fw.closed,bw=closed?[]:contRun(M,pi,x0,o,-1);M.setParam(pi,p0);
+  const pts=[...bw.reverse(),...fw.slice(closed?0:1)];
   const special=findSpecial(pts,M.discrete);
   // first Lyapunov coefficient at each Hopf point: negative = supercritical, positive = subcritical
   if(!M.discrete&&M.n>=2&&!M.hasDelay)for(const s of special)if(s.type==='HB'){M.setParam(pi,s.p);const x=newton(M,s.x)||s.x;s.l1=lyap1(M,x);}
   M.setParam(pi,p0);
-  return{pts,special};
+  return{pts,special,closed};
 }
 function findSpecialMap(pts){
   const sp=[];
@@ -2315,6 +2328,21 @@ init th=0,v=2.5
 @ xlo=0,xhi=6.2832,ylo=-2,yhi=4
 done
 `},
+{id:'forced',name:'Forced phase oscillator (Arnold tongues)',text:`# Forced phase oscillator on a torus: Arnold tongues
+# x is the phase of an oscillator forced at frequency om, y is the phase of the forcing. Both are periodic (folded).
+# Locked solutions satisfy x(T)=x(0)+2*pi*n and y(T)=y(0)+2*pi*m with T=2*pi*m/om; their edges in (om,b) are the tongues.
+p(x)=-sin(x)/(1+a*cos(x))
+x'=1+b*p(x)*cos(y)
+y'=om
+par om=2,b=.25,a=.25
+init x=0,y=0
+#@range om 0.5 3.2
+#@range b 0 0.5
+@ fold=x,fold=y,tor_per=6.283185
+@ xp=x,yp=y,xlo=0,xhi=6.3,ylo=0,yhi=6.3
+@ total=100,dt=0.05
+done
+`},
 {id:'nfhn',name:'Noisy FitzHugh–Nagumo (SDE)',text:`# FitzHugh-Nagumo in the excitable regime, driven by white noise
 # w is a Wiener variable: integrated with Euler-Maruyama
 wiener w
@@ -2516,8 +2544,8 @@ const S={
   pp:{xi:0,yi:1,win:{xlo:-1,xhi:1,ylo:-1,yhi:1},nc:true,field:false,eq:true,points:false,equal:(()=>{try{return localStorage.getItem('xpps-equal')==='1';}catch(e){return false;}})(),eqExpand:true},
   p3:{xi:0,yi:1,zi:2,yaw:-0.62,pitch:0.42,zoom:1,pan:{x:0,y:0},box:null,spin:false},
   tc:{vars:new Set(),win:{xlo:0,xhi:1,ylo:-1,yhi:1},swin:{xlo:0,xhi:1,ylo:0,yhi:1},spec:false,log:false,smooth:false,stwin:{xlo:0,xhi:1,ylo:0,yhi:1},st:false,stVars:new Set(),stLast:null,stLo:null,stHi:null,fams:[]},
-  bif:{pi:0,vi:0,pmin:0,pmax:1,ds:0.01,win:{xlo:0,xhi:1,ylo:-1,yhi:1},branches:[],sweeps:[],bvps:[],busy:false,start:0},
-  tp:{p2i:1,p2min:0,p2max:1,win:{xlo:0,xhi:1,ylo:0,yhi:1},curves:[]},
+  bif:{pi:0,vi:0,pmin:0,pmax:1,ds:0.01,win:{xlo:0,xhi:1,ylo:-1,yhi:1},branches:[],sweeps:[],bvps:[],period:1,busy:false,start:0},
+  tp:{p2i:1,p2min:0,p2max:1,win:{xlo:0,xhi:1,ylo:0,yhi:1},curves:[],three:false,p3i:0,box3:null},
   lock:{pp:false,tc:false,bif:false,tp:false},
   tpCol:(()=>{try{const v=JSON.parse(localStorage.getItem('xpps-tpcol')||'{}');return v&&typeof v==='object'?v:{};}catch(e){return{};}})(),
   tableFiles:{},mkIC:new Float64Array(0),mkIC0:new Float64Array(0),
@@ -2575,7 +2603,7 @@ function loadModel(text,{fromUser}={}){
   let meth='rk4';if(o.meth&&!spec.discrete){const m=METH[String(o.meth).toLowerCase()];if(m)meth=m;else msgs.push(['w',`Method "${o.meth}" not available; using Runge–Kutta 4`]);if(m==='ros23'&&String(o.meth).toLowerCase()!=='rosenbrock'&&String(o.meth).toLowerCase()!=='stiff')msgs.push(['o',`Method "${o.meth}" uses the Rosenbrock 2(3) stiff solver here`]);}
   {const sv=parseFloat(o.seed);S.num.seed=Number.isFinite(sv)?(sv>>>0):null;}
   if(spec.markov.length)msgs.push(['o',`Markov variable${spec.markov.length>1?'s':''} ${spec.markov.map(q=>`${q.name} (${q.n} states)`).join(', ')}: trajectories use fixed steps of size dt, and each step a state jumps with probability 1 − e^(−rate·dt). Equilibria, nullclines and continuation hold the states at their initial values (see the Initial tab).`]);
-  if(M.nbc)msgs.push(['o',`Boundary value problem: ${M.nbc} condition${M.nbc>1?'s':''} (${M.bcExprs.map(e=>'b '+e).join('; ')}). An unprimed name is its value at the left end (t = t0), a primed name its value at the right end (t = t0 + total). Turn on Solve BVP above the plot: Newton's method then adjusts all the initial values until every condition is zero, and solves again whenever a parameter or an initial value changes. In the Bifurcation view, Continue BVP follows the solution along the parameter (through folds).`]);
+  if(M.nbc)msgs.push(['o',`Boundary value problem: ${M.nbc} condition${M.nbc>1?'s':''} (${M.bcExprs.map(e=>'b '+e).join('; ')}). An unprimed name is its value at the left end (t = t0), a primed name its value at the right end (t = t0 + total). Turn on Solve BVP above the plot: Newton's method then adjusts all the initial values until every condition is zero, and solves again whenever a parameter or an initial value changes. In the Bifurcation view, Continue BVP follows the solution along the parameter (through folds). Nullclines, equilibria and a first trajectory are not drawn automatically for a boundary value problem; the Nullclines chip and the Find equilibria button bring them back.`]);
   if(spec.tables.length)msgs.push(['o',`Table${spec.tables.length>1?'s':''} ${spec.tables.map(q=>q.kind==='fn'?`${q.name} (${q.npts} points)`:`${q.name} (from ${q.file})`).join(', ')}, interpolated linearly.`]);
   if(spec.wiener.length)msgs.push(['o',`Wiener variable${spec.wiener.length>1?'s':''} ${spec.wiener.join(', ')}: trajectories use Euler–Maruyama with step dt; equilibria, nullclines and continuation use the noise-free system.`]);
   if(M.hasDelay)msgs.push(['o',`Delay equation with ${M.delayNames.join(', ')}: trajectories run forward from t = 0 with fixed-step Runge–Kutta 4 (step dt) and cubic Hermite interpolation of the stored history; the history for t < 0 is set in the Initial tab. Equilibria and one-parameter continuation use the characteristic equation (Chebyshev collocation of the solution operator), so their stability and Hopf points are those of the delay equation. Periodic-orbit and two-parameter continuation are off.`]);
@@ -2604,8 +2632,12 @@ function loadModel(text,{fromUser}={}){
   if(M.hasVolt&&M.n<2)S.view='tc';
   S.trajs=[];S.gridKeep=0;S.active=-1;S.colorK=0;S.eqs=[];S.eqSel=-1;S.ver++;S.sepSaddles=[];
   S.lock={pp:false,tc:false,bif:false,tp:false};
+  // a boundary value problem is not an initial value problem: no nullclines, equilibria or first trajectory until asked for
+  if(M.nbc>0){if(S.ncSaved===undefined)S.ncSaved=S.pp.nc;S.pp.nc=false;}
+  else if(S.ncSaved!==undefined){S.pp.nc=S.ncSaved;S.ncSaved=undefined;}
+  $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
-  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];
+  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
   setBifRange();
   {const C=S.cont,pv=k=>{const v=parseFloat(o[k]);return Number.isFinite(v)&&v>0?v:null;};
@@ -2614,16 +2646,22 @@ function loadModel(text,{fromUser}={}){
     if(pv('nmax'))C.eqNmax=C.poNmax=Math.max(10,Math.round(pv('nmax')));if(pv('ntst'))C.poNtst=Math.min(80,Math.max(4,Math.round(pv('ntst'))));
     S.num.trans=Math.max(0,num('trans',0));}
   S.tp.curves=[];S.bif.sel=null;S.tp.sel=null;
-  {const np=M.parNames.length,nx=rk.find(n=>M.parNames.indexOf(n)!==S.bif.pi);let q=nx?M.parNames.indexOf(nx):-1;if(q<0)q=np>1?(S.bif.pi===0?1:0):0;setP2(q);}
+  {const np=M.parNames.length,nx=rk.find(n=>M.parNames.indexOf(n)!==S.bif.pi);let q=nx?M.parNames.indexOf(nx):-1;if(q<0)q=np>1?(S.bif.pi===0?1:0):0;setP2(q);{const o3=rk.map(n=>M.parNames.indexOf(n)).find(i=>i!==S.bif.pi&&i!==q);S.tp.p3i=o3!==undefined?o3:Math.max(0,M.parNames.findIndex((_,i)=>i!==S.bif.pi&&i!==q));S.tp.three=false;S.tp.box3=null;}}
   $('#modelTitle').textContent=spec.title||'';
+  { // a script belongs to a model: clear it when a different model is loaded (not while recording or running a script)
+    const sig=(spec.title||'')+'|'+M.varNames.join(',');
+    if(S.modelSig&&S.modelSig!==sig&&!SCRIPT.running&&!SCRIPT.rec){const ta=$('#scrText');
+      if(ta&&ta.value.trim()){SCRIPT.cleared=ta.value;ta.value='';store.set('xpps-script','');$('#scrRestore').hidden=false;$('#scrLine').textContent='script cleared: a different model was loaded';}}
+    S.modelSig=sig;
+  }
   buildAll();
   msgs.unshift(['o',`Loaded ${M.n} variable${M.n===1?'':'s'}${M.nv?`, ${M.nv} Volterra variable${M.nv===1?'':'s'}`:''}, ${M.parNames.length} parameter${M.parNames.length===1?'':'s'}${M.naux?`, ${M.naux} aux`:''}.`]);
   showMsgs([...msgs,...spec.warnings.map(w=>['w',w])]);
-  runDir(S.ic,{noIcUpdate:true});
+  if(!(M.nbc>0))runDir(S.ic,{noIcUpdate:true});
   if(!S.pp.win)fitPP(true);
   computeEquilibria();refreshEqList();
   fitTC();
-  status(`${spec.title||'Model'} ready · ${M.hasVolt&&M.n<2?'trajectories start at t = 0 from the values in the Initial tab':'click the phase plane to start trajectories'}`);
+  status(`${spec.title||'Model'} ready · ${M.nbc>0?'boundary value problem: turn on Solve BVP above the plot, or press Integrate to run from the initial values':M.hasVolt&&M.n<2?'trajectories start at t = 0 from the values in the Initial tab':'click the phase plane to start trajectories'}`);
   requestRender();
   return true;
 }
@@ -2731,9 +2769,13 @@ function activeTraj(){return S.trajs[S.active]||S.trajs.filter(t=>!t.kind).slice
 function erase(){S.sepSaddles=[];S.trajs=[];S.gridKeep=0;S.active=-1;refreshTrajList();requestRender();status('Trajectories erased');}
 
 /* ======================= equilibria ======================= */
-function computeEquilibria(){
+// The search runs Newton's method on the whole system from many starting points, with a dense Jacobian and its eigenvalues,
+// so for large systems (arrays standing in for a PDE, say) it is not done automatically: the Find equilibria button does it.
+const EQ_AUTO_MAX=40;
+function computeEquilibria(force){
   const M=S.M,n=M.n,{xi,yi}=S.pp,w=S.pp.win;if(!w)return;
   if(M.hasVolt){S.eqs=[];return;}
+  if((n>EQ_AUTO_MAX||M.nbc>0)&&force!==true)return;
   const seeds=[Float64Array.from(S.ic)];
   for(const e of S.eqs)seeds.push(Float64Array.from(e.x));
   if(xi<n&&yi<n&&xi!==yi){const G=7;for(let a=0;a<G;a++)for(let b=0;b<G;b++){const y=Float64Array.from(S.ic);y[xi]=w.xlo+(a+.5)/G*(w.xhi-w.xlo);y[yi]=w.ylo+(b+.5)/G*(w.yhi-w.ylo);seeds.push(y);}}
@@ -3246,7 +3288,46 @@ function renderP3(ctx,w,h){
 }
 let spinning=false;
 function spinLoop(){if(spinning)return;spinning=true;const step=()=>{if(!S.p3.spin||S.view!=='p3'){spinning=false;return;}S.p3.yaw+=0.005;render();requestAnimationFrame(step);};requestAnimationFrame(step);}
-function renderView(ctx,w,h){if(S.view==='pp')renderPP(ctx,w,h);else if(S.view==='p3')renderP3(ctx,w,h);else if(S.view==='tc')renderTC(ctx,w,h,false);else if(S.view==='tp')renderTP(ctx,w,h);else renderBif(ctx,w,h);}
+const is3=()=>S.view==='p3'||(S.view==='tp'&&S.tp.three);
+function renderView(ctx,w,h){if(S.view==='pp')renderPP(ctx,w,h);else if(S.view==='p3')renderP3(ctx,w,h);else if(S.view==='tc')renderTC(ctx,w,h,false);else if(S.view==='tp')(S.tp.three?renderTP3:renderTP)(ctx,w,h);else renderBif(ctx,w,h);
+  if(S.legend&&(S.view==='bif'||S.view==='tp')&&S.lastFrame){const e=legendEntries(S.view);if(e.length)drawLegend(ctx,S.lastFrame,e);}}
+/* ---- legend for the bifurcation and two-parameter views ---- */
+// Parameters worth mentioning: those that differ from the file, or differ between the curves shown.
+function legendNotes(curves,skip){
+  const M=S.M,np=M.parNames.length,use=[];
+  for(let i=0;i<np;i++){if(skip.includes(i))continue;const vals=curves.map(c=>c.params&&c.params[i]).filter(v=>v!==undefined);if(!vals.length)continue;
+    const f=S.par0[i],tol=1e-9*(1+Math.abs(f));if(vals.some(v=>Math.abs(v-f)>tol)||vals.some(v=>Math.abs(v-vals[0])>tol))use.push(i);}
+  return c=>{if(!c.params||!use.length)return'';const t=use.slice(0,4).map(i=>`${M.parNames[i]} = ${fmt(c.params[i],4)}`);return` · ${t.join(', ')}${use.length>4?', …':''}`;};
+}
+function legendEntries(view){
+  const M=S.M,out=[],pi=S.bif.pi,mode=S.bif.mode||'var';
+  if(view==='bif'){
+    const eq=mode==='var'?S.bif.branches.filter(b=>b.pi===pi):[],cy=mode==='N'?[]:S.bif.cycles.filter(c=>c.pi===pi),sw=mode==='N'?[]:S.bif.sweeps.filter(c=>c.pi===pi),bv=(mode==='T'||mode==='f')?[]:S.bif.bvps.filter(c=>c.pi===pi);
+    const note=legendNotes([...eq,...cy,...sw,...bv],[pi]);
+    for(const b of eq.filter(b=>!b.fam))out.push({kind:'line',color:TK.ink,text:`${M.discrete?(b.period>1?`period-${b.period} orbits`:'fixed points'):'equilibria'}${b.from?` (${b.from})`:''}${note(b)}`});
+    for(const c of cy)out.push({kind:'line',color:TK.po,text:`periodic orbits${c.from?` from ${c.from}`:''}${note(c)}`});
+    for(const c of bv)out.push({kind:'line',color:TK.po,text:`boundary value solutions${note(c)}`});
+    for(const c of sw)out.push({kind:'dot',color:TK.sweep,text:`${c.disc?'orbit diagram':'sweep max/min'}${note(c)}`});
+  }else{
+    const p1=S.bif.pi,p2=S.tp.p2i,mine=S.tp.curves.filter(c=>c.p1i===p1&&c.p2i===p2),note=legendNotes(mine,[p1,p2]);
+    const NAME={LP:'fold',HB:'Hopf',PD:'period doubling',LPC:'fold of cycles',PDC:'period doubling of cycles',CPER:'constant period'};
+    for(const cv of mine){const base=cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
+      out.push({kind:'line',color:tpColor(base),text:`${NAME[cv.type]||cv.type} curve${cv.from?` from ${cv.from}`:''}${cv.start?` (${cv.start})`:''}${note(cv)}`});}
+  }
+  return out;
+}
+function drawLegend(ctx,fr,entries){
+  ctx.save();ctx.font='11px "IBM Plex Sans", system-ui, sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
+  const maxW=fr.W*0.62,fit=t=>{while(t.length>8&&ctx.measureText(t).width>maxW)t=t.slice(0,-2);return t;};
+  const lines=entries.map(e=>({...e,text:ctx.measureText(e.text).width>maxW?fit(e.text)+'…':e.text}));
+  const tw=Math.max(...lines.map(l=>ctx.measureText(l.text).width)),lh=17,bw=tw+46,bh=lines.length*lh+10,bx=fr.L+fr.W-bw-8,by=fr.T+8;
+  ctx.fillStyle=TK.surface;ctx.globalAlpha=0.9;ctx.fillRect(bx,by,bw,bh);ctx.globalAlpha=1;ctx.strokeStyle=TK.line;ctx.lineWidth=1;ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
+  lines.forEach((l,i)=>{const y=by+5+lh*i+lh/2;ctx.strokeStyle=l.color;ctx.fillStyle=l.color;ctx.lineWidth=2.2;ctx.setLineDash([]);
+    if(l.kind==='dot'){for(const dx of[6,13,20]){ctx.beginPath();ctx.arc(bx+dx+2,y,2,0,7);ctx.fill();}}
+    else{ctx.beginPath();ctx.moveTo(bx+8,y);ctx.lineTo(bx+28,y);ctx.stroke();}
+    ctx.fillStyle=TK['ink-2']||TK.ink;ctx.fillText(l.text,bx+36,y);});
+  ctx.restore();
+}
 function tcFitWin(tr,vars){
   if(!tr||!vars.length)return null;let lo=Infinity,hi=-Infinity;
   for(const vi of vars){const c=tr.cols[vi];for(let k=0;k<c.length;k++){const v=c[k];if(v<lo)lo=v;if(v>hi)hi=v;}}
@@ -3275,10 +3356,11 @@ function renderBif(ctx,w,h){
       else{const a=r.max[vi],b=r.min[vi],osc=Math.abs(a-b)>1e-4*(1+Math.abs(a));ctx.globalAlpha=osc?0.9:0.35;ctx.beginPath();for(const v of osc?[a,b]:[a]){const Y=m.Y(v);ctx.moveTo(X+2,Y);ctx.arc(X,Y,osc?2.2:1.8,0,7);}ctx.fill();}}
     ctx.globalAlpha=1;}
   ctx.lineCap='round';
-  for(const br of S.bif.branches){if(br.pi!==pi||(mode!=='var'&&mode!=='N'))continue;const P=br.pts,ey=q=>mode==='N'?eqN(q.x):q.x[vi];
-    if(br===sel)halo(P,[ey]);
+  for(const br of S.bif.branches){if(br.pi!==pi||(mode!=='var'&&mode!=='N'))continue;const P=br.pts,ey=q=>mode==='N'?eqN(q.x):q.x[vi],low=k=>br.period>1&&P[k].mp<br.period&&P[k+1].mp<br.period;
+    if(br===sel||(sel&&sel.pts&&(br.fam||br)===(sel.fam||sel)))halo(P,[ey]);
+    if(br.period>1){ctx.beginPath();ctx.strokeStyle=TK.muted;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);for(let k=0;k+1<P.length;k++)if(low(k)){ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}ctx.stroke();}
     for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=stab?TK.ink:TK.muted;ctx.lineWidth=stab?2.4:1.4;ctx.setLineDash(stab?[]:[5,4]);
-      for(let k=0;k+1<P.length;k++){const s=P[k].stable&&P[k+1].stable;if(s!==stab)continue;ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}
+      for(let k=0;k+1<P.length;k++){if(low(k))continue;const s=P[k].stable&&P[k+1].stable;if(s!==stab)continue;ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}
       ctx.stroke();}
     ctx.setLineDash([]);}
   // periodic orbits: max and min of the plotted variable over the orbit
@@ -3311,7 +3393,7 @@ function renderBif(ctx,w,h){
 }
 const bvY=(q,key)=>key==='N'?q.nr[S.bif.vn||0]:q[key][S.bif.vi];
 function allSpecial(){const out=[],cnt={};
-  for(const br of S.bif.branches)for(const sp of br.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:br.pi,params:br.params,label:sp.type+cnt[sp.type]});}
+  for(const br of S.bif.branches)for(const sp of br.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:br.pi,params:br.params,br,label:sp.type+cnt[sp.type]});}
   for(const cb of S.bif.cycles)for(const sp of cb.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:cb.pi,cyc:cb,label:sp.type+cnt[sp.type]});}
   for(const bb of S.bif.bvps)for(const sp of bb.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:bb.pi,bvp:bb,label:sp.type+cnt[sp.type]});}
   return out;}
@@ -3390,11 +3472,20 @@ function tpStarts(){const L=allSpecial().filter(s=>s.pi===S.bif.pi&&followSp(s))
   if(!S.M.discrete)for(const o of pickedOrbits())if(o.pi===S.bif.pi)L.push({...o,type:'CPER',label:`${o.label} (T=${fmt(o.T,4)})`});
   return L;}
 function followConstT(o){if(S.M.parNames.length<2){status('Constant-period curves need a second parameter',true);return;}runCycTwoPar({...o,type:'CPER',label:`${o.label} (T=${fmt(o.T,4)})`});}
+// default values for the slices: the slider range of the third parameter
+function fillSliceRange(force){
+  const M=S.M,i=S.tp.p3i;if(!M||i>=M.parNames.length)return;
+  const lo=parseFloat(($('#pmin-'+i)||{}).value),hi=parseFloat(($('#pmax-'+i)||{}).value),v=M.getParam(i);
+  const a=Number.isFinite(lo)&&Number.isFinite(hi)&&hi>lo?lo:v-0.5*Math.abs(v||1),b=Number.isFinite(lo)&&Number.isFinite(hi)&&hi>lo?hi:v+0.5*Math.abs(v||1);
+  if(force||!$('#tMin3').value){$('#tMin3').value=fmtIn(a);$('#tMax3').value=fmtIn(b);}
+}
 function buildTpControls(){
   const M=S.M,opts=()=>M.parNames.map((n,i)=>el('option',{value:i,text:n}));
   $('#tP1').replaceChildren(...opts());$('#tP1').value=S.bif.pi;
   $('#tP2').replaceChildren(...opts());$('#tP2').value=S.tp.p2i;
   $('#tMin1').value=fmtIn(S.bif.pmin);$('#tMax1').value=fmtIn(S.bif.pmax);$('#tMin2').value=fmtIn(S.tp.p2min);$('#tMax2').value=fmtIn(S.tp.p2max);
+  {const np=M.parNames.length;if(S.tp.p3i>=np||S.tp.p3i===S.bif.pi||S.tp.p3i===S.tp.p2i){const o=M.parNames.findIndex((_,i)=>i!==S.bif.pi&&i!==S.tp.p2i);S.tp.p3i=o<0?0:o;}
+    $('#tP3').replaceChildren(...opts());$('#tP3').value=S.tp.p3i;fillSliceRange(false);$('#tSlices').disabled=np<3;}
   const st=tpStarts();
   $('#tStart').replaceChildren(...(st.length?st.map((s,k)=>el('option',{value:k,text:`${s.label} · ${M.parNames[s.pi]} ${fmt(s.p,5)}`})):[el('option',{value:-1,text:'No LP or HB points yet'})]));
   $('#tRun').disabled=!st.length||M.parNames.length<2;
@@ -3444,7 +3535,7 @@ async function runCycTwoPar(sp){
   restore();
   if(S.view!=='tp')setView('tp');
   setTPBusy(true);S.tp.stop=false;S.tp.skip=false;
-  const curve={type,p1i:p1,p2i:p2,pts:[],special:[],cyc:true};S.tp.curves.push(curve);
+  const curve={type,p1i:p1,p2i:p2,pts:[],special:[],cyc:true,from:sp.label,start:`${M.parNames[p1]} = ${fmt(sp.p,5)}`,params:Array.from(saved)};S.tp.curves.push(curve);
   const merge=()=>{curve.pts=[...(sts[1].pts.length>1?sts[1].pts.slice().reverse():[]),...sts[0].pts.slice(sts[1].pts.length>1?1:0)];};
   const t0=performance.now(),prog=$('#bProg').firstElementChild;
   try{
@@ -3472,7 +3563,7 @@ async function runCycTwoPar(sp){
 }
 function runTwoPar(sp){
   if(sp&&sp.cyc)return runCycTwoPar(sp);
-  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
+  const M=iterModel(S.M,(sp&&sp.br&&sp.br.period)||1),p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
   if(!sp){status('Pick a fold or Hopf point to start from',true);return;}
   if(p1===p2){status('Choose two different parameters',true);return;}
   if(delayNo('Two-parameter continuation'))return;
@@ -3483,13 +3574,169 @@ function runTwoPar(sp){
   const r1=S.bif.pmax-S.bif.pmin,r2=S.tp.p2max-S.tp.p2min,t0=performance.now();
   try{
     const cv=twoParCurve(M,sp.type,p1,p2,sp.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:Math.min(r1,r2)/100,dsmax:Math.max(r1,r2)/40,maxPts:S.cont.tpNmax});
-    S.tp.curves.push(cv);
+    cv.from=sp.label;cv.start=`${M.parNames[p1]} = ${fmt(sp.p,5)}`;cv.params=Array.from(M.P.subarray(0,M.parNames.length));S.tp.curves.push(cv);
     const c={};for(const s of cv.special)c[s.type]=(c[s.type]||0)+1;
     status(`${({LP:'Fold',HB:'Hopf',PD:'Period-doubling'})[sp.type]} curve from ${sp.label}: ${cv.pts.length} points${cv.closed?', closed loop':''} in ${Math.round(performance.now()-t0)} ms · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no codimension-two points'}`);
   }catch(e){status(`Couldn't follow ${sp.label}: ${e.message}`,true);}
   finally{saved.forEach((v,i)=>M.setParam(i,v));}
   if(S.view!=='tp')setView('tp');
   fitTP();refreshCodim2();requestRender();
+}
+
+/* ---- two-parameter curves stacked in 3D, over a third parameter ---- */
+const tpBase=cv=>cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!S.M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
+function tp3Curves(){const p1=S.bif.pi,p2=S.tp.p2i,p3=S.tp.p3i;return S.tp.curves.filter(c=>c.p1i===p1&&c.p2i===p2&&c.params&&c.params[p3]!==undefined&&c.pts.length>1);}
+function tp3Box(cs){
+  const p3=S.tp.p3i,b=[[Infinity,-Infinity],[Infinity,-Infinity],[Infinity,-Infinity]];
+  for(const c of cs){const z=c.params[p3];b[2][0]=Math.min(b[2][0],z);b[2][1]=Math.max(b[2][1],z);
+    for(const q of c.pts){if(!Number.isFinite(q.p1)||!Number.isFinite(q.p2))continue;b[0][0]=Math.min(b[0][0],q.p1);b[0][1]=Math.max(b[0][1],q.p1);b[1][0]=Math.min(b[1][0],q.p2);b[1][1]=Math.max(b[1][1],q.p2);}}
+  for(const r of b){const sp=r[1]-r[0];if(!(sp>1e-9)){r[0]-=1;r[1]+=1;}else{r[0]-=0.05*sp;r[1]+=0.05*sp;}}
+  return b;
+}
+function renderTP3(ctx,w,h){
+  const M=S.M,fr={L:8,T:8,W:Math.max(10,w-16),H:Math.max(10,h-16)};S.lastFrame=fr;
+  ctx.fillStyle=TK.surface;ctx.fillRect(0,0,w,h);
+  const cs=tp3Curves(),p1=S.bif.pi,p2=S.tp.p2i,p3=S.tp.p3i,nm=[M.parNames[p1],M.parNames[p2],M.parNames[p3]];
+  if(!cs.length){ctx.fillStyle=TK.muted;ctx.font='12.5px "IBM Plex Sans", system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(`No curves in (${nm[0]}, ${nm[1]}) yet. Follow a curve, change ${nm[2]} and follow it again, or press Compute slices.`,fr.L+fr.W/2,fr.T+fr.H/2);return;}
+  const B=S.tp.box3||(S.tp.box3=tp3Box(cs)),P=p3Proj(fr);
+  const nz=(i,v)=>2*(v-B[i][0])/(B[i][1]-B[i][0])-1;
+  const vec=(i,t,a,b)=>i===0?[t,a,b]:i===1?[a,t,b]:[a,b,t];
+  const proj=v=>P(v[0],v[1],v[2]),ctr=P(0,0,0),tk=B.map(([lo,hi])=>ticks(lo,hi,4));
+  ctx.lineWidth=1;ctx.strokeStyle=TK.grid;ctx.beginPath();
+  for(const v of tk[0].vals){const u=nz(0,v),a=P(u,-1,-1),b=P(u,1,-1);ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}
+  for(const v of tk[1].vals){const u=nz(1,v),a=P(-1,u,-1),b=P(1,u,-1);ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}
+  ctx.stroke();
+  ctx.strokeStyle=TK.line;ctx.beginPath();
+  for(let i=0;i<3;i++)for(const a of[-1,1])for(const b of[-1,1]){const p=proj(vec(i,-1,a,b)),q=proj(vec(i,1,a,b));ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);}
+  ctx.stroke();
+  for(let i=0;i<3;i++){
+    let best=null,bs=-Infinity;
+    for(const a of[-1,1])for(const b of[-1,1]){const mid=proj(vec(i,0,a,b)),score=i===2?ctr[0]-mid[0]:mid[1]-ctr[1];if(score>bs){bs=score;best=[a,b,mid];}}
+    const[a,b,mid]=best;let dx=mid[0]-ctr[0],dy=mid[1]-ctr[1];const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+    ctx.strokeStyle=TK.line;ctx.beginPath();
+    for(const v of tk[i].vals){const p=proj(vec(i,nz(i,v),a,b));ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+dx*4,p[1]+dy*4);}
+    ctx.stroke();
+    ctx.textAlign=dx>0.35?'left':dx<-0.35?'right':'center';ctx.textBaseline=dy>0.35?'top':dy<-0.35?'bottom':'middle';
+    const cx=X=>Math.max(fr.L+14,Math.min(fr.L+fr.W-14,X)),cy=Y=>Math.max(fr.T+10,Math.min(fr.T+fr.H-10,Y));
+    ctx.fillStyle=TK.muted;ctx.font='11px "IBM Plex Mono", ui-monospace, monospace';
+    for(const v of tk[i].vals){const p=proj(vec(i,nz(i,v),a,b));ctx.fillText(tickLabel(v,tk[i].dec),cx(p[0]+dx*8),cy(p[1]+dy*8));}
+    ctx.fillStyle=TK['ink-2'];ctx.font='600 12px "IBM Plex Mono", ui-monospace, monospace';
+    const e=proj(vec(i,0,a,b));ctx.fillText(nm[i],cx(e[0]+dx*30),cy(e[1]+dy*30));
+  }
+  // the curves, far to near in six depth bands, each at the value of the third parameter it was computed with
+  clip(ctx,fr);ctx.lineJoin='round';ctx.lineCap='round';
+  const LV=6,dm=1.8,lvl=d=>Math.max(0,Math.min(LV-1,Math.floor((d+dm)/(2*dm)*LV)));
+  for(const cv of cs){
+    const z=cv.params[p3],col=tpColor(tpBase(cv)),N=cv.pts.length,px=new Float32Array(N),py=new Float32Array(N),lv=new Uint8Array(N);
+    for(let k=0;k<N;k++){const q=P(nz(0,cv.pts[k].p1),nz(1,cv.pts[k].p2),nz(2,z));px[k]=q[0];py[k]=q[1];lv[k]=lvl(q[2]);}
+    ctx.strokeStyle=col;ctx.lineWidth=2;
+    for(let Lv=LV-1;Lv>=0;Lv--){
+      ctx.globalAlpha=1-0.6*Lv/(LV-1);ctx.beginPath();let any=false;
+      for(let k=0;k+1<N;k++){if(lv[k]!==Lv||!Number.isFinite(px[k])||!Number.isFinite(px[k+1]))continue;ctx.moveTo(px[k],py[k]);ctx.lineTo(px[k+1],py[k+1]);any=true;}
+      if(any)ctx.stroke();}
+    ctx.globalAlpha=1;
+    if(S.tp.labels3!==false&&Number.isFinite(px[0])){ctx.fillStyle=TK.muted;ctx.font='10px "IBM Plex Mono", ui-monospace, monospace';ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(fmt(z,4),px[0]+4,py[0]-3);}
+  }
+  // codimension-two points (cusp, Bautin, Bogdanov–Takens, …) as diamonds; a type that occurs once on every slice is joined from slice to slice
+  const mk=[];
+  for(const cv of cs)for(const sp of cv.special||[]){if(!Number.isFinite(sp.p1)||!Number.isFinite(sp.p2))continue;const z=cv.params[p3],q=P(nz(0,sp.p1),nz(1,sp.p2),nz(2,z));mk.push({type:sp.type,z,x:q[0],y:q[1]});}
+  const byType={};for(const m of mk)(byType[m.type]=byType[m.type]||[]).push(m);
+  for(const[type,L]of Object.entries(byType)){L.sort((a,b)=>a.z-b.z);
+    if(L.length>1&&new Set(L.map(m=>m.z.toFixed(9))).size===L.length){ctx.strokeStyle=spColor(type);ctx.globalAlpha=0.7;ctx.lineWidth=1.4;ctx.setLineDash([3,3]);ctx.beginPath();L.forEach((m,i)=>i?ctx.lineTo(m.x,m.y):ctx.moveTo(m.x,m.y));ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}}
+  ctx.font='600 10px "IBM Plex Mono", ui-monospace, monospace';ctx.textAlign='left';ctx.textBaseline='bottom';
+  for(const m of mk){ctx.fillStyle=spColor(m.type);ctx.strokeStyle=TK.surface;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(m.x,m.y-4.5);ctx.lineTo(m.x+4.5,m.y);ctx.lineTo(m.x,m.y+4.5);ctx.lineTo(m.x-4.5,m.y);ctx.closePath();ctx.stroke();ctx.fill();ctx.fillText(m.type,m.x+6,m.y-2);}
+  ctx.restore();
+}
+// Follow one curve again at each of a series of values of a third parameter, moving the starting point from slice to slice.
+async function runSlices(){
+  if(S.bif.busy)return;
+  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i,p3=S.tp.p3i,np=M.parNames.length;readTpInputs();
+  const sp=tpStarts()[parseInt($('#tStart').value,10)];
+  if(!sp||sp.type==='CPER'){status('Choose a fold or Hopf point (or a fold of cycles) under Start',true);return;}
+  if(new Set([p1,p2,p3]).size<3){status('Choose three different parameters',true);return;}
+  const isCyc=!!sp.cyc;if(isCyc&&sp.type!=='LPC'){status('Slices of cycle curves are for folds of cycles (LPC)',true);return;}
+  if(!isCyc&&sp.type==='HB'&&M.n>12){status('Hopf curves are limited to 12 variables',true);return;}
+  if(isCyc&&!poGuard())return;if(delayNo('Slices'))return;
+  const lo=parseFloat($('#tMin3').value),hi=parseFloat($('#tMax3').value),n=Math.max(2,Math.min(60,Math.round(parseFloat($('#tN3').value)||6)));
+  if(!(Number.isFinite(lo)&&Number.isFinite(hi)&&hi>lo)){status('Give the values of Parameter 3, smallest first',true);return;}
+  const vals=Array.from({length:n},(_,i)=>lo+(hi-lo)*i/(n-1)),base=sp.params?Array.from(sp.params):Array.from(M.P.subarray(0,np)),v0=base[p3];
+  const saved=Float64Array.from(M.P.subarray(0,np)),restore=()=>saved.forEach((v,i)=>M.setParam(i,v));
+  const setBase=v=>{base.forEach((x,i)=>M.setParam(i,x));M.setParam(p3,v);};
+  let i0=0;for(let i=1;i<n;i++)if(Math.abs(vals[i]-v0)<Math.abs(vals[i0]-v0))i0=i;
+  const chains=[vals.slice(i0).map((v,j)=>[i0+j,v]),Array.from({length:i0},(_,j)=>[i0-1-j,vals[i0-1-j]])].filter(c=>c.length);
+  const pn3=M.parNames[p3],r1=S.bif.pmax-S.bif.pmin,r2=S.tp.p2max-S.tp.p2min,t0=performance.now(),tick=()=>new Promise(r=>setTimeout(r,0));
+  const eqOpts={pmin:S.bif.pmin,pmax:S.bif.pmax,ds:S.bif.ds,dsmin:S.cont.eqDsmin,dsmax:S.cont.eqDsmax,maxPts:S.cont.eqNmax,xmax:S.num.bound};
+  // the equilibrium (and from it the Hopf or fold point of the same kind, nearest the previous one) at a new value v of the third parameter
+  const findPoint=(prev,vFrom,v,type,p2c)=>{
+    setBase(vFrom);if(p2c!==undefined)M.setParam(p2,p2c);M.setParam(p1,prev.p1);let x=Float64Array.from(prev.x);
+    for(let k=1;k<=5;k++){M.setParam(p3,vFrom+(v-vFrom)*k/5);x=newton(M,x);if(!x)throw new Error(`the equilibrium was lost near ${pn3} = ${fmt(vFrom+(v-vFrom)*k/5,4)}`);}
+    const r=continueBoth(M,p1,x,eqOpts),c=r.special.filter(q=>q.type===type);
+    if(!c.length)throw new Error(`there is no ${type} point at ${pn3} = ${fmt(v,4)}`);
+    return c.reduce((a,b)=>Math.abs(a.p-prev.p1)<=Math.abs(b.p-prev.p1)?a:b);
+  };
+  const sliceEq=(prev,vFrom,v)=>{
+    // the start point lies on the previous slice's curve; if the fold or Hopf point has gone at that value of the second
+    // parameter (the curve has moved), try other points of the previous curve, nearest in the second parameter first
+    const cand=[{x:prev.x,p1:prev.p1,p2:prev.p2}];
+    if(prev.cv){const P=prev.cv.pts.filter(q=>q.x&&Number.isFinite(q.p1)&&Number.isFinite(q.p2)),step=Math.max(1,Math.floor(P.length/14));
+      const extra=[];for(let k=0;k<P.length;k+=step)extra.push({x:Float64Array.from(P[k].x),p1:P[k].p1,p2:P[k].p2});
+      extra.sort((a,b)=>Math.abs(a.p2-prev.p2)-Math.abs(b.p2-prev.p2));cand.push(...extra);}
+    let q=null,used=null,err=null;
+    for(const c of cand){try{q=findPoint(c,vFrom,v,sp.type,c.p2);used=c;break;}catch(e){err=err||e;}}
+    if(!q)throw err||new Error(`there is no ${sp.type} point at ${pn3} = ${fmt(v,4)}`);
+    setBase(v);M.setParam(p2,used.p2);M.setParam(p1,q.p);
+    const cv=twoParCurve(M,sp.type,p1,p2,q.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:Math.min(r1,r2)/100,dsmax:Math.max(r1,r2)/40,maxPts:S.cont.tpNmax});
+    cv.from=sp.label;cv.start=`${M.parNames[p1]} = ${fmt(q.p,5)}`;cv.params=Array.from(M.P.subarray(0,np));S.tp.curves.push(cv);made.push({v,ends:cv.ends||[],pts:cv.pts.length});
+    return{x:q.x,p1:q.p,p2:used.p2,cv};
+  };
+  const hbBase=isCyc?(allSpecial().find(q=>q.label===sp.cyc.from&&q.pi===p1)||null):null;
+  if(isCyc&&!hbBase){status(`The orbits behind ${sp.label} did not start at a Hopf point of this diagram (${sp.cyc.from||'unknown'}), so they cannot be repeated at other values`,true);return;}
+  const sliceCyc=async(prev,vFrom,v)=>{
+    const hp0=findPoint(prev.hb,vFrom,v,'HB');setBase(v);M.setParam(p1,hp0.p);
+    const hp={...hp0,pi:p1,params:Array.from(M.P.subarray(0,np)),label:sp.cyc.from},o2=poOptions();
+    const st=poFromHopf(M,p1,hp,o2);let g=0,last=performance.now();
+    while(poStep(st)&&g++<o2.maxPts){
+      if(performance.now()-last>120){last=performance.now();status(`Slice ${done+1} of ${n}: ${pn3} = ${fmt(v,4)}, orbits from ${sp.cyc.from}: ${st.pts.length} points…`);await tick();if(S.tp.stop)throw new Error('stopped');}
+    }
+    const L=poSpecial(st.pts).filter(q=>q.type==='LPC');if(!L.length)throw new Error(`the orbits from the Hopf point have no fold at ${pn3} = ${fmt(v,4)}`);
+    const q=L.reduce((a,b)=>Math.abs(a.p-prev.lpc)<=Math.abs(b.p-prev.lpc)?a:b),k=q.t<0.5?q.k:Math.min(q.k+1,st.pts.length-1);
+    const o={m:st.pts[k].m,ds:S.cont.poDs,dsmax:Math.max(S.cont.poDs,0.75*S.cont.poDsmax),dt:S.num.dt>0?S.num.dt:0.05,maxPts:S.cont.tcNmax,p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,Tmax:Math.max(5000,50*(S.num.T||0)),stiff:S.num.method==='ros23'};
+    setBase(v);M.setParam(p1,q.p);
+    const sts=cycCurveInit(M,p1,p2,'LPC',st.pts[k],st.xsig,o),params=Array.from(M.P.subarray(0,np));
+    for(const c of sts){let g2=0,last2=performance.now();
+      while(cycCurveStep(c)&&g2++<o.maxPts){
+        if(performance.now()-last2>120){last2=performance.now();status(`Slice ${done+1} of ${n}: ${pn3} = ${fmt(v,4)}, following ${sp.label}: ${c.pts.length} points…`);await tick();if(S.tp.stop)throw new Error('stopped');}
+      }
+      if(c.closed)break;}
+    const cv={type:'LPC',p1i:p1,p2i:p2,pts:[...(sts[1].pts.length>1?sts[1].pts.slice().reverse():[]),...sts[0].pts.slice(sts[1].pts.length>1?1:0)],special:[],cyc:true,from:sp.label,start:`${M.parNames[p1]} = ${fmt(q.p,5)}`,params};
+    cv.special=sts.flatMap(c=>cycCurveSpecial(c.pts,c.endGH));cv.ends=sts.map(c=>c.done||'');S.tp.curves.push(cv);made.push({v,ends:cv.ends,pts:cv.pts.length});
+    return{hb:{x:hp0.x,p1:hp0.p},lpc:q.p};
+  };
+  const start=isCyc?{hb:{x:hbBase.x,p1:hbBase.p},lpc:sp.p}:{x:sp.x,p1:sp.p,p2:base[p2],cv:null};
+  setTPBusy(true);S.tp.stop=false;S.tp.skip=false;
+  const failed=[],made=[];let done=0;
+  try{
+    for(const chain of chains){
+      let prev=start,vFrom=v0;
+      for(const[idx,v]of chain){
+        if(S.tp.stop)break;
+        // the curve the start point belongs to is already there: do not compute it again
+        if(Math.abs(v-v0)<1e-9*(1+Math.abs(v0))&&S.tp.curves.some(c=>c.from===sp.label&&c.p1i===p1&&c.p2i===p2&&c.params&&Math.abs(c.params[p3]-v)<1e-9*(1+Math.abs(v)))){prev=start;vFrom=v;done++;continue;}
+        status(`Slice ${done+1} of ${n}: ${pn3} = ${fmt(v,4)}…`);await tick();
+        try{prev=isCyc?await sliceCyc(prev,vFrom,v):sliceEq(prev,vFrom,v);vFrom=v;done++;}
+        catch(e){if(S.tp.stop)break;failed.push(`${pn3} = ${fmt(v,4)}: ${e.message}`);break;}
+        restore();S.tp.box3=null;fitTP();requestRender();await tick();
+      }
+      if(S.tp.stop)break;
+    }
+  }finally{restore();setTPBusy(false);}
+  if(S.M!==M)return;
+  S.tp.three=true;S.tp.box3=null;if(S.view!=='tp')setView('tp');
+  fitTP();refreshCodim2();updateToolbar();requestRender();
+  S.tp.sliceLog=made;
+  const cut=made.filter(m=>m.ends.some(e=>/corrector|step|stopped converging/i.test(e)));
+  status(`${done} of ${n} slices of the ${sp.label} curve in ${((performance.now()-t0)/1000).toFixed(1)} s${S.tp.stop?' (stopped)':''}${failed.length?` · stopped at ${failed.join('; ')}`:''}${cut.length?` · at one end of ${cut.length} curve${cut.length>1?'s':''} the corrector stopped converging (${cut.map(m=>fmt(m.v,4)).join(', ')}); this happens near very long periods, small phi-like parameters or a cusp of cycles`:''}`,failed.length>0);
 }
 
 let rq=false;
@@ -3552,7 +3799,7 @@ function fitBif(force){
 }
 function fit(){
   if(S.view in S.lock)S.lock[S.view]=false;
-  if(S.view==='pp')fitPP(false,true);else if(S.view==='p3'){fitP3();S.p3.pan={x:0,y:0};S.p3.zoom=1;}else if(S.view==='tc')fitTC(true);else if(S.view==='tp')fitTP(true);else fitBif(true);
+  if(S.view==='pp')fitPP(false,true);else if(S.view==='p3'){fitP3();S.p3.pan={x:0,y:0};S.p3.zoom=1;}else if(S.view==='tc')fitTC(true);else if(S.view==='tp'){if(S.tp.three){S.tp.box3=null;S.p3.pan={x:0,y:0};S.p3.zoom=1;}else fitTP(true);}else fitBif(true);
   syncWinPop();requestRender();
 }
 
@@ -3569,7 +3816,7 @@ function winLabels(){
 }
 const winFmt=v=>Number.isFinite(v)?String(+v.toPrecision(6)):'';
 function syncWinPop(force){
-  const pop=$('#winPop');if(pop.hidden||S.view==='p3')return;
+  const pop=$('#winPop');if(pop.hidden||is3())return;
   if(force&&pop.contains(document.activeElement))document.activeElement.blur();
   const w=curWin(),[xl,yl]=winLabels();
   $('#wXl').textContent=xl;$('#wXl').title=xl;$('#wYl').textContent=yl;$('#wYl').title=yl;
@@ -3596,7 +3843,7 @@ function applyWinPop(){
 function updateReadout(px,py){
   const ro=$('#readout');
   if(px!==undefined)S.hover=px===null?null:{px,py};
-  if(S.view==='p3'&&S.M){const d=r=>Math.round(r*180/Math.PI);ro.textContent=`azimuth ${((d(S.p3.yaw)%360)+360)%360}°   elevation ${d(S.p3.pitch)}°`;return;}
+  if(is3()&&S.M){const d=r=>Math.round(r*180/Math.PI);ro.textContent=`azimuth ${((d(S.p3.yaw)%360)+360)%360}°   elevation ${d(S.p3.pitch)}°`;return;}
   if(!S.hover||!S.lastFrame||!S.M){ro.textContent='';return;}
   const fr=S.lastFrame,{px:X,py:Y}=S.hover;
   if(X<fr.L||X>fr.L+fr.W||Y<fr.T||Y>fr.T+fr.H){ro.textContent='';return;}
@@ -3613,13 +3860,15 @@ function updateReadout(px,py){
   else ro.textContent=`${M.parNames[S.bif.pi]} ${fmt(wx,5)}   ${S.bif.mode==='T'?'period':S.bif.mode==='f'?'freq':M.varNames[S.bif.vi]} ${fmt(wy,5)}`;
 }
 function onPlotClick(px,py,shift){
+  if(is3())return;
   const fr=S.lastFrame;if(!fr||px<fr.L||px>fr.L+fr.W||py<fr.T||py>fr.T+fr.H)return;
   if(S.view==='p3')return;
   const m=mapper(fr,curWin()),M=S.M;
-  if(S.view==='pp'&&M.discrete&&M.n===1){const y0=Float64Array.from(S.ic);y0[0]=m.ix(px);runTraj(y0,false);requestRender();}
+  if(S.view==='pp'&&M.discrete&&M.n===1){const y0=Float64Array.from(S.ic);y0[0]=m.ix(px);rec(`traj ${M.varNames[0]}=${recNum(+y0[0].toPrecision(7))}`);runTraj(y0,false);requestRender();}
   else if(S.view==='pp'){
     const{xi,yi}=S.pp;if(!(xi<M.n&&yi<M.n)){status('Starting points can only be set when both axes are state variables',true);return;}
     const y0=Float64Array.from(S.ic);y0[xi]=m.ix(px);y0[yi]=m.iy(py);
+    {const both=shift&&canBoth(M),d=both?'fb':S.num.dir||'f',r5=v=>recNum(+v.toPrecision(7));rec(`traj ${M.varNames[xi]}=${r5(y0[xi])} ${M.varNames[yi]}=${r5(y0[yi])}${d==='fb'?' both':d==='b'?' backward':''}`);}
     if(shift&&canBoth(M))runTraj(y0,'both');else runDir(y0);
     requestRender();
   }else if(S.view==='bif'){
@@ -3649,7 +3898,7 @@ function onPlotClick(px,py,shift){
 // ---- selecting and deleting single curves in the bifurcation and two-parameter diagrams
 function curveName(view,c){const M=S.M;
   if(view==='tp')return`${CURVENAME[c.type]||c.type} curve${c.type==='CPER'&&c.T0?` (T = ${fmt(c.T0,4)})`:''} in (${M.parNames[c.p1i]}, ${M.parNames[c.p2i]}), ${c.pts.length} points`;
-  if(S.bif.branches.includes(c))return`${M.discrete?'fixed-point':'equilibrium'} branch ${S.bif.branches.indexOf(c)+1} (${c.pts.length} points)`;
+  if(S.bif.branches.includes(c)){const f=c.fam||c,k=S.bif.branches.filter(b=>!b.fam).indexOf(f)+1;return f.period>1?`branch ${k} of period-${f.period} orbits (all ${f.period} points of each orbit)`:`${M.discrete?'fixed-point':'equilibrium'} branch ${k} (${c.pts.length} points)`;}
   if(S.bif.cycles.includes(c)){const k=S.bif.cycles.indexOf(c);return`periodic-orbit family ${k+1} (${c.pts.length} points)`;}
   if(S.bif.sweeps.includes(c))return`${c.disc?'orbit diagram':'sweep'} ${S.bif.sweeps.indexOf(c)+1} (${c.rows.length} values)`;
   if(S.bif.bvps&&S.bif.bvps.includes(c))return`boundary-value branch ${S.bif.bvps.indexOf(c)+1} (${c.pts.length} points)`;
@@ -3667,7 +3916,7 @@ function deleteSelected(view){
   if(S.bif.busy){status('Wait for the current computation to finish',true);return;}
   const name=curveName(view,c);
   if(view==='tp'){S.tp.curves=S.tp.curves.filter(q=>q!==c);S.tp.sel=null;refreshCodim2();}
-  else{S.bif.branches=S.bif.branches.filter(q=>q!==c);S.bif.cycles=S.bif.cycles.filter(q=>q!==c);S.bif.sweeps=S.bif.sweeps.filter(q=>q!==c);if(S.bif.bvps)S.bif.bvps=S.bif.bvps.filter(q=>q!==c);S.bif.sel=null;refreshSpecial();}
+  else{const fam=c.fam||c;S.bif.branches=S.bif.branches.filter(q=>q!==c&&(q.fam||q)!==fam);S.bif.cycles=S.bif.cycles.filter(q=>q!==c);S.bif.sweeps=S.bif.sweeps.filter(q=>q!==c);if(S.bif.bvps)S.bif.bvps=S.bif.bvps.filter(q=>q!==c);S.bif.sel=null;refreshSpecial();}
   buildTpControls();selectCurve(view,null,true);status(`Deleted the ${name}`);
 }
 function grab(p,x,what){
@@ -3706,7 +3955,7 @@ function attachPlot(cv){
     const r=cv.getBoundingClientRect();
     if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
       if(!drag.moved&&Math.hypot(dx,dy)>4){drag.moved=true;S.interacting=true;cv.classList.add('panning');}
-      if(drag.moved&&S.view==='p3'){
+      if(drag.moved&&is3()){
         if(drag.shift)S.p3.pan={x:drag.pan.x+dx,y:drag.pan.y+dy};
         else{S.p3.yaw=drag.yaw+dx*0.008;S.p3.pitch=Math.max(-1.55,Math.min(1.55,drag.pitch+dy*0.008));}
         requestRender();}
@@ -3720,7 +3969,7 @@ function attachPlot(cv){
   let wt=null;
   cv.addEventListener('wheel',e=>{
     e.preventDefault();
-    if(S.view==='p3'){S.p3.zoom=Math.max(0.2,Math.min(30,S.p3.zoom*Math.exp(-(e.deltaY||e.deltaX)*0.0015)));requestRender();return;}
+    if(is3()){S.p3.zoom=Math.max(0.2,Math.min(30,S.p3.zoom*Math.exp(-(e.deltaY||e.deltaX)*0.0015)));recWindow();requestRender();return;}
     const fr=S.lastFrame;if(!fr)return;const r=cv.getBoundingClientRect(),w=curWin(),m=mapper(fr,w);
     const wx=m.ix(e.clientX-r.left),wy=m.iy(e.clientY-r.top),f=Math.exp((e.deltaY||e.deltaX)*0.0015);
     const zx=!e.altKey,zy=!e.shiftKey||e.altKey;
@@ -3728,12 +3977,17 @@ function attachPlot(cv){
     S.interacting=true;clearTimeout(wt);wt=setTimeout(()=>{S.interacting=false;afterWindowChange();},200);requestRender();
   },{passive:false});
 }
+function findEquilibria(){
+  const M=S.M;status(`Searching for equilibria of ${M.n} variables… the page may pause`);
+  setTimeout(()=>{const t0=performance.now();computeEquilibria(true);refreshSeparatrices();refreshEqList();requestRender();
+    status(`Found ${S.eqs.length} equilibri${S.eqs.length===1?'um':'a'} in ${((performance.now()-t0)/1000).toFixed(1)} s (visible window; the list is cleared when a parameter changes)`);},40);
+}
 function afterWindowChange(){if(S.view==='pp'){computeEquilibria();refreshEqList();}requestRender();}
 
 /* ======================= live parameter updates ======================= */
 let livePending=false;
 function scheduleLive(){if(livePending)return;livePending=true;requestAnimationFrame(()=>{livePending=false;liveUpdate();});}
-function liveUpdate(){S.ver++;rerunAll();if(S.bvp)bvpSolve(false);computeEquilibria();refreshSeparatrices();refreshEqList();refreshTrajList();requestRender();}
+function liveUpdate(){S.ver++;rerunAll();if(S.bvp)bvpSolve(false);if(S.M.n>EQ_AUTO_MAX||S.M.nbc>0){S.eqs=[];S.eqSel=-1;}computeEquilibria();refreshSeparatrices();refreshEqList();refreshTrajList();requestRender();}
 function setParamVal(i,v,updateUI){
   S.M.setParam(i,v);S.ver++;if(SCRIPT.rec)rec(`par ${S.M.parNames[i]}=${recNum(v)}`,'par:'+i);
   if(updateUI){const r=S.ranges[i];if(v<r.min)r.min=v;if(v>r.max)r.max=v;const row=document.getElementById('prow-'+i);if(row)syncParamRow(i);}
@@ -3983,7 +4237,8 @@ function updateToolbar(){
   const v=S.view,M=S.M,cob=!!(M&&M.discrete&&M.n===1);
   $('#ppAxes').hidden=v!=='pp'||cob;$('#p3Axes').hidden=v!=='p3';
   $('#ppToggles').hidden=v!=='pp';$('#tgNc').hidden=$('#tgField').hidden=cob;
-  $('#styleToggles').hidden=!(v==='pp'||v==='p3'||v==='tc')||(v==='pp'&&cob);
+  $('#styleToggles').hidden=!(v==='pp'||v==='p3'||v==='tc'||v==='bif'||v==='tp')||(v==='pp'&&cob);
+  $('#tgPts').hidden=v==='bif'||v==='tp';$('#tgLegend').hidden=!(v==='bif'||v==='tp');$('#tgTp3').hidden=v!=='tp';$('#tgTp3').setAttribute('aria-pressed',!!S.tp.three);$('#tgLegend').setAttribute('aria-pressed',!!S.legend);
   $('#tgSpin').hidden=v!=='p3';$('#tgSpec').hidden=v!=='tc';$('#tgLog').hidden=$('#tgSmooth').hidden=!(v==='tc'&&S.tc.spec);
   const fams=S.tc.fams||[],inST=v==='tc'&&S.tc.st;$('#tgST').hidden=!(v==='tc'&&fams.length>0);$('#tgST').setAttribute('aria-pressed',!!S.tc.st);
   // menu of ready-made sets of rows: each family, all variables, or "custom" for anything else
@@ -3994,7 +4249,7 @@ function updateToolbar(){
   $('#varsLbl').textContent=inST?'Space-time variables':'Time-course variables';$('#stAll').hidden=$('#stNone').hidden=!inST;
   if(S._chipMode!==inST){S._chipMode=inST;buildChips();}
   $('#tgSpec').setAttribute('aria-pressed',S.tc.spec);$('#tgLog').setAttribute('aria-pressed',S.tc.log);$('#tgSmooth').setAttribute('aria-pressed',S.tc.smooth);
-  $('#tgPts').setAttribute('aria-pressed',S.pp.points);$('#tgEqual').setAttribute('aria-pressed',!!S.pp.equal);$('#tgEqual').hidden=v!=='pp'||cob;$('#tgSpin').setAttribute('aria-pressed',S.p3.spin);$('#tgBVP').hidden=!(S.M&&S.M.nbc>0);$('#tgBVP').setAttribute('aria-pressed',!!S.bvp);
+  $('#tgPts').setAttribute('aria-pressed',S.pp.points);$('#tgEqual').setAttribute('aria-pressed',!!S.pp.equal);$('#tgEqual').hidden=v!=='pp'||cob;$('#tgSpin').setAttribute('aria-pressed',S.p3.spin);$('#tgBVP').hidden=!(S.M&&S.M.nbc>0)||v==='bif'||v==='tp';$('#tgBVP').setAttribute('aria-pressed',!!S.bvp);
 }
 function buildNumerics(){
   const d=!!(S.M&&S.M.discrete);
@@ -4029,7 +4284,8 @@ function buildChips(){
 function refreshEqList(){
   const box=$('#eqList'),M=S.M;box.replaceChildren();
   $('#eqCount').textContent=S.eqs.length?String(S.eqs.length):'';$('#eqLbl').textContent=M.discrete?'Fixed points':'Equilibria';
-  if(!S.eqs.length){box.append(el('p',{class:'empty',text:S.M.hasVolt?'Not computed for Volterra equations: their state is the whole history, not a point. Use trajectories or Sweep max/min.':'None found near the current window. Pan or zoom out to search a wider region.'}));refreshBifStart();return;}
+  const big=(M.n>EQ_AUTO_MAX||M.nbc>0)&&!M.hasVolt;$('#eqFind').hidden=!big;
+  if(!S.eqs.length){box.append(el('p',{class:'empty',text:big?(M.nbc>0?'This is a boundary value problem, so equilibria are not searched automatically. Press Find equilibria to search the visible window.':`This system has ${M.n} variables, so equilibria are not searched automatically. Press Find equilibria to search the visible window; it can take a while (about 15 seconds for 400 variables).`):S.M.hasVolt?'Not computed for Volterra equations: their state is the whole history, not a point. Use trajectories or Sweep max/min.':'None found near the current window. Pan or zoom out to search a wider region.'}));refreshBifStart();return;}
   S.eqs.forEach((e,k)=>{
     const coords=M.varNames.map((n,i)=>`${n} ${fmt(e.x[i],5)}`).join(' · ');
     const evs=[];const seen=new Set();
@@ -4076,6 +4332,7 @@ function buildBifControls(){
   $('#bSweep').title=M.discrete?'Iterate the map across the parameter range and plot the attractor':'XPP-style range integration';
   $('#sweepLg').textContent=M.discrete?'orbit diagram':'sweep max/min';
   $('#bPO').hidden=$('#poLg').hidden=!!M.discrete;$('#bPO').disabled=!M.parNames.length;
+  $('#bPer').hidden=$('#lblPer').hidden=!M.discrete;$('#bPer').value=S.bif.period||1;
   {const bv=M.nbc>0;$('#bBvp').hidden=$('#bvpLg').hidden=!bv;$('#bBvp').disabled=!M.parNames.length;if(bv){$('#bRun').hidden=$('#bSweep').hidden=$('#bPO').hidden=$('#poLg').hidden=true;}else{$('#bRun').hidden=$('#bSweep').hidden=false;}}
   refreshBifStart();refreshSpecial();
 }
@@ -4094,12 +4351,14 @@ function refreshSpecial(){
   const tb=el('table',{class:'sp'});
   tb.append(el('tr',null,el('th',{text:'Pt'}),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
   tb.firstChild.append(el('th',{text:''}));
-  const per=s=>s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?'2':'—';
+  const per=s=>{const N=(s.br&&s.br.period)||1;return s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?String(2*N):N>1?String(N):'—';};
   const NAMES={HB:'Hopf',LP:'fold',BP:'branch-point',PD:'period-doubling',NS:'Neimark–Sacker',LPC:'fold-of-cycles',TR:'torus'};
   const btn=(text,title,fn)=>el('button',{class:'btn small',text,title,onclick:ev=>{ev.stopPropagation();fn();}});
   sp.forEach(s=>{
     const acts=el('div',{class:'acts'});
     if(!s.cyc&&!s.bvp&&followable(s.type)&&M.parNames.length>1)acts.append(btn('Follow','Continue this point in two parameters',()=>runTwoPar(s)));
+    if(!s.cyc&&!s.bvp&&s.type==='BP')acts.append(btn('Switch','Follow the other branch through this branch point',()=>runSwitch(s,false)));
+    if(!s.cyc&&!s.bvp&&M.discrete&&s.type==='PD')acts.append(btn('Double','Follow the period-doubled orbits (the next iterate of the map)',()=>runSwitch(s,true)));
     if(!s.cyc&&!s.bvp&&s.type==='HB'&&!M.discrete)acts.append(btn('Cycles','Continue the periodic orbits born at this Hopf point',()=>runPOFromHopf(s)));
     if(s.cyc&&s.type==='PD')acts.append(btn('Double','Switch to the period-doubled branch of orbits',()=>runPODouble(s)));
     if(s.cyc&&s.type!=='OR'&&followSp(s)&&M.parNames.length>1)acts.append(btn('Follow','Continue this bifurcation of cycles in two parameters',()=>runTwoPar(s)));
@@ -4132,10 +4391,17 @@ async function runCycles(states,from){
   const prog=$('#bProg').firstElementChild,branches=[];
   try{
     for(const st of states){
-      const cb={pi,pts:st.pts,special:[],xsig:st.xsig,params:Array.from(saved)};S.bif.cycles.push(cb);branches.push({cb,st});
+      if(branches.some(b=>b.st.closed))continue; // the first direction went all the way round a loop
+      const cb={pi,pts:st.pts,special:[],xsig:st.xsig,params:Array.from(saved),from};S.bif.cycles.push(cb);branches.push({cb,st});
       let k=0,last=performance.now();
       while(!S.bif.poStop&&!S.bif.skip&&poStep(st)){
         cb.xsig=st.xsig;
+        // a branch that closes up on itself (the locked orbits of an Arnold tongue, an isola) passes through the same folds again:
+        // stop when a fold repeats, and cut the points back to one lap
+        if(st.pts.length>20&&st.pts.length%8===0){const sp=poSpecial(st.pts),pr=st.o.pmax-st.o.pmin;let lap=0;
+          for(let j=1;j<sp.length&&!lap;j++)for(let i=0;i<j;i++){const a=sp[i],b=sp[j];
+            if(a.type===b.type&&b.k>a.k+3&&Math.abs(a.p-b.p)<2e-3*pr&&Math.abs((a.T||0)-(b.T||0))<2e-3*(a.T||1)){lap=b.k-a.k;break;}}
+          if(lap){st.pts.length=Math.min(st.pts.length,lap+1);st.done='the branch closed up on itself (a loop)';st.closed=true;break;}}
         if(performance.now()-last>120){last=performance.now();cb.special=poSpecial(cb.pts);
           saved.forEach((v,i)=>M.setParam(i,v));prog.style.width=`${Math.min(100,Math.round(100*cb.pts.length/st.o.maxPts))}%`;
           fitBif();render();status(`Continuing periodic orbits from ${from}: ${cb.pts.length} points, ${M.parNames[pi]} = ${fmt(cb.pts[cb.pts.length-1].p,5)}, period ${fmt(cb.pts[cb.pts.length-1].T,4)}…`);
@@ -4234,7 +4500,7 @@ async function runBvpCont(){
   const tick=()=>new Promise(r=>setTimeout(r,0)),prog=$('#bProg');
   const u0=Float64Array.from([...Array.from(x0,(v,i)=>v/sx[i]),p0/sp]);
   setBvpBusy(true);S.bif.poStop=false;S.bif.skip=false;
-  const startPt=mkPt(u0),fw=[],bw=[],ff=[],bf=[],bb={pi,pts:[startPt],special:[]};S.bif.bvps.push(bb);
+  const startPt=mkPt(u0),fw=[],bw=[],ff=[],bf=[],bb={pi,pts:[startPt],special:[],params:Array.from(M.P.subarray(0,M.parNames.length))};S.bif.bvps.push(bb);
   const show=()=>{bb.pts=[...bw].reverse().concat([startPt],fw);};
   const nmax=Math.min(S.cont.eqNmax||3000,1000),t0=performance.now();
   const walk=async(dir,out,folds)=>{
@@ -4272,6 +4538,7 @@ async function runBvpCont(){
         if(!fu){let a=0,b=1;for(let q=0;q<50;q++){const mid=(a+b)/2;if(Math.sign(dH(n,mid))===s0)a=mid;else b=mid;}fu=Float64Array.from({length:n+1},(_,c)=>H(c,(a+b)/2));}
         {const xf=toX(fu),pf=toP(fu);M.setParam(pi,pf);const st=bvpStats(xf,meth);folds.push({type:'LP',p:pf,x:xf,mx:st.mx,mn:st.mn,nr:st.nr,a:last,b:pt,t:ts});}}
       out.push(pt);last=pt;u=un;tau=tn;
+      if(out.length>10){let d2=0,dt=0;for(let k=0;k<=n;k++){const dk=u0[k]-u[k];d2+=dk*dk;dt+=dk*tau[k];}if(Math.sqrt(d2)<1.5*ds&&dt>0)return 'the branch closed up on itself (a loop)';}
       ds=Math.min(dsmax*(1+nrm(un)),ds*(got.it<=3?1.4:got.it>5?0.7:1));
       if(nrm(pt.x)>S.num.bound)return 'the solution grew beyond the bound';
       if(Math.abs(pt.p-pmax)<1e-8*(1+Math.abs(pmax))||Math.abs(pt.p-pmin)<1e-8*(1+Math.abs(pmin)))return 'reached the end of the range';
@@ -4279,7 +4546,7 @@ async function runBvpCont(){
     }
     return 'reached the point limit';
   };
-  const r1=await walk(1,fw,ff);const r2=r1==='stopped'?'not run':await walk(-1,bw,bf);
+  const r1=await walk(1,fw,ff);const r2=r1==='stopped'||r1.startsWith('the branch closed')?'not run':await walk(-1,bw,bf);
   show();
   for(const f of [...ff,...bf]){const ia=bb.pts.indexOf(f.a),ib=bb.pts.indexOf(f.b);bb.special.push({type:'LP',p:f.p,x:f.x,mx:f.mx,mn:f.mn,nr:f.nr,k:Math.min(ia,ib),t:ia<ib?f.t:1-f.t});}
   bb.special.sort((a,b)=>a.k-b.k);
@@ -4287,21 +4554,124 @@ async function runBvpCont(){
   fitBif();refreshSpecial();requestRender();
   status(`Branch of ${bb.pts.length} points in ${Math.round(performance.now()-t0)} ms · ${bb.special.length} fold${bb.special.length===1?'':'s'}${bb.special.length?' ('+bb.special.map(f=>fmt(f.p,5)).join(', ')+')':''} · forward: ${r1}; backward: ${r2}${adaptive?' · (shooting integrations use Runge–Kutta 4 with step dt)':''}`);
 }
+/* ---- orbits of maps as fixed points of an iterate, and switching branches at branch points ---- */
+// The p-th iterate of a map as a model whose "right-hand side" is f^p(x) - x, so equilibrium continuation, Newton and the
+// multipliers all work on period-p orbits unchanged.
+function iterModel(M,N){
+  if(!M.discrete||!(N>1))return M;
+  const Mp=Object.create(M),n=M.n,tmp=new Float64Array(n),y=new Float64Array(n);
+  Mp.rhs=(t,x,out)=>{y.set(x.subarray?x.subarray(0,n):x);for(let k=0;k<N;k++){M.rhs(t,y,tmp);for(let i=0;i<n;i++)y[i]+=tmp[i];}for(let i=0;i<n;i++)out[i]=y[i]-x[i];};
+  return Mp;
+}
+// smallest d dividing N with f^d(x)=x (the minimal period of the orbit through x)
+function minPerAt(M,pi,x,p,N){
+  if(N<=1)return 1;const n=M.n,y=new Float64Array(n),tmp=new Float64Array(n),p0=M.getParam(pi);M.setParam(pi,p);
+  let sc=0;for(let i=0;i<n;i++)sc=Math.max(sc,Math.abs(x[i]));let mp=N;
+  for(let d=1;d<N;d++){if(N%d)continue;y.set(x);for(let k=0;k<d;k++){M.rhs(0,y,tmp);for(let i=0;i<n;i++)y[i]+=tmp[i];}
+    let err=0;for(let i=0;i<n;i++)err=Math.max(err,Math.abs(y[i]-x[i]));if(err<1e-6*(1+sc)){mp=d;break;}}
+  M.setParam(pi,p0);return mp;
+}
+// A branch of fixed points of the N-th iterate holds one point of each period-N orbit. The other N-1 points of the orbit
+// are its images under the map; they are added as branches of their own (no special points, so each bifurcation is
+// listed once) that belong to the same family: they are drawn, exported and deleted together with it.
+function addImages(M,pi,nb,N){
+  if(!M.discrete||!(N>1))return[];
+  const n=M.n,y=new Float64Array(n),tmp=new Float64Array(n),p0=M.getParam(pi),out=[];let prev=nb.pts;
+  for(let j=1;j<N;j++){
+    let near=0;
+    const pts=prev.map(q=>{M.setParam(pi,q.p);y.set(q.x);M.rhs(0,y,tmp);const x=new Float64Array(n);for(let i=0;i<n;i++)x[i]=y[i]+tmp[i];return{...q,x};});
+    // stop once the images come back to the starting points (the orbits have period j)
+    pts.forEach((q,k)=>{let d=0,sc=0;for(let i=0;i<n;i++){d=Math.max(d,Math.abs(q.x[i]-nb.pts[k].x[i]));sc=Math.max(sc,Math.abs(q.x[i]));}if(d<1e-7*(1+sc))near++;});
+    if(near>pts.length/2)break;
+    const im={pi,pts,special:[],params:nb.params,period:N,from:nb.from,image:j,fam:nb};out.push(im);prev=pts;
+  }
+  M.setParam(pi,p0);S.bif.branches.push(...out);return out;
+}
+function annotateMinPeriod(M,pi,pts,N){if(N>1&&M.discrete)for(const q of pts)q.mp=minPerAt(M,pi,q.x,q.p,N);}
+// unit vector in the null space of A (inverse iteration on a slightly shifted matrix)
+function nullVec(A){
+  const n=A.length;let sc=0;for(const r of A)for(const v of r)sc=Math.max(sc,Math.abs(v));const eps=1e-9*(sc||1);
+  let v=Array.from({length:n},(_,i)=>1+0.1*i);
+  for(let it=0;it<8;it++){const B=A.map((r,i)=>Array.from(r,(x,j)=>x+(i===j?eps:0))),w=solve(B,v);if(!w)break;const nr=Math.hypot(...w);if(!(nr>0)||!Number.isFinite(nr))break;v=w.map(x=>x/nr);}
+  const nr=Math.hypot(...v);return Float64Array.from(v,x=>x/nr);
+}
+// distance from the point (x,p) to the polyline of a branch, in (x,p) space
+function distToBranch(P,x,p){
+  let best=Infinity;const n=x.length;
+  for(let k=0;k+1<P.length;k++){const a=P[k],b=P[k+1];let ab2=0,abp=0;
+    for(let i=0;i<n;i++){const ab=b.x[i]-a.x[i],ap=x[i]-a.x[i];ab2+=ab*ab;abp+=ab*ap;}
+    {const ab=b.p-a.p,ap=p-a.p;ab2+=ab*ab;abp+=ab*ap;}
+    const t=ab2>0?Math.max(0,Math.min(1,abp/ab2)):0;let d2=0;
+    for(let i=0;i<n;i++){const q=a.x[i]+t*(b.x[i]-a.x[i])-x[i];d2+=q*q;}{const q=a.p+t*(b.p-a.p)-p;d2+=q*q;}
+    if(d2<best)best=d2;}
+  return Math.sqrt(best);
+}
+// a point on the branch that leaves (xs,ps) along v: step delta along v, then Newton in (x,p) with the step kept orthogonal to v
+function branchStart(M,pi,xs,ps,v,delta){
+  const n=M.n,N=n+1,u=new Float64Array(N),pred=new Float64Array(n);
+  for(let i=0;i<n;i++){pred[i]=xs[i]+delta*v[i];u[i]=pred[i];}u[n]=ps;
+  for(let it=0;it<40;it++){
+    const r=jacFull(M,pi,u),A=[];for(let i=0;i<n;i++)A.push(Array.from(r.J[i]));A.push([...v,0]);
+    let d=0;for(let i=0;i<n;i++)d+=v[i]*(u[i]-pred[i]);
+    const dx=solve(A,[...Array.from(r.f0,x=>-x),-d]);if(!dx)return null;
+    let nd=0;for(let k=0;k<N;k++){u[k]+=dx[k];nd+=dx[k]*dx[k];}
+    if(!u.every(Number.isFinite))return null;
+    if(Math.sqrt(nd)<1e-11*(1+norm(u)))break;
+  }
+  M.setParam(pi,u[n]);const f=new Float64Array(n);M.rhs(0,u,f);
+  return norm(f)<1e-8?{x:Float64Array.from(u.subarray(0,n)),p:u[n]}:null;
+}
+// Follow the other branch at a branch point sp of branch sp.br. For a period doubling of a map (double=true) the iterate
+// is doubled first: the period-2p orbits leave the period-p orbit at a branch point of the 2p-th iterate.
+function runSwitch(sp,double){
+  const M=S.M,pi=sp.pi,br=sp.br;if(!br){status('This point has no branch to switch from',true);return;}
+  const N=(br.period||1)*(double?2:1),Mi=iterModel(M,N),xs=Float64Array.from(sp.x),ps=sp.p,pOrig=M.getParam(pi);
+  M.setParam(pi,ps);
+  const v=nullVec(numJac(Mi,xs)),sc=1+norm(xs),t0=performance.now(),found=[];
+  const o={pmin:S.bif.pmin,pmax:S.bif.pmax,ds:S.bif.ds/(N>1?N*N:1),dsmin:S.cont.eqDsmin,dsmax:S.cont.eqDsmax,maxPts:S.cont.eqNmax,xmax:S.num.bound};
+  for(const sign of[1,-1]){
+    let start=null,used=0;
+    for(const dl of[0.02,0.006,0.05,0.002]){
+      const delta=sign*dl*sc;M.setParam(pi,ps);const u1=branchStart(Mi,pi,xs,ps,v,delta);if(!u1)continue;
+      {let d=0;for(let i=0;i<xs.length;i++)d+=(u1.x[i]-xs[i])**2;     // Newton ran off to a distant solution: try another step
+       if(Math.sqrt(d)>3*Math.abs(delta)||u1.p<S.bif.pmin-0.1*(S.bif.pmax-S.bif.pmin)||u1.p>S.bif.pmax+0.1*(S.bif.pmax-S.bif.pmin))continue;}
+      if(distToBranch(br.pts,u1.x,u1.p)<0.3*Math.abs(delta))continue; // converged back onto the branch we left
+      if(N>1&&minPerAt(M,pi,u1.x,u1.p,N)!==N)continue;                 // an orbit of lower period, not the new one
+      if(found.some(b=>distToBranch(b.pts,u1.x,u1.p)<0.3*Math.abs(delta)))break; // already on a branch found from the other side (or an image of it): nothing new this side
+      start=u1;used=Math.abs(delta);break;
+    }
+    if(!start)continue;
+    M.setParam(pi,start.p);
+    const res=continueBoth(Mi,pi,start.x,{...o,stopNear:{u:Float64Array.from([...xs,ps]),r:0.3*used}});
+    M.setParam(pi,pOrig);
+    if(res.pts.length<2)continue;
+    annotateMinPeriod(M,pi,res.pts,N);
+    const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:N,from:`from ${sp.label}`};S.bif.branches.push(nb);found.push(nb,...addImages(M,pi,nb,N));
+  }
+  M.setParam(pi,pOrig);
+  if(!found.length){status(`Could not find a second branch at ${sp.label}${N>1?` for the ${N}-th iterate`:''}. Check that the multiplier really passes through ${M.discrete?'+1':'0'} there.`,true);return;}
+  fitBif();refreshSpecial();buildTpControls();requestRender();
+  {const fams=found.filter(b=>!b.fam),np=fams.reduce((a,b)=>a+b.pts.length,0);
+  status(`Switched at ${sp.label}${N>1?` (period ${N})`:''}: ${fams.length} new branch${fams.length>1?'es':''} of ${np} points${N>1&&M.discrete?`, each drawn at all ${N} points of the orbit`:''}, in ${Math.round(performance.now()-t0)} ms${N>1?' · dotted = an orbit of lower period':''}`);}
+}
 function runContinuation(){
   const M=S.M;if(!M.parNames.length)return;if(voltNo('Equilibrium continuation'))return;readBifInputs();
   const pi=S.bif.pi,k=parseInt($('#bStart').value,10);
-  let x0=k>=0&&S.eqs[k]?S.eqs[k].x:newton(M,S.ic);
-  if(!x0){status('Could not find an equilibrium to start from. Set the initial condition close to one first.',true);return;}
+  const Np=M.discrete?Math.max(1,S.bif.period||1):1,Mi=iterModel(M,Np);
+  let x0=k>=0&&S.eqs[k]?S.eqs[k].x:newton(Mi,S.ic);
+  if(!x0){status(Np>1?`Could not find a period-${Np} orbit to start from. Set the initial condition close to one first.`:'Could not find an equilibrium to start from. Set the initial condition close to one first.',true);return;}
   const p0=M.getParam(pi);
   if(p0<S.bif.pmin||p0>S.bif.pmax)status(`Note: ${M.parNames[pi]} = ${fmt(p0)} is outside the range; continuing anyway`);
   const t0=performance.now();
-  const res=continueBoth(M,pi,x0,{pmin:S.bif.pmin,pmax:S.bif.pmax,ds:S.bif.ds,dsmin:S.cont.eqDsmin,dsmax:S.cont.eqDsmax,maxPts:S.cont.eqNmax,xmax:S.num.bound});
+  const dsN=S.bif.ds/(Np>1?Np*Np:1); // the p-th iterate varies p times faster, so use a finer step
+  const res=continueBoth(Mi,pi,x0,{pmin:S.bif.pmin,pmax:S.bif.pmax,ds:dsN,dsmin:S.cont.eqDsmin,dsmax:S.cont.eqDsmax,maxPts:S.cont.eqNmax,xmax:S.num.bound});
   M.setParam(pi,p0);
   if(res.pts.length<2){status('Continuation failed at the first step. Try a smaller ds.',true);return;}
-  S.bif.branches.push({pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length))});
+  annotateMinPeriod(M,pi,res.pts,Np);
+  {const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:Np};S.bif.branches.push(nb);addImages(M,pi,nb,Np);}
   fitBif();refreshSpecial();buildTpControls();requestRender();
   const c={};for(const s of res.special)c[s.type]=(c[s.type]||0)+1;
-  status(`Branch of ${res.pts.length} points in ${Math.round(performance.now()-t0)} ms · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no bifurcations detected'}`);
+  status(`Branch of ${res.pts.length} points in ${Math.round(performance.now()-t0)} ms · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no bifurcations detected'}${res.closed?' · the branch closed up on itself (a loop)':''}`);
 }
 // period of a sweep run: spacing of the maxima of the largest-amplitude variable over the recorded half, or null when
 // there are fewer than three maxima or their spacing isn't regular (chaos, noise, multi-peaked orbits)
@@ -4324,7 +4694,7 @@ async function runSweep(){
   const M=S.M;if(!M.parNames.length||S.bif.busy)return;readBifInputs();
   const pi=S.bif.pi,N=Math.max(10,Math.min(600,S.num.sweepN|0)),p0=M.getParam(pi),n=M.n;
   setPOBusy(true);S.bif.poStop=false;S.bif.skip=false;const prog=$('#bProg');
-  const sw={pi,rows:[],disc:M.discrete};S.bif.sweeps.push(sw);
+  const sw={pi,rows:[],disc:M.discrete,params:Array.from(M.P.subarray(0,M.parNames.length))};S.bif.sweeps.push(sw);
   let y=Float64Array.from(S.ic);
   for(const dir of[1,-1]){
     if(S.M!==M)break;y=Float64Array.from(S.ic);
@@ -4665,10 +5035,18 @@ const CMDS={
     if(k==='meth'||k==='method'){const m=METH[v.toLowerCase()]||(['rk4','dp45','euler','ros23'].includes(v)?v:null);if(!m)throw new Error(`unknown method “${v}”`);v=m;}
     if(k==='dir'||k==='direction'){v=dirArg(v);if(!v)throw new Error('dir is forward, backward or both');}
     fire(id,v);}}},
+  tp3d:{help:'tp3d on|off — two-parameter curves in a 3D box over the third parameter',run:a=>{if(onoff(a[0],S.tp.three)!==S.tp.three)$('#tgTp3').click();}},
+  period:{help:'period N — for maps, continue orbits of period N (fixed points of the N-th iterate)',run:a=>{const n=scrNum(a[0],'N');if(!S.M.discrete)throw new Error('period is for maps');fire('#bPer',n);}},
+  switch:{help:'switch BP1 — follow the other branch through a branch point',run:a=>{const sp=findSpecialLabel(a[0]);if(sp.cyc||sp.type!=='BP')throw new Error(`${sp.label} is not a branch point of equilibria or fixed points`);const n=S.bif.branches.length;runSwitch(sp,false);if(S.bif.branches.length===n)throw new Error($('#status').textContent);}},
+  slices:{help:'slices LABEL P3 lo hi n — follow LABEL in two parameters at n values of a third parameter',run:async a=>{if(a.length!==5)throw new Error('give a start point, a parameter and its smallest value, largest value and number of slices');
+    const sp=findSpecialLabel(a[0]),st=tpStarts(),k=st.findIndex(q=>q.label.split(' ')[0]===sp.label);if(k<0)throw new Error(`${sp.label} cannot be followed in two parameters`);
+    $('#tStart').value=String(k);fire('#tP3',parIndex(a[1]));$('#tMin3').value=scrNum(a[2],'lo');$('#tMax3').value=scrNum(a[3],'hi');$('#tN3').value=scrNum(a[4],'n');
+    const n=S.tp.curves.length;await runSlices();await waitIdle();if(S.tp.curves.length===n)throw new Error($('#status').textContent);}},
   view:{help:'view pp|3d|tc|bif|tp — choose the plot',run:a=>{const v=VIEWS[String(a[0]||'').toLowerCase()];if(!v)throw new Error('view is pp, 3d, tc, bif or tp');setView(v);}},
   axes:{help:'axes X Y [Z] — variables on the phase-plane (or 3D) axes',run:a=>{if(a.length<2)throw new Error('give two variables');if(a.length>2||S.view==='p3'){for(const[k,id]of[[0,'#x3Sel'],[1,'#y3Sel'],[2,'#z3Sel']])if(a[k])fire(id,a[k]==='t'?-1:varIndex(a[k],true));}else{fire('#xSel',varIndex(a[0],true));fire('#ySel',varIndex(a[1],true));}}},
   window:{help:'window xlo xhi ylo yhi — axis limits of the current plot',run:a=>{const w={xlo:scrNum(a[0],'xlo'),xhi:scrNum(a[1],'xhi'),ylo:scrNum(a[2],'ylo'),yhi:scrNum(a[3],'yhi')};if(!(w.xhi>w.xlo&&w.yhi>w.ylo))throw new Error('each max must exceed its min');setWin(w);S.lock[S.view]=true;if(S.view==='pp'){S.pp.eqExpand=true;S.ver++;computeEquilibria();refreshEqList();}requestRender();}},
   fit:{help:'fit — fit the axes to the data',run:()=>fit()},
+  legend:{help:'legend on|off',run:a=>{if(onoff(a[0],S.legend)!==S.legend)$('#tgLegend').click();}},
   nullclines:{help:'nullclines on|off',run:a=>{if(onoff(a[0],S.pp.nc)!==S.pp.nc)$('#tgNc').click();}},
   field:{help:'field on|off — direction field',run:a=>{if(onoff(a[0],S.pp.field)!==S.pp.field)$('#tgField').click();}},
   equilibria:{help:'equilibria on|off',run:a=>{if(onoff(a[0],S.pp.eq)!==S.pp.eq)$('#tgEq').click();}},
@@ -4683,15 +5061,24 @@ const CMDS={
       if(a.length===8){fire('#g2v',varIndex(a[4]));$('#g2a').value=scrNum(a[5]);$('#g2b').value=scrNum(a[6]);$('#g2n').value=scrNum(a[7]);}else fire('#g2v',-1);S.gridEdited=true;}
     runGridIC();await waitIdle();}},
   separatrices:{help:'separatrices [k] — separatrices of saddle k (default: the first saddle)',run:a=>{const sd=S.eqs.filter(e=>e.kind==='saddle');const k=a[0]?scrNum(a[0],'k')-1:0;if(!sd[k])throw new Error(`there ${sd.length===1?'is 1 saddle':`are ${sd.length} saddles`} in view`);separatrices(sd[k]);}},
-  tcvars:{help:'tcvars x y … — variables shown in the time course',run:a=>{if(!a.length)throw new Error('give at least one variable');S.tc.vars=new Set(a.map(n=>varIndex(n,true)));buildChips();fitTC();requestRender();}},
-  bifpar:{help:'bifpar NAME [lo hi] [ds=…] — parameter and range for continuation',run:a=>{const i=parIndex(a[0]);fire('#bPar',i);const rest=a.slice(1).filter(x=>!x.includes('='));if(rest.length===2){fire('#bMin',scrNum(rest[0],'lo'));fire('#bMax',scrNum(rest[1],'hi'));}else if(rest.length)throw new Error('give both ends of the range');for(const[k,v]of kv(a.slice(1).filter(x=>x.includes('=')))){if(k!=='ds')throw new Error(`unknown option ${k}`);fire('#bDs',scrNum(v,'ds'));}}},
+  tcvars:{help:'tcvars x y … — variables shown in the time course (or in the space-time plot when it is on)',run:a=>{if(!a.length)throw new Error('give at least one variable');const v=new Set(a.map(n=>varIndex(n,true)));if(S.tc.st)S.tc.stVars=v;else S.tc.vars=v;buildChips();fitTC();requestRender();}},
+  spectrum:{help:'spectrum on|off — power spectra in the time course',run:a=>{if(onoff(a[0],S.tc.spec)!==S.tc.spec)$('#tgSpec').click();}},
+  spacetime:{help:'spacetime on|off — space-time plot in the time course',run:a=>{if(onoff(a[0],S.tc.st)!==S.tc.st)$('#tgST').click();}},
+  logscale:{help:'logscale on|off — logarithmic spectra',run:a=>{if(onoff(a[0],S.tc.log)!==S.tc.log)$('#tgLog').click();}},
+  smooth:{help:'smooth on|off — smoothed spectra',run:a=>{if(onoff(a[0],S.tc.smooth)!==S.tc.smooth)$('#tgSmooth').click();}},
+  solvebvp:{help:'solvebvp on|off — solve the boundary value problem',run:a=>{if(onoff(a[0],!!S.bvp)!==!!S.bvp)$('#tgBVP').click();}},
+  rotate:{help:'rotate AZ EL [ZOOM] — the 3D view: azimuth and elevation in degrees, and zoom',run:a=>{const r=Math.PI/180;S.p3.yaw=scrNum(a[0],'azimuth')*r;S.p3.pitch=Math.max(-1.55,Math.min(1.55,scrNum(a[1],'elevation')*r));if(a[2]!==undefined)S.p3.zoom=Math.max(0.2,Math.min(30,scrNum(a[2],'zoom')));requestRender();}},
+  findeq:{help:'findeq — search the window for equilibria (for large systems, where this is not automatic)',run:()=>{computeEquilibria(true);refreshSeparatrices();refreshEqList();requestRender();}},
+  bifpar:{help:'bifpar NAME [lo hi] [ds=…] — parameter and range for continuation',run:a=>{const i=parIndex(a[0]);fire('#bPar',i);const rest=a.slice(1).filter(x=>!x.includes('='));if(rest.length===2){fire('#bMin',scrNum(rest[0],'lo'));fire('#bMax',scrNum(rest[1],'hi'));}else if(rest.length)throw new Error('give both ends of the range');for(const[k,v]of kv(a.slice(1).filter(x=>x.includes('=')))){if(k==='ds')fire('#bDs',scrNum(v,'ds'));else if(k==='period')CMDS.period.run([v]);else throw new Error(`unknown option ${k}`);}}},
   plot:{help:'plot VAR — variable on the bifurcation diagram',run:a=>fire('#bVar',varIndex(a[0]))},
   show:{help:'show hilo|L2|period|frequency — what the bifurcation diagram shows',run:a=>{const m=SHOWS[String(a[0]||'').toLowerCase()];if(!m)throw new Error('show is hilo, L2, period or frequency');if(a[1])$('#bVar').value=varIndex(a[1]);fire('#bShow',m);}},
   continue:{help:'continue [eq K] — continue equilibria from equilibrium K (default: Newton from the initial values)',run:a=>{if(a[0]&&a[0].toLowerCase()==='eq'){const k=scrNum(a[1],'K')-1;if(!S.eqs[k])throw new Error(`there are ${S.eqs.length} equilibria in view`);$('#bStart').value=String(k);}else $('#bStart').value='-1';const n=S.bif.branches.length;runContinuation();if(S.bif.branches.length===n)throw new Error($('#status').textContent);}},
   sweep:{help:'sweep — Sweep max/min over the parameter range',run:async()=>{runSweep();await waitIdle();}},
   cycles:{help:'cycles HB1 — continue the periodic orbits from a Hopf point',run:async a=>{const sp=findSpecialLabel(a[0]);if(sp.type!=='HB')throw new Error(`${sp.label} is not a Hopf point`);const n=S.bif.cycles.length;runPOFromHopf(sp);await waitIdle();if(S.bif.cycles.length===n)throw new Error($('#status').textContent);}},
   limitcycle:{help:'limitcycle — continue the orbit the current trajectory has settled on',run:async()=>{const n=S.bif.cycles.length;runPOFromOrbit();await waitIdle();if(S.bif.cycles.length===n)throw new Error($('#status').textContent);}},
-  double:{help:'double PD1 — switch to the period-doubled orbits',run:async a=>{const sp=findSpecialLabel(a[0]);if(!sp.cyc||sp.type!=='PD')throw new Error(`${sp.label} is not a period doubling of cycles`);runPODouble(sp);await waitIdle();}},
+  double:{help:'double PD1 — switch to the period-doubled orbits (of a periodic orbit, or of a fixed point or orbit of a map)',run:async a=>{const sp=findSpecialLabel(a[0]);
+    if(!sp.cyc&&sp.type==='PD'&&S.M.discrete){const n=S.bif.branches.length;runSwitch(sp,true);if(S.bif.branches.length===n)throw new Error($('#status').textContent);return;}
+    if(!sp.cyc||sp.type!=='PD')throw new Error(`${sp.label} is not a period doubling`);runPODouble(sp);await waitIdle();}},
   pick:{help:'pick K NAME=value — pick the orbit of family K nearest that parameter value (becomes OR1, OR2, …)',run:a=>{const fam=S.bif.cycles.filter(c=>c.pi===S.bif.pi),cb=fam[scrNum(a[0],'K')-1];if(!cb)throw new Error(`there are ${fam.length} orbit families for this parameter`);const[[k,v]]=kv([a[1]]);if(parIndex(k)!==S.bif.pi)throw new Error(`orbits are parametrised by ${S.M.parNames[S.bif.pi]}`);const p=scrNum(v);let best=0;cb.pts.forEach((q,j)=>{if(Math.abs(q.p-p)<Math.abs(cb.pts[best].p-p))best=j;});grabCycle(cb,best,null,true);}},
   tppar:{help:'tppar NAME [lo hi] — second parameter (and its range) for two-parameter curves',run:a=>{const i=parIndex(a[0]);if(i===S.bif.pi)throw new Error('the second parameter must differ from the first');fire('#tP2',i);if(a.length===3){fire('#tMin2',scrNum(a[1],'lo'));fire('#tMax2',scrNum(a[2],'hi'));}else if(a.length!==1)throw new Error('give both ends of the range');}},
   follow:{help:'follow LABEL — follow HB1, LP1, LPC1, PD1 … in two parameters, or OR1 at constant period',run:async a=>{const sp=findSpecialLabel(a[0]);const n=S.tp.curves.length;if(sp.type==='OR')followConstT(sp);else runTwoPar(sp);await waitIdle();if(S.tp.curves.length===n)throw new Error($('#status').textContent);}},
@@ -4774,7 +5161,10 @@ const recNum=v=>String(+(+v).toPrecision(8));
 // wrapping the actions must happen before init() attaches them to buttons, or the buttons keep the unwrapped functions
 // settings lines are written only when they differ from the last ones written since the model was loaded
 const recOnce=(line,key)=>{SCRIPT.seen=SCRIPT.seen||{};if(SCRIPT.seen[key]===line)return;rec(line,key);if(SCRIPT.rec&&!SCRIPT.running&&!SCRIPT.mute)SCRIPT.seen[key]=line;};
-const recBif=()=>recOnce(`bifpar ${S.M.parNames[S.bif.pi]} ${recNum(S.bif.pmin)} ${recNum(S.bif.pmax)} ds=${recNum(S.bif.ds)}`,'bifpar');
+const recBif=()=>recOnce(`bifpar ${S.M.parNames[S.bif.pi]} ${recNum(S.bif.pmin)} ${recNum(S.bif.pmax)} ds=${recNum(S.bif.ds)}${S.M.discrete?` period=${S.bif.period||1}`:''}`,'bifpar');
+function recWindow(){if(!SCRIPT.rec||SCRIPT.running||SCRIPT.mute||!S.M)return;
+  if(is3()){const d=r=>Math.round(r*1800/Math.PI)/10;rec(`rotate ${d(S.p3.yaw)} ${d(S.p3.pitch)} ${recNum(+S.p3.zoom.toPrecision(3))}`,'rotate');return;}
+  const w=curWin();rec(`window ${recNum(w.xlo)} ${recNum(w.xhi)} ${recNum(w.ylo)} ${recNum(w.yhi)}`,'window:'+S.view);}
 const recTp=()=>recOnce(`tppar ${S.M.parNames[S.tp.p2i]} ${recNum(S.tp.p2min)} ${recNum(S.tp.p2max)}`,'tppar');
 function scriptWrap(){
   const bp=recBif,tpr=recTp;
@@ -4795,6 +5185,21 @@ function scriptWrap(){
   followConstT=wrapRec(followConstT,sp=>{if(S.tp.running)return;tpr();rec(`follow ${lab(sp)}`);});
   grabCycle=wrapRec(grabCycle,(cb,k,what,pick)=>{if(!pick)return;const fam=S.bif.cycles.filter(c=>c.pi===cb.pi),K=fam.indexOf(cb)+1;if(K>0)rec(`pick ${K} ${S.M.parNames[cb.pi]}=${recNum(cb.pts[k].p)}`);});
   runGridIC=wrapRec(runGridIC,()=>{if(gridRun)return;const g=k=>[S.M.varNames[+$(`#g${k}v`).value],$(`#g${k}a`).value,$(`#g${k}b`).value,$(`#g${k}n`).value];rec(S.gridEdited?`grid ${g(1).join(' ')}${+$('#g2v').value>=0?' '+g(2).join(' '):''}`:'grid');});
+  // after-the-fact recording: the call sets the state, which is then written as one line
+  const wrapAfter=(fn,after)=>function(...a){const live=SCRIPT.rec&&!SCRIPT.running&&!SCRIPT.mute;SCRIPT.mute++;let r;try{r=fn.apply(this,a);}finally{SCRIPT.mute--;}if(live){try{after(...a);}catch(e){}}return r;};
+  // a point taken from a diagram: its parameter values and the initial values it loads
+  const recState=pis=>{const M=S.M,ps=[...new Set(pis)].filter(i=>i>=0).map(i=>`${M.parNames[i]}=${recNum(M.getParam(i))}`),xs=M.varNames.map((nm,i)=>`${nm}=${recNum(S.ic[i])}`);rec(`set ${[...ps,...xs].join(' ')}`,'state');};
+  grab=wrapAfter(grab,()=>recState([S.bif.pi]));
+  grab2=wrapAfter(grab2,()=>recState([S.bif.pi,S.tp.p2i]));
+  grabBvp=wrapAfter(grabBvp,bb=>recState([bb.pi]));
+  {const g=grabCycle;grabCycle=wrapAfter(g,(cb,k,what,pick)=>{if(!pick)recState([cb.pi]);});}
+  runSwitch=wrapRec(runSwitch,(sp,dbl)=>{if(S.bif.busy)return;bp();rec(`${dbl?'double':'switch'} ${lab(sp)}`);});
+  runSlices=wrapRec(runSlices,()=>{if(S.bif.busy)return;const sp=tpStarts()[parseInt($('#tStart').value,10)];if(!sp)return;tpr();rec(`slices ${lab(sp)} ${S.M.parNames[S.tp.p3i]} ${$('#tMin3').value} ${$('#tMax3').value} ${$('#tN3').value}`);});
+  findEquilibria=wrapRec(findEquilibria,()=>rec('findeq'));
+  fit=wrapRec(fit,()=>rec('fit'));
+  erase=wrapRec(erase,()=>rec('erase'));
+  // panning and zooming with the mouse: the window (or the 3D angle) once the gesture ends
+  afterWindowChange=wrapRec(afterWindowChange,()=>recWindow());
 }
 function scriptInit(){
   const ta=$('#scrText');ta.value=store.get('xpps-script')||SCRIPT_EXAMPLE;
@@ -4802,10 +5207,45 @@ function scriptInit(){
   $('#scrRun').addEventListener('click',()=>runScript(ta.value));
   $('#scrStep').addEventListener('click',()=>runScript(ta.value,{step:true}));
   $('#scrOde').addEventListener('click',()=>{const t=odeScript($('#odeText').value);if(!t.trim()){status('The equations have no #@do lines',true);return;}runScript('apply\n'+t);});
-  $('#scrRec').addEventListener('click',()=>{SCRIPT.rec=!SCRIPT.rec;$('#scrRec').setAttribute('aria-pressed',SCRIPT.rec);$('#scrRec').textContent=SCRIPT.rec?'● Recording':'Record';
-    if(SCRIPT.rec){const id=$('#exSel').value;rec(id&&id!=='custom'?`example ${id}`:'apply');status('Recording: what you do is written into the script');}else status('Recording stopped');});
+  // Record: ask what to do with commands already in the box, mark a new block if they are kept, and report what was recorded
+  const askRecord=()=>new Promise(res=>{
+    const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':'Record into the script'});
+    const done=v=>{sh.remove();res(v);};
+    sh.append(el('div',{class:'about'},
+      el('h3',{text:'Record into the script'}),
+      el('p',{text:'The script box already has commands in it. Recorded commands are always added at the end.'}),
+      el('div',{class:'row'},
+        el('button',{class:'btn primary',text:'Clear the old script',onclick:()=>done('clear')}),
+        el('button',{class:'btn',text:'Keep it, start a new block',onclick:()=>done('keep')}),
+        el('button',{class:'btn',text:'Cancel',onclick:()=>done(null)}))));
+    sh.addEventListener('click',e=>{if(e.target===sh)done(null);});document.body.append(sh);
+  });
+  const recLines=()=>ta.value.replace(/\s+$/,'').split('\n');
+  const recButton=()=>{$('#scrRec').setAttribute('aria-pressed',SCRIPT.rec);$('#scrRec').textContent=SCRIPT.rec?'● Recording':'Record';};
+  $('#scrRec').addEventListener('click',async()=>{
+    if(!SCRIPT.rec){
+      let choice='clear';
+      if(ta.value.trim())choice=await askRecord();
+      if(!choice)return;
+      if(choice==='clear')ta.value='';
+      else{const d=new Date(),pad=n=>String(n).padStart(2,'0');
+        ta.value=ta.value.replace(/\s+$/,'')+`\n\n# --- new recording, ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} ---\n`;}
+      store.set('xpps-script',ta.value);
+      SCRIPT.recStart=ta.value.trim()?recLines().length:0; // lines before the first recorded command
+      SCRIPT.rec=true;recButton();$('#scrLine').textContent='';
+      const id=$('#exSel').value;rec(id&&id!=='custom'?`example ${id}`:'apply');
+      status('Recording: what you do is written at the end of the script');
+    }else{
+      SCRIPT.rec=false;recButton();
+      const lines=recLines(),added=lines.slice(SCRIPT.recStart||0).filter(l=>l.trim()&&!/^\s*#/.test(l)).length;
+      ta.scrollTop=ta.scrollHeight;
+      const msg=added?`Recording stopped: ${added} command${added===1?'':'s'} recorded, script lines ${(SCRIPT.recStart||0)+1} to ${lines.length}`:'Recording stopped: nothing was recorded';
+      $('#scrLine').textContent=added?`${added} command${added===1?'':'s'} recorded`:'';status(msg);
+    }
+  });
   $('#scrHelp').addEventListener('click',()=>{const box=$('#scrLog');box.replaceChildren(...Object.values(CMDS).map(c=>el('div',{class:'h',text:c.help})));});
   $('#scrEx').addEventListener('click',()=>{ta.value=SCRIPT_EXAMPLE;store.set('xpps-script',ta.value);});
+  $('#scrRestore').addEventListener('click',()=>{if(ta.value.trim()&&!confirm('Replace what is in the script box with the old script?'))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;$('#scrLine').textContent='old script restored';});
   $('#scrInsert').addEventListener('click',()=>{const t=ta.value.trim();if(!t){status('The script is empty',true);return;}
     const body=t.split('\n').filter(l=>l.trim()&&!/^\s*#/.test(l)&&!/^\s*example\b/i.test(l)).map(l=>'#@do '+l.trim());
     const ot=$('#odeText'),src=ot.value.split('\n').filter(l=>!/^\s*#@do\s/i.test(l));let di=src.length;for(let k=src.length-1;k>=0;k--)if(/^\s*(done|d)\s*$/i.test(src[k])){di=k;break;}
@@ -4817,10 +5257,11 @@ function scriptInit(){
   $('#tab-ic').addEventListener('change',e=>{const m=/^ic-(\d+)$/.exec(e.target.id||'');if(m){const i=+m[1];rec(`init ${S.M.varNames[i]}=${recNum(S.ic[i])}`,'init:'+i);}});
   $('#icDir').addEventListener('change',e=>rec(`num dir=${e.target.value==='fb'?'both':e.target.value==='b'?'backward':'forward'}`,'num:dir'));
   for(const id of['#xSel','#ySel'])$(id).addEventListener('change',()=>rec(`axes ${S.M.names[S.pp.xi]} ${S.M.names[S.pp.yi]}`,'axes'));
-  for(const[id,nm,get]of[['#tgNc','nullclines',()=>S.pp.nc],['#tgField','field',()=>S.pp.field],['#tgEq','equilibria',()=>S.pp.eq],['#tgPts','points',()=>S.pp.points],['#tgEqual','equal',()=>S.pp.equal]])$(id).addEventListener('click',()=>rec(`${nm} ${get()?'on':'off'}`));
-  $('#fitBtn').addEventListener('click',()=>rec('fit'));
+  for(const[id,nm,get]of[['#tgNc','nullclines',()=>S.pp.nc],['#tgField','field',()=>S.pp.field],['#tgEq','equilibria',()=>S.pp.eq],['#tgPts','points',()=>S.pp.points],['#tgEqual','equal',()=>S.pp.equal],['#tgLegend','legend',()=>S.legend],['#tgTp3','tp3d',()=>S.tp.three],['#tgSpec','spectrum',()=>S.tc.spec],['#tgST','spacetime',()=>S.tc.st],['#tgLog','logscale',()=>S.tc.log],['#tgSmooth','smooth',()=>S.tc.smooth],['#tgBVP','solvebvp',()=>!!S.bvp]])$(id).addEventListener('click',()=>rec(`${nm} ${get()?'on':'off'}`));
+  $('#varChips').addEventListener('click',e=>{if(!e.target.closest('button'))return;const set=S.view==='tc'&&S.tc.st?S.tc.stVars:S.tc.vars;if(set.size)rec(`tcvars ${[...set].sort((a,b)=>a-b).map(i=>S.M.names[i]).join(' ')}`,'tcvars');});
+  for(const id of['#x3Sel','#y3Sel','#z3Sel'])$(id).addEventListener('change',()=>{const n=i=>i<0?'t':S.M.names[i];rec(`axes ${n(S.p3.xi)} ${n(S.p3.yi)} ${n(S.p3.zi)}`,'axes3');});
+  $('#bPer').addEventListener('change',()=>rec(`period ${S.bif.period}`,'period'));
   $('#winPop').addEventListener('submit',()=>{const w=curWin();rec(`window ${recNum(w.xlo)} ${recNum(w.xhi)} ${recNum(w.ylo)} ${recNum(w.yhi)}`,'window');});
-  $('#eraseBtn').addEventListener('click',()=>rec('erase'));
   for(const id of['#goBtn','#icGo'])$(id).addEventListener('click',()=>rec('go'));
   const bp=recBif;
   for(const id of['#bPar','#bMin','#bMax','#bDs'])$(id).addEventListener('change',bp);
@@ -4924,7 +5365,10 @@ function init(){
   $('#tgSmooth').addEventListener('click',()=>{S.tc.smooth=!S.tc.smooth;specChange();});
   const tog=(id,key)=>$(id).addEventListener('click',()=>{S.pp[key]=!S.pp[key];$(id).setAttribute('aria-pressed',S.pp[key]);requestRender();});
   tog('#tgNc','nc');tog('#tgField','field');tog('#tgEq','eq');
+  S.legend=store.get('xpps-legend')==='1';$('#tgLegend').setAttribute('aria-pressed',S.legend);
+  $('#tgLegend').addEventListener('click',()=>{S.legend=!S.legend;store.set('xpps-legend',S.legend?'1':'0');$('#tgLegend').setAttribute('aria-pressed',S.legend);requestRender();});
   $('#fitBtn').addEventListener('click',fit);
+  $('#eqFind').addEventListener('click',findEquilibria);
   $('#winBtn').addEventListener('click',()=>openWinPop($('#winPop').hidden));
   $('#wClose').addEventListener('click',()=>openWinPop(false));
   $('#winPop').addEventListener('submit',e=>{e.preventDefault();applyWinPop();});
@@ -4942,6 +5386,9 @@ function init(){
   $('#tP1').addEventListener('change',e=>setP1(+e.target.value));
   $('#tP2').addEventListener('change',e=>{const q=+e.target.value;if(q===S.bif.pi){status('Parameter 2 must differ from parameter 1',true);$('#tP2').value=S.tp.p2i;return;}setP2(q);buildTpControls();S.lock.tp=false;fitTP(true);requestRender();});
   for(const id of['#tMin1','#tMax1','#tMin2','#tMax2'])$(id).addEventListener('change',()=>{readTpInputs();fitTP();requestRender();});
+  $('#tgTp3').addEventListener('click',()=>{S.tp.three=!S.tp.three;S.tp.box3=null;updateToolbar();requestRender();});
+  $('#tP3').addEventListener('change',()=>{S.tp.p3i=parseInt($('#tP3').value,10);S.tp.box3=null;fillSliceRange(true);requestRender();});
+  $('#tSlices').addEventListener('click',runSlices);
   $('#tRun').addEventListener('click',()=>{if(S.tp.running){S.tp.stop=true;return;}const k=parseInt($('#tStart').value,10);runTwoPar(tpStarts()[k]);});
   $('#tClear').addEventListener('click',()=>{S.tp.curves=S.tp.curves.filter(c=>!(c.p1i===S.bif.pi&&c.p2i===S.tp.p2i));refreshCodim2();fitTP();requestRender();status('Two-parameter curves cleared');});
   const bifPlotChange=()=>{const v=+$('#bVar').value,m=$('#bShow').value;S.bif.vi=v;S.bif.vn=v;S.bif.mode=m;$('#bVar').disabled=m==='T'||m==='f';
@@ -4950,6 +5397,8 @@ function init(){
   for(const id of['#bMin','#bMax','#bDs'])$(id).addEventListener('change',()=>{readBifInputs();$('#cDs').value=fmtIn(S.bif.ds);if(!S.bif.branches.length)fitBif();requestRender();});
   $('#bStart').addEventListener('change',e=>{S.bif.start=+e.target.value;S.bif.userStart=true;});
   $('#bRun').addEventListener('click',runContinuation);
+  $('#bPer').addEventListener('change',()=>{const v=Math.max(1,Math.min(24,Math.round(parseFloat($('#bPer').value)||1)));S.bif.period=v;$('#bPer').value=v;
+    status(v>1?`Continuation now follows period-${v} orbits: fixed points of the ${v}-th iterate of the map (a dotted curve is an orbit of lower period)`:'Continuation follows fixed points of the map');});
   $('#bBvp').addEventListener('click',()=>{if(S.bif.busy){S.bif.poStop=true;status('Stopping…');}else runBvpCont();});
   $('#bSweep').addEventListener('click',runSweep);
   $('#bPO').addEventListener('click',runPOFromOrbit);
@@ -4975,7 +5424,7 @@ function init(){
     const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;if(e.ctrlKey||e.metaKey||e.altKey)return;
     const k=e.key.toLowerCase();
     if((k==='delete'||k==='backspace')&&(S.view==='bif'||S.view==='tp')){if((S.view==='tp'?S.tp.sel:S.bif.sel)){e.preventDefault();deleteSelected();}return;}
-    if(k==='g'){runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();}
+    if(k==='g'){rec('go');runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();}
     else if(k==='e')erase();
     else if(k==='n')$('#tgNc').click();
     else if(k==='d')$('#tgField').click();
