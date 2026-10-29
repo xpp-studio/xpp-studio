@@ -155,6 +155,8 @@ test('recording writes connect for Find and follow for a homoclinic orbit', asyn
     const k1 = P.app('S.eqs.findIndex(e=>Math.abs(e.x[0]-1)<1e-6)'), k0 = P.app('S.eqs.findIndex(e=>Math.abs(e.x[0])<1e-6)');
     P.app(`fillConnMenus();$('#cFrom').value='e${k1}';$('#cTo').value='e${k0}';$('#cRev').checked=false`);
     P.$('#cFind').click();
+    await new Promise(r => setTimeout(r, 20));
+    for (let i = 0; i < 200 && P.app('CONN.running'); i++) await new Promise(r => setTimeout(r, 50));
     assert.match(P.status(), /Heteroclinic orbit HET1/);
     const text = P.$('#scrText').value;
     assert.match(text, new RegExp(`^connect ${k1 + 1} ${k0 + 1}$`, 'm'));
@@ -174,5 +176,35 @@ test('logistic map: each doubled branch starts at its period doubling, not on so
     // and is stable only from its own period doubling to the next
     const stable = J(P, "S.bif.branches.filter(b=>!b.fam&&b.period>1).map(b=>{const s=b.pts.filter(q=>q.stable).map(q=>q.p);return[Math.min(...s),Math.max(...s)];})");
     stable.forEach(([a, b], k) => assert.ok(a > pd[k] - 2e-3 && b < pd[k + 1] + 2e-3, `stable part of branch ${k + 1}: ${a}–${b}`));
+  } finally { P.close(); }
+});
+
+test('a search for a connecting orbit, and its following, can be stopped', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example mlhom\nview bif\nbifpar i 0 40');
+    const k = P.app("S.eqs.findIndex(e=>e.label==='Saddle')");
+    P.app(`fillConnMenus();$('#cFrom').value='e${k}';$('#cTo').value='e${k}'`);
+    P.$('#cFind').click();
+    await new Promise(r => setTimeout(r, 300));
+    assert.equal(P.$('#cFind').textContent, 'Stop', 'Find becomes Stop while it searches');
+    assert.match(P.status(), /Searching for a homoclinic orbit/);
+    P.$('#cFind').click();
+    for (let i = 0; i < 100 && P.app('CONN.running'); i++) await new Promise(r => setTimeout(r, 50));
+    assert.equal(P.app('CONN.running'), null);
+    assert.match(P.status(), /Search stopped after/);
+    assert.equal(P.$('#cFind').textContent, 'Find');
+    assert.equal(P.app('S.bif.busy'), false);
+    assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('i'))"), 37, 'the parameter is back where it was');
+    // follow, stopped from the Two-parameter view
+    await P.run(`connect ${k + 1}\ntppar phi 0.05 0.6`);
+    P.app("runTwoPar(connPoints()[0])");
+    await new Promise(r => setTimeout(r, 1500));
+    assert.equal(P.$('#tRun').textContent, 'Stop');
+    P.$('#tRun').click();
+    for (let i = 0; i < 200 && P.app('S.tp.running'); i++) await new Promise(r => setTimeout(r, 50));
+    assert.equal(P.app('S.tp.running'), false);
+    assert.match(P.status(), /Homoclinic curve from HOM1: \d+ points.*you stopped it/);
+    assert.deepEqual(P.errors, []);
   } finally { P.close(); }
 });

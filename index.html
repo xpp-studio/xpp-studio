@@ -2691,7 +2691,7 @@ function loadModel(text,{fromUser}={}){
   try{M=buildModel(spec,S.tableFiles);}catch(e){showMsgs([['e',e.message],...spec.warnings.map(w=>['w',w])]);status(e.message,true);if(fromUser)setTab('eq');return false;}
   const o=spec.opts,msgs=[];
   // a continuation or sweep still running belongs to the old model: ask it to stop at its next pause
-  if(S.bif&&S.bif.busy)S.bif.poStop=true;if(S.tp&&S.tp.running)S.tp.stop=true;
+  if(S.bif&&S.bif.busy)S.bif.poStop=true;if(S.tp&&S.tp.running)S.tp.stop=true;if(CONN.running)CONN.stop=true;
   S.M=M;S.spec=spec;
   S.ic=Float64Array.from(spec.vars.map(v=>v.init));S.ic0=Float64Array.from(S.ic);
   S.histText=M.varNames.map(nm=>spec.hist[nm]||'');S.histFns=M.varNames.map(()=>null);S.histText.forEach((t,i)=>{if(t&&!setHist(i,t))S.histText[i]='';});
@@ -3923,15 +3923,29 @@ function connAt(c,p,sigma){
 // bisection of a bracket [a,b] on which g changes sign
 // the root of the splitting on a bracket [a,b] where it changes sign: false position with the Illinois modification
 // (a bisection step whenever the bracket stops shrinking fast), so it needs a fraction of the evaluations of bisection
-function connBisect(c,a,b,ga,sigma){
-  const rb=connAt(c,b,sigma);let gb=rb.g;
+// Searches for connections run in short slices, handing control back to the page between them, so that they can be
+// stopped: Stop (the Find button, or Stop in the Two-parameter view), Esc, or Stop in the Script tab.
+// While the page has control the parameters are put back to the user's values (CONN.out), and the search's own values are
+// set again before it carries on (CONN.in), so that the plots drawn meanwhile are not disturbed.
+const CONN={running:null,stop:false,skip:false,last:0,out:null,in:null};
+class ConnStop extends Error{constructor(skip){super(skip?'skipped':'stopped');this.skip=!!skip;}}
+function connCheck(){
+  if(CONN.stop||(SCRIPT.running&&SCRIPT.stop)||(CONN.running==='follow'&&S.tp.stop))throw new ConnStop(false);
+  if(CONN.skip||(CONN.running==='follow'&&S.tp.skip))throw new ConnStop(true);
+}
+async function connYield(){
+  if(CONN.out)CONN.out();await new Promise(r=>setTimeout(r,0));CONN.last=performance.now();connCheck();if(CONN.in)CONN.in();
+}
+async function connTick(){connCheck();if(performance.now()-CONN.last>60)await connYield();}
+async function connBisect(c,a,b,ga,sigma){
+  await connTick();const rb=connAt(c,b,sigma);let gb=rb.g;
   if(!Number.isFinite(gb)||!(ga*gb<0))return null;
   let side=0,lastW=b-a,k=0;
   for(let it=0;it<100;it++){
     const W=b-a;if(W<1e-13*(1+Math.abs(a)+Math.abs(b)))break;
     let m=null;if(++k%3===0){if(W>0.5*lastW)m=0.5*(a+b);lastW=W;}
     if(m===null){m=(a*gb-b*ga)/(gb-ga);const e=0.01*W;if(!(m>a+e))m=a+e;else if(!(m<b-e))m=b-e;}
-    const r=connAt(c,m,sigma);if(!Number.isFinite(r.g))return null;
+    await connTick();const r=connAt(c,m,sigma);if(!Number.isFinite(r.g))return null;
     if(r.g===0){a=b=m;break;}
     if(r.g*ga<0){b=m;gb=r.g;if(side<0)ga*=0.5;side=-1;}else{a=m;ga=r.g;if(side>0)gb*=0.5;side=1;}
   }
@@ -3948,25 +3962,25 @@ function connContext(x0,x1,same,rev){
 }
 // look for a connection in Parameter 1: scan, bracket a sign change, bisect. With a hint from the end of a branch of
 // orbits, a narrow window round it is searched first.
-function connFind(c,pmin,pmax,hint,local){
-  const scan=(lo,hi,N)=>{const found=[];
+async function connFind(c,pmin,pmax,hint,local,progress){
+  const scan=async(lo,hi,N)=>{const found=[];
     for(const sigma of[1,-1]){let prev=null;
-      for(let i=0;i<=N;i++){const p=lo+(hi-lo)*i/N,r=connAt(c,p,sigma);
+      for(let i=0;i<=N;i++){const p=lo+(hi-lo)*i/N;await connTick();if(progress)progress(sigma,i,N,lo,hi);const r=connAt(c,p,sigma);
         if(prev&&Number.isFinite(prev.g)&&Number.isFinite(r.g)&&prev.g*r.g<0)found.push({a:prev.p,b:p,ga:prev.g,sigma});
         prev={p,g:r.g};}}
     found.sort((u,v)=>Math.abs(0.5*(u.a+u.b)-hint)-Math.abs(0.5*(v.a+v.b)-hint));
-    for(const f of found){const sol=connBisect(c,f.a,f.b,f.ga,f.sigma);
+    for(const f of found){const sol=await connBisect(c,f.a,f.b,f.ga,f.sigma);
       if(sol&&sol.r<1e-3*(1+sol.rmax))return{sol,count:found.length};}   // a real connection ends on xp; a jump of the closest approach does not
     return{sol:null,count:found.length};};
-  if(local){const w=0.04*(pmax-pmin),r=scan(Math.max(pmin,hint-w),Math.min(pmax,hint+w),32);if(r.sol)return r;}
-  return scan(pmin,pmax,60);
+  if(local){const w=0.04*(pmax-pmin),r=await scan(Math.max(pmin,hint-w),Math.min(pmax,hint+w),32);if(r.sol)return r;}
+  return await scan(pmin,pmax,60);
 }
 // the connection for a nearby value of Parameter 2: bracket around the previous value of Parameter 1
-function connNear(c,guess,sigma,width){
+async function connNear(c,guess,sigma,width){
   let d=width;
   for(let k=0;k<14;k++,d*=2){
-    const a=guess-d,b=guess+d,ra=connAt(c,a,sigma),rb=connAt(c,b,sigma);
-    if(Number.isFinite(ra.g)&&Number.isFinite(rb.g)&&ra.g*rb.g<0){const sol=connBisect(c,a,b,ra.g,sigma);if(sol&&sol.r<1e-3*(1+sol.rmax))return sol;}
+    await connTick();const a=guess-d,b=guess+d,ra=connAt(c,a,sigma);await connTick();const rb=connAt(c,b,sigma);
+    if(Number.isFinite(ra.g)&&Number.isFinite(rb.g)&&ra.g*rb.g<0){const sol=await connBisect(c,a,b,ra.g,sigma);if(sol&&sol.r<1e-3*(1+sol.rmax))return sol;}
   }
   return null;
 }
@@ -3981,14 +3995,14 @@ function fillConnMenus(){
   const ch=connChoices();
   for(const id of['cFrom','cTo']){const sel=$('#'+id),old=sel.value;sel.replaceChildren(...ch.map(c=>el('option',{value:c.key,text:c.label})));if(old&&ch.some(c=>c.key===old))sel.value=old;}
   if(!ch.some(c=>c.key===$('#cTo').value)&&ch.length)$('#cTo').value=$('#cFrom').value;
-  $('#cFind').disabled=!ch.length||S.bif.busy;
+  $('#cFind').disabled=!ch.length||(S.bif.busy&&CONN.running!=='find');
   $('#cNote').textContent=ch.length?'Both must be saddles with one real unstable direction (or, with time backwards, one stable direction). Find searches the range of the parameter above.':'No equilibria yet: they are found in the phase plane at the current parameters. A branch of periodic orbits whose period grows at its end also adds the saddle it approaches here.';
 }
 // connections found, as points of the one-parameter diagram: HOM1, HET1, …
 function connPoints(){const cnt={};return(S.bif.conns||[]).map(c=>{cnt[c.type]=(cnt[c.type]||0)+1;return{type:c.type,p:c.p,pi:c.pi,T:Infinity,x:c.x0,conn:c,label:c.type+cnt[c.type]};});}
 // find a connection from the equilibrium chosen as From to the one chosen as To (keys of connChoices), in the parameter of the
 // Bifurcation view over its range; it is added to the diagram, and the orbit is drawn in the phase plane
-function connFindRun(fromKey,toKey,rev){
+async function connFindRun(fromKey,toKey,rev){
   const M=S.M,pi=S.bif.pi;readBifInputs();
   if(!connOK())throw new Error('Homoclinic and heteroclinic orbits are found for ordinary differential equations with at least two variables and a parameter');
   if(S.bif.busy)throw new Error('Wait for the computation that is running to finish');
@@ -4004,7 +4018,18 @@ function connFindRun(fromKey,toKey,rev){
   if(uniqueUnstable(sc(numJac(M,xa)))===null||uniqueUnstable(sc(numJac(M,xb)))===null){restore();
     throw new Error(`Both equilibria must be saddles with exactly one real unstable direction${rev?' (counted backwards in time)':''}, the other directions stable.${rev?'':' If the unstable manifold is two-dimensional, try Run time backwards.'}`);}
   c.xm=Float64Array.from(xa);c.xp=Float64Array.from(xb);
-  const t0=performance.now(),{sol,count}=connFind(c,S.bif.pmin,S.bif.pmax,p0,!!cand);
+  const t0=performance.now(),pn=M.parNames[pi];let res;
+  const progress=(sigma,i,N,lo,hi)=>{if(performance.now()-(CONN.shown||0)<250)return;CONN.shown=performance.now();
+    status(`Searching for a ${same?'homoclinic':'heteroclinic'} orbit: ${pn} = ${fmt(lo+(hi-lo)*i/N,5)}, ${sigma>0?'first':'second'} side of the manifold, ${i} of ${N}… Esc or Stop ends the search`);};
+  const base=Float64Array.from(M.P.subarray(0,M.parNames.length));
+  CONN.out=restore;CONN.in=()=>base.forEach((v,i)=>M.setParam(i,v));
+  CONN.running='find';CONN.stop=false;CONN.skip=false;CONN.last=performance.now();S.bif.busy=true;
+  const fb=$('#cFind');fb.textContent='Stop';fb.classList.add('primary');fb.disabled=false;
+  try{res=await connFind(c,S.bif.pmin,S.bif.pmax,p0,!!cand,progress);}
+  catch(e){restore();if(e instanceof ConnStop)throw new Error(`Search stopped after ${((performance.now()-t0)/1000).toFixed(1)} s: no connection found yet`);throw e;}
+  finally{CONN.running=null;CONN.stop=CONN.skip=false;CONN.out=CONN.in=null;S.bif.busy=false;fb.textContent='Find';fb.classList.remove('primary');fillConnMenus();}
+  if(S.M!==M)throw new Error('A different model was loaded during the search');
+  const{sol,count}=res;
   if(!sol){restore();throw new Error(count?`${count} sign change${count>1?'s':''} of the splitting in ${M.parNames[pi]}, but none ends on the equilibrium: no connection found`:`No connection found for ${M.parNames[pi]} between ${fmt(S.bif.pmin)} and ${fmt(S.bif.pmax)}; try another range, or other equilibria`);}
   M.setParam(pi,sol.p);const params=Array.from(M.P.subarray(0,M.parNames.length));
   // the orbit, for its place on the diagram (max, min and L2 norm) and for the phase plane
@@ -4033,10 +4058,11 @@ function connShow(rec,quiet){
 }
 // how a choice is named in a script: the number of the equilibrium, or end (the last saddle found at the end of a branch), endK
 const connKeyArg=k=>{const j=+k.slice(1);return k[0]==='e'?String(j+1):j===(S.bif.connCand||[]).length-1?'end':'end'+(j+1);};
-function connFindClick(){
+async function connFindClick(){
+  if(CONN.running==='find'){CONN.stop=true;status('Stopping the search…');return;}
   const f=$('#cFrom').value,t=$('#cTo').value,rv=$('#cRev').checked;
   if(SCRIPT.rec&&!SCRIPT.running&&!SCRIPT.mute){try{recBif();rec(`connect ${connKeyArg(f)}${t!==f?' '+connKeyArg(t):''}${rv?' backward':''}`);}catch(e){}}
-  try{const rc=connFindRun(f,t,rv),M=S.M;
+  try{const rc=await connFindRun(f,t,rv),M=S.M;
     status(`${rc.type==='HOM'?'Homoclinic':'Heteroclinic'} orbit ${connPoints().find(q=>q.conn===rc).label} at ${M.parNames[rc.pi]} = ${fmt(rc.p,9)}, time ${fmt(rc.T,4)} from ε = ${fmt(rc.eps,2)} to within ${fmt(rc.r,2)} of the end · ${rc.secs.toFixed(1)} s. ${M.parNames.length>1?'Follow it in two parameters from the Special points table.':''}`);}
   catch(e){status(e.message,true);}
 }
@@ -4048,23 +4074,26 @@ async function connFollow(rec,label){
   if(p1!==S.bif.pi){status(`${label} was found in ${M.parNames[p1]}; choose it as the parameter first`,true);return;}
   const c={pi:p1,rev:rec.rev,xm:null,xp:null,same:rec.same,eps:rec.eps,Tmax:rec.Tmax,vref:null,wref:null};
   const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),start={p1:rec.p,p2:rec.params[p2],T:rec.T},lo=S.tp.p2min,hi=S.tp.p2max,tick=()=>new Promise(r=>setTimeout(r,0));
-  const reset=()=>{rec.params.forEach((v,i)=>M.setParam(i,v));c.xm=Float64Array.from(rec.xm);c.xp=Float64Array.from(rec.xp);c.vref=rec.vref&&Float64Array.from(rec.vref);c.wref=rec.wref&&Float64Array.from(rec.wref);};
+  const reset=()=>{CONN.p2=start.p2;rec.params.forEach((v,i)=>M.setParam(i,v));c.xm=Float64Array.from(rec.xm);c.xp=Float64Array.from(rec.xp);c.vref=rec.vref&&Float64Array.from(rec.vref);c.wref=rec.wref&&Float64Array.from(rec.wref);};
   const cv={type:rec.type,p1i:p1,p2i:p2,pts:[start],special:[],from:label,start:`${M.parNames[p1]} = ${fmt(rec.p,6)}`,params:Array.from(rec.params),conn:rec};
   S.tp.curves.push(cv);if(S.view!=='tp')setView('tp');
-  setTPBusy(true);S.tp.stop=false;S.tp.skip=false;const t0=performance.now();
+  setTPBusy(true);S.tp.stop=false;S.tp.skip=false;const t0=performance.now();CONN.running='follow';CONN.stop=CONN.skip=false;CONN.last=performance.now();
+  CONN.out=()=>saved.forEach((v,i)=>M.setParam(i,v));CONN.in=()=>{rec.params.forEach((v,i)=>M.setParam(i,v));M.setParam(p2,CONN.p2);};
   const walk=async dir=>{
     const out=[];let q1=start.p1,q2=start.p2,qprev=null,h=(hi-lo)/80,why='';
     for(let k=0;k<400&&!S.tp.stop&&!S.tp.skip;k++){
       let n2=q2+dir*h;if(n2<lo||n2>hi){n2=dir>0?hi:lo;if(Math.abs(n2-q2)<1e-12*(1+Math.abs(q2))){why='the end of the range';break;}}
-      M.setParam(p2,n2);
+      M.setParam(p2,n2);CONN.p2=n2;
       const guess=qprev?q1+(q1-qprev.p1)*(n2-q2)/(q2-qprev.p2):q1,range1=S.bif.pmax-S.bif.pmin;
-      let sol=connNear(c,guess,rec.sigma,1e-4*(1+Math.abs(q1)));
+      let sol;
+      try{sol=await connNear(c,guess,rec.sigma,1e-4*(1+Math.abs(q1)));}
+      catch(e){if(!(e instanceof ConnStop))throw e;M.setParam(p2,q2);if(e.skip){S.tp.skip=false;why='you skipped this direction';}else why='you stopped it';break;}
       if(sol&&(sol.p<S.bif.pmin||sol.p>S.bif.pmax)){why=`the edge of the range of ${M.parNames[p1]}`;break;}
       if(sol&&Math.abs(sol.p-guess)>0.1*range1)sol=null;
-      if(!sol){h/=2;M.setParam(p2,q2);if(h<(hi-lo)*1e-7){why='the connection was lost';break;}continue;}
+      if(!sol){h/=2;M.setParam(p2,q2);CONN.p2=q2;if(h<(hi-lo)*1e-7){why='the connection was lost';break;}continue;}
       qprev={p1:q1,p2:q2};q1=sol.p;q2=n2;out.push({p1:q1,p2:q2,T:sol.T});
       c.xm=sol.xm;if(!c.same)c.xp=sol.xp;
-      if(k%4===3){cv.pts=[...(dir>0?[]:out.slice().reverse()),start,...(dir>0?out:[])];requestRender();status(`Following ${label} ${dir>0?'up':'down'} in ${M.parNames[p2]}: ${out.length} points…`);await tick();}
+      if(k%4===3){cv.pts=[...(dir>0?[]:out.slice().reverse()),start,...(dir>0?out:[])];requestRender();status(`Following ${label} ${dir>0?'up':'down'} in ${M.parNames[p2]}: ${out.length} points… Esc moves on to the other direction; Stop ends the run`);try{await connYield();}catch(e){if(!(e instanceof ConnStop))throw e;if(e.skip){S.tp.skip=false;why='you skipped this direction';}else why='you stopped it';break;}}
       if(n2===lo||n2===hi){why='the end of the range';break;}
     }
     if(S.tp.skip){S.tp.skip=false;if(!why)why='you skipped this direction';}
@@ -4073,7 +4102,7 @@ async function connFollow(rec,label){
   let up,down;
   try{reset();up=await walk(1);reset();down=S.tp.stop?{out:[],why:'stopped'}:await walk(-1);}
   catch(e){status(`Following ${label} failed: ${e.message}`,true);up=up||{out:[],why:'failed'};down=down||{out:[],why:'failed'};}
-  finally{saved.forEach((v,i)=>M.setParam(i,v));setTPBusy(false);}
+  finally{saved.forEach((v,i)=>M.setParam(i,v));CONN.running=null;CONN.stop=CONN.skip=false;CONN.out=CONN.in=null;setTPBusy(false);}
   if(S.M!==M)return;
   cv.pts=[...down.out.slice().reverse(),start,...up.out];
   fitTP();refreshCodim2();requestRender();
@@ -5505,7 +5534,7 @@ const scrNum=(v,what)=>{const x=Number(v);if(v===undefined||v===''||!Number.isFi
 const kv=args=>{const o=[];for(const a of args){const m=/^([a-z_][\w]*)=(.*)$/i.exec(a);if(!m)throw new Error(`expected name=value, not “${a}”`);o.push([m[1].toLowerCase(),m[2]]);}return o;};
 const fire=(id,v,ev='change')=>{const e=$(id);if(!e)throw new Error(`no control ${id}`);if(v!==undefined)e.value=String(v);e.dispatchEvent(new Event(ev,{bubbles:true}));};
 const idle=()=>!S.bif.busy&&!S.tp.running&&!gridRun;
-async function waitIdle(){await new Promise(r=>setTimeout(r,0));while(!idle()){if(SCRIPT.stop){S.bif.poStop=true;S.tp.stop=true;if(gridRun)gridRun.stop=true;}await new Promise(r=>setTimeout(r,40));}}
+async function waitIdle(){await new Promise(r=>setTimeout(r,0));while(!idle()){if(SCRIPT.stop){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;if(gridRun)gridRun.stop=true;}await new Promise(r=>setTimeout(r,40));}}
 function findSpecialLabel(lab){
   const L=String(lab).toUpperCase(),all=[...allSpecial(),...pickedOrbits(),...connPoints()].filter(s=>s.pi===S.bif.pi);
   const sp=all.find(s=>s.label.toUpperCase()===L);
@@ -5577,12 +5606,12 @@ const CMDS={
   pick:{help:'pick K NAME=value — pick the orbit of family K nearest that parameter value (becomes OR1, OR2, …)',run:a=>{const fam=S.bif.cycles.filter(c=>c.pi===S.bif.pi),cb=fam[scrNum(a[0],'K')-1];if(!cb)throw new Error(`there are ${fam.length} orbit families for this parameter`);const[[k,v]]=kv([a[1]]);if(parIndex(k)!==S.bif.pi)throw new Error(`orbits are parametrised by ${S.M.parNames[S.bif.pi]}`);const p=scrNum(v);let best=0;cb.pts.forEach((q,j)=>{if(Math.abs(q.p-p)<Math.abs(cb.pts[best].p-p))best=j;});grabCycle(cb,best,null,true);}},
   tppar:{help:'tppar NAME [lo hi] — second parameter (and its range) for two-parameter curves',run:a=>{const i=parIndex(a[0]);if(i===S.bif.pi)throw new Error('the second parameter must differ from the first');fire('#tP2',i);if(a.length===3){fire('#tMin2',scrNum(a[1],'lo'));fire('#tMax2',scrNum(a[2],'hi'));}else if(a.length!==1)throw new Error('give both ends of the range');}},
   follow:{help:'follow LABEL — follow HB1, LP1, LPC1, PD1 … in two parameters, or OR1 at constant period',run:async a=>{const sp=findSpecialLabel(a[0]);const n=S.tp.curves.length;if(sp.type==='OR')followConstT(sp);else runTwoPar(sp);await waitIdle();if(S.tp.curves.length===n)throw new Error($('#status').textContent);}},
-  connect:{help:'connect FROM [TO] [backward] — find a homoclinic (TO = FROM, or no TO) or heteroclinic orbit in the bifurcation parameter. FROM and TO are equilibrium numbers, or end for the saddle found at the end of the last branch of periodic orbits whose period grew',run:a=>{
+  connect:{help:'connect FROM [TO] [backward] — find a homoclinic (TO = FROM, or no TO) or heteroclinic orbit in the bifurcation parameter. FROM and TO are equilibrium numbers, or end for the saddle found at the end of the last branch of periodic orbits whose period grew',run:async a=>{
     const w=a.slice(),back=w.length&&/^b(ack(ward)?)?$/i.test(w[w.length-1]);if(back)w.pop();if(!w.length||w.length>2)throw new Error('give FROM and optionally TO');
     const key=v=>{v=String(v).toLowerCase();const C=S.bif.connCand||[];if(/^end\d*$/.test(v)){const j=v==='end'?C.length-1:+v.slice(3)-1;if(!C[j]||C[j].pi!==S.bif.pi)throw new Error('no saddle has been found at the end of a branch of periodic orbits in this parameter');return'c'+j;}
       const k=scrNum(v,'the equilibrium number')-1;if(!S.eqs[k])throw new Error(`there are ${S.eqs.length} equilibria in view`);return'e'+k;};
     const f=key(w[0]),t=w[1]?key(w[1]):f,cand=[f,t].map(k=>k[0]==='c'?S.bif.connCand[+k.slice(1)]:null).find(Boolean),rv=back||!!(cand&&cand.rev);
-    connFindRun(f,t,rv);}},
+    await connFindRun(f,t,rv);}},
   clear:{help:'clear bif|tp — clear the bifurcation or two-parameter diagram',run:a=>{const w=String(a[0]||'').toLowerCase();if(w==='bif')$('#bClear').click();else if(w==='tp')$('#tClear').click();else throw new Error('clear bif or clear tp');}},
   export:{help:'export svg|csv|dat [FILE] — save the current plot or its data',run:async a=>{const kind=String(a[0]||'').toLowerCase(),name=a[1];
     const sink=SCRIPT.files,before=sink?sink.length:0;
@@ -5970,13 +5999,13 @@ function init(){
     e.target.value='';saveTables();refreshTableList();applyEditor();status(`Loaded table file${fs.length>1?'s':''} ${fs.map(f=>f.name).join(', ')}`);});
   $('#tblForget').addEventListener('click',()=>{S.tableFiles={};saveTables();refreshTableList();status('Table files forgotten');});
   // soft interrupt: end the current direction or branch and let the run carry on with the rest
-  const softSkip=()=>{if(!S.bif.busy)return;if(S.tp.running)S.tp.skip=true;else S.bif.skip=true;status('Skipping to the next direction…');};
+  const softSkip=()=>{if(!S.bif.busy)return;if(CONN.running==='find'){CONN.stop=true;status('Stopping the search…');return;}if(S.tp.running)S.tp.skip=true;else S.bif.skip=true;status('Skipping to the next direction…');};
   $('#bSkip').addEventListener('click',softSkip);$('#tSkip').addEventListener('click',softSkip);
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&!S.bif.busy&&(S.bif.sel||S.tp.sel)&&!e.target.closest('input,textarea,select,.sheet')){selectCurve('bif',null,true);selectCurve('tp',null,true);return;}
     if(e.key!=='Escape'||!S.bif.busy)return;
     e.preventDefault();
-    if(e.shiftKey){S.bif.poStop=true;S.tp.stop=true;status('Stopping…');}else softSkip();
+    if(e.shiftKey){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;status('Stopping…');}else softSkip();
   });
   $('#bDel').addEventListener('click',()=>deleteSelected('bif'));$('#tDel').addEventListener('click',()=>deleteSelected('tp'));
   $('#bClear').addEventListener('click',()=>{if(S.bif.busy)return;S.bif.branches=S.bif.branches.filter(b=>b.pi!==S.bif.pi);S.bif.sweeps=S.bif.sweeps.filter(s=>s.pi!==S.bif.pi);S.bif.cycles=S.bif.cycles.filter(c=>c.pi!==S.bif.pi);S.bif.bvps=S.bif.bvps.filter(b=>b.pi!==S.bif.pi);S.bif.conns=(S.bif.conns||[]).filter(c=>c.pi!==S.bif.pi);S.bif.connCand=(S.bif.connCand||[]).filter(c=>c.pi!==S.bif.pi);refreshSpecial();buildTpControls();fillConnMenus();fitBif();requestRender();});
