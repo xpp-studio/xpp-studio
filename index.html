@@ -99,7 +99,19 @@ select{padding-right:4px}
 .tab{flex:none;background:none;border:0;padding:10px 3px 8px;font-family:var(--f-cond);font-size:11.5px;letter-spacing:0;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
 .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
 .tabbody{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
-#scrText{width:100%;min-height:260px;flex:1;resize:vertical;font:12.5px/1.6 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:10px 12px;white-space:pre;overflow:auto}
+/* the script box: a transparent textarea over a bar that marks the command running (or next, or failed) */
+.scred{position:relative;flex:1;min-height:260px;display:flex;flex-direction:column;background:var(--surface-2);border-radius:5px}
+#scrText{position:relative;z-index:1;width:100%;min-height:260px;flex:1;resize:vertical;font:12.5px/20px var(--f-mono);background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:10px 12px;white-space:pre;overflow:auto}
+.scrbar{position:absolute;left:1px;right:1px;height:20px;pointer-events:none;border-left:3px solid var(--accent);background:var(--accent-soft);display:none}
+.scrbar.run,.scrbar.next,.scrbar.err{display:block}
+.scrbar.next{background:transparent;border-left-style:dashed;box-shadow:inset 0 0 0 1px var(--accent-soft)}
+.scrbar.err{border-left-color:var(--err);background:color-mix(in srgb,var(--err) 14%,transparent)}
+.scrbar.run{animation:scrpulse 1.4s ease-in-out infinite}
+@keyframes scrpulse{50%{background:color-mix(in srgb,var(--accent-soft) 55%,transparent)}}
+.scrlog:empty{display:none}
+.btn.attn{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);animation:attn 1.1s ease-in-out 4}
+@keyframes attn{50%{box-shadow:0 0 0 6px var(--accent-soft)}}
+@media (prefers-reduced-motion:reduce){.scrbar.run,.btn.attn{animation:none}}
 .scrlog{font:11.5px/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:6px 8px;max-height:200px;min-height:60px;overflow:auto;white-space:pre-wrap}
 .scrlog .d{color:var(--muted)}.scrlog .e{color:var(--err)}.scrlog .w{color:var(--accent)}.scrlog .o{color:var(--ink)}.scrlog .h{color:var(--ink);padding:1px 0}
 #scrRec[aria-pressed=true]{color:var(--err);border-color:var(--err)}
@@ -380,14 +392,13 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
     </section>
     <section class="tabbody" id="tab-scr" hidden>
       <div class="row">
-        <button class="btn primary" id="scrRun" title="Run the script from the top (Ctrl+Enter)">Run</button>
-        <button class="btn" id="scrStep1" title="Run the next command only (Ctrl+Shift+Enter). The next line is shown on the right and selected in the script; you can edit the script between steps.">Step</button>
+        <button class="btn primary" id="scrRun" title="Run the script from the top (Ctrl+Enter); while stepping, run the rest of it">Run</button>
+        <button class="btn" id="scrStep1" title="Run the next command only (Ctrl+Shift+Enter). The next command is marked in the script, which you can edit between steps.">Step</button>
         <button class="btn small" id="scrRestart" hidden title="Go back to the first command; the next Step starts from the top">Restart</button>
-        <button class="btn" id="scrStep" title="Run slowly, so you can watch each command">Run slowly</button>
+        <span class="spacer" style="flex:1"></span>
         <button class="btn" id="scrRec" aria-pressed="false" title="Write what you do in the interface into the script">Record</button>
-        <span id="scrLine" style="color:var(--muted);font-size:12px"></span>
       </div>
-      <textarea id="scrText" spellcheck="false" aria-label="Script" placeholder="# one command per line, e.g.\nexample ml\nview pp\ngrid\nexport svg phase.svg"></textarea>
+      <div class="scred"><div class="scrbar" id="scrBar" aria-hidden="true"></div><textarea id="scrText" spellcheck="false" aria-label="Script" placeholder="# one command per line, e.g.\nexample ml\nview pp\ngrid\nexport svg phase.svg"></textarea></div>
       <div class="row">
         <button class="btn small" id="scrHelp" title="List every command in the log below">Commands</button>
         <button class="btn small" id="scrEx" title="Replace the script with the Morris–Lecar example">Example</button>
@@ -396,7 +407,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button class="btn small" id="scrRestore" hidden title="Put back the script that was cleared when the model changed">Restore old script</button>
       </div>
       <div class="scrlog" id="scrLog" aria-live="polite"></div>
-      <p class="note">A script repeats the same steps as the buttons, so the same script on the same model always gives the same figures. Exports made by a script are saved together at the end, in one zip when there are several.</p>
+      <p class="note">A script repeats the same steps as the buttons, so it always gives the same figures. The command running is marked in the script. Exports are saved together at the end, in one zip when there are several.</p>
     </section>
   </aside>
 
@@ -480,7 +491,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
             <label for="cTo">To</label><select id="cTo" title="The saddle the orbit arrives at: the same one for a homoclinic orbit"></select>
           </div>
           <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin:2px 0 6px"><input type="checkbox" id="cRev"> Run time backwards (from To back to From)</label>
-          <div class="row"><button class="btn" id="cFind" title="Search the range of the parameter for a value at which the unstable manifold of the equilibrium chosen under From runs into the stable manifold of the one under To (the same equilibrium: a homoclinic orbit). The orbit found is marked HOM or HET on the diagram and drawn in the phase plane.">Find</button></div>
+          <div class="row"><button class="btn" id="cFind" title="Search the range of the parameter for a value at which the unstable manifold of the equilibrium chosen under From runs into the stable manifold of the one under To (the same equilibrium: a homoclinic orbit). The orbit found is marked HOM or HET on the diagram and drawn in the phase plane.">Find connecting orbit</button></div>
           <p class="note" id="cNote"></p>
         </div>
         <div class="legend"><span><i class="lg"></i>stable</span><span><i class="lg dash"></i>unstable</span><span><i class="lgd"></i><span id="sweepLg">sweep max/min</span></span><span id="poLg"><i class="lg po"></i>periodic orbit (max/min)</span><span id="bvpLg" hidden><i class="lg po"></i>boundary value solution (max/min)</span></div>
@@ -2739,7 +2750,7 @@ function loadModel(text,{fromUser}={}){
   else if(S.ncSaved!==undefined){S.pp.nc=S.ncSaved;S.ncSaved=undefined;}
   $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
-  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];
+  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
   setBifRange();
   {const C=S.cont,pv=k=>{const v=parseFloat(o[k]);return Number.isFinite(v)&&v>0?v:null;};
@@ -2755,7 +2766,7 @@ function loadModel(text,{fromUser}={}){
   { // a script belongs to a model: clear it when a different model is loaded (not while recording or running a script)
     const sig=(spec.title||'')+'|'+M.varNames.join(',');
     if(S.modelSig&&S.modelSig!==sig&&!SCRIPT.running&&!SCRIPT.rec){const ta=$('#scrText');
-      if(ta&&ta.value.trim()){SCRIPT.cleared=ta.value;ta.value='';store.set('xpps-script','');$('#scrRestore').hidden=false;$('#scrLine').textContent='script cleared: a different model was loaded';}}
+      if(ta&&ta.value.trim()){SCRIPT.cleared=ta.value;ta.value='';store.set('xpps-script','');$('#scrRestore').hidden=false;msgs.push(['w','The script was cleared because a different model was loaded; Restore old script in the Script tab brings it back.']);}}
     S.modelSig=sig;
   }
   buildAll();
@@ -3996,7 +4007,7 @@ function fillConnMenus(){
   for(const id of['cFrom','cTo']){const sel=$('#'+id),old=sel.value;sel.replaceChildren(...ch.map(c=>el('option',{value:c.key,text:c.label})));if(old&&ch.some(c=>c.key===old))sel.value=old;}
   if(!ch.some(c=>c.key===$('#cTo').value)&&ch.length)$('#cTo').value=$('#cFrom').value;
   $('#cFind').disabled=!ch.length||(S.bif.busy&&CONN.running!=='find');
-  $('#cNote').textContent=ch.length?'Both must be saddles with one real unstable direction (or, with time backwards, one stable direction). Find searches the range of the parameter above.':'No equilibria yet: they are found in the phase plane at the current parameters. A branch of periodic orbits whose period grows at its end also adds the saddle it approaches here.';
+  $('#cNote').textContent=ch.length?'Both must be saddles with one real unstable direction (or, with time backwards, one stable direction). Find connecting orbit searches the range of the parameter above.':'No equilibria yet: they are found in the phase plane at the current parameters. A branch of periodic orbits whose period grows at its end also adds the saddle it approaches here.';
 }
 // connections found, as points of the one-parameter diagram: HOM1, HET1, …
 function connPoints(){const cnt={};return(S.bif.conns||[]).map(c=>{cnt[c.type]=(cnt[c.type]||0)+1;return{type:c.type,p:c.p,pi:c.pi,T:Infinity,x:c.x0,conn:c,label:c.type+cnt[c.type]};});}
@@ -4024,10 +4035,10 @@ async function connFindRun(fromKey,toKey,rev){
   const base=Float64Array.from(M.P.subarray(0,M.parNames.length));
   CONN.out=restore;CONN.in=()=>base.forEach((v,i)=>M.setParam(i,v));
   CONN.running='find';CONN.stop=false;CONN.skip=false;CONN.last=performance.now();S.bif.busy=true;
-  const fb=$('#cFind');fb.textContent='Stop';fb.classList.add('primary');fb.disabled=false;
+  const fb=$('#cFind');fb.textContent='Stop';fb.classList.remove('attn');fb.classList.add('primary');fb.disabled=false;
   try{res=await connFind(c,S.bif.pmin,S.bif.pmax,p0,!!cand,progress);}
   catch(e){restore();if(e instanceof ConnStop)throw new Error(`Search stopped after ${((performance.now()-t0)/1000).toFixed(1)} s: no connection found yet`);throw e;}
-  finally{CONN.running=null;CONN.stop=CONN.skip=false;CONN.out=CONN.in=null;S.bif.busy=false;fb.textContent='Find';fb.classList.remove('primary');fillConnMenus();}
+  finally{CONN.running=null;CONN.stop=CONN.skip=false;CONN.out=CONN.in=null;S.bif.busy=false;fb.textContent='Find connecting orbit';fb.classList.remove('primary');fillConnMenus();}
   if(S.M!==M)throw new Error('A different model was loaded during the search');
   const{sol,count}=res;
   if(!sol){restore();throw new Error(count?`${count} sign change${count>1?'s':''} of the splitting in ${M.parNames[pi]}, but none ends on the equilibrium: no connection found`:`No connection found for ${M.parNames[pi]} between ${fmt(S.bif.pmin)} and ${fmt(S.bif.pmax)}; try another range, or other equilibria`);}
@@ -4143,8 +4154,8 @@ function homCandidate(cb){
 function loadHomCandidate(cb){
   const c=homCandidate(cb);if(!c)return'';
   S.bif.connCand=(S.bif.connCand||[]).filter(q=>q.cb!==cb&&S.bif.cycles.includes(q.cb));S.bif.connCand.push(c);
-  fillConnMenus();const k='c'+(S.bif.connCand.length-1);$('#cFrom').value=k;$('#cTo').value=k;$('#cRev').checked=c.rev;
-  return ` · the last orbits pass close to a saddle with one ${c.rev?'stable':'unstable'} direction, now loaded under Homoclinic and heteroclinic orbits${c.rev?' with time backwards':''}: press Find`;
+  fillConnMenus();const k='c'+(S.bif.connCand.length-1);$('#cFrom').value=k;$('#cTo').value=k;$('#cRev').checked=c.rev;$('#cFind').classList.add('attn');
+  return ` · the last orbits pass close to a saddle with one ${c.rev?'stable':'unstable'} direction, now loaded under Homoclinic and heteroclinic orbits${c.rev?' with time backwards':''}: press Find connecting orbit`;
 }
 async function runSlices(){
   if(S.bif.busy)return;
@@ -5637,7 +5648,7 @@ async function scrExec(L){
   const w=scrWords(L.s),cmd=(w.shift()||'').toLowerCase(),C=CMDS[cmd];
   if(!C){scrLog(`Line ${L.ln}: unknown command “${cmd}”. Press Commands for the list.`,'e');return false;}
   if(!S.M&&cmd!=='example'&&cmd!=='apply'){scrLog(`Line ${L.ln}: load a model first`,'e');return false;}
-  try{await C.run(w,scrLog);await waitIdle();scrLog(`${L.ln}  ${L.s}`,'d');return true;}
+  try{await C.run(w,scrLog);await waitIdle();return true;}
   catch(e){scrLog(`Line ${L.ln}: ${L.s}\n  ${e.message}`,'e');return false;}
 }
 // the files exported by a script (or by one step of it) are saved together: one file, or a zip
@@ -5648,9 +5659,19 @@ async function scrDeliver(files,quiet){
   else{const zipName=files.length===1?files[0].name.replace(/\.\w+$/,'')+'.zip':`${fileBase()}-script.zip`;await deliverFile(makeZip(files),zipName);}
   if(!quiet)scrLog(`Saved ${files.length} file${files.length>1?'s':''}${files.length>1||!/\.(svg|csv|txt)$/i.test(files[0].name)?' in a zip':''}: ${files.map(f=>f.name).join(', ')}`,'o');
 }
-function scrBusy(on,label){
-  $('#scrRun').textContent=on?'Stop':(SCRIPT.stepper?'Run to end':'Run');$('#scrStep').disabled=on;$('#scrStep1').disabled=on;$('#scrRestart').disabled=on;
-  if(label!==undefined)$('#scrLine').textContent=label;
+function scrBusy(on){
+  $('#scrRun').textContent=on?'Stop':(SCRIPT.stepper?'Run to end':'Run');$('#scrStep1').disabled=on;$('#scrRestart').disabled=on;
+}
+// mark a line of the script: run (the command running), next (the next step) or err (the command that failed); null clears
+function scrMark(ln,kind){
+  SCRIPT.hl=ln?{ln,kind}:null;scrPlaceBar(true);
+}
+function scrPlaceBar(scroll){
+  const bar=$('#scrBar'),ta=$('#scrText');if(!bar||!ta)return;const h=SCRIPT.hl;
+  bar.className='scrbar'+(h?' '+h.kind:'');if(!h)return;
+  const lh=20,pad=10,y=pad+(h.ln-1)*lh;
+  if(scroll){const top=ta.scrollTop,vis=ta.clientHeight||200;if(y-lh<top||y+2*lh>top+vis)ta.scrollTop=Math.max(0,y-vis/3);}
+  const top=y-ta.scrollTop+1;bar.style.top=top+'px';bar.style.visibility=top<0||top>(ta.clientHeight||Infinity)?'hidden':'visible';
 }
 async function runScript(text,{step,from}={}){
   if(SCRIPT.running){SCRIPT.stop=true;return;}
@@ -5660,18 +5681,17 @@ async function runScript(text,{step,from}={}){
   if(!all.length){status('The script is empty',true);return;}
   if(!lines.length){scrStepEnd();status('No commands left: the script has been stepped to its end',true);return;}
   SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];const t0=performance.now(),cont=!!from&&!!SCRIPT.stepper;
-  scrBusy(true);if(!cont)$('#scrLog').replaceChildren();else scrLog(`Running from line ${lines[0].ln} to the end`,'o');
-  let ok=true,done=0;
+  scrBusy(true);if(!cont)$('#scrLog').replaceChildren();
+  let ok=true,done=0,bad=null;
   try{
     for(const L of lines){
-      if(SCRIPT.stop){scrLog('Stopped.','w');ok=false;break;}
-      $('#scrLine').textContent=`line ${L.ln}`;
-      if(!(await scrExec(L))){ok=false;break;}
+      if(SCRIPT.stop){scrLog(`Stopped before line ${L.ln}.`,'w');ok=false;break;}
+      scrMark(L.ln,'run');
+      if(!(await scrExec(L))){ok=false;bad=L.ln;break;}
       done++;
-      if(step)await new Promise(r=>setTimeout(r,350));
     }
   }finally{
-    const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'');
+    const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false);scrMark(bad,'err');
     requestRender();
     await scrDeliver(files);
   }
@@ -5685,28 +5705,24 @@ function scrShowNext(){
   const st=SCRIPT.stepper,ta=$('#scrText');if(!st)return;
   const L=scrParse(ta.value).find(q=>q.ln>=st.next);
   if(!L){scrStepEnd();return;}
-  st.next=L.ln;$('#scrLine').textContent=`next: line ${L.ln} · ${L.s.length>34?L.s.slice(0,33)+'…':L.s}`;
-  // select the next line in the box (visible when the box has the focus), and scroll it into view
-  const rows=ta.value.split('\n'),a=rows.slice(0,L.ln-1).reduce((n,r)=>n+r.length+1,0);
-  try{ta.setSelectionRange(a,a+rows[L.ln-1].length);}catch(e){}
-  const lh=parseFloat(getComputedStyle(ta).lineHeight)||16;ta.scrollTop=Math.max(0,(L.ln-3)*lh);
+  st.next=L.ln;if(!(SCRIPT.hl&&SCRIPT.hl.kind==='err'))scrMark(L.ln,'next');
 }
-function scrStepEnd(){if(!SCRIPT.stepper)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'end of script');scrLog('End of the script.','o');status('Stepped to the end of the script');}
+function scrStepEnd(){if(!SCRIPT.stepper)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false);scrMark(null);status('Stepped to the end of the script');}
 async function stepScript(){
   if(SCRIPT.running)return;
   const ta=$('#scrText'),all=scrParse(ta.value);if(!all.length){status('The script is empty',true);return;}
-  if(!SCRIPT.stepper){SCRIPT.stepper={next:all[0].ln};$('#scrLog').replaceChildren();scrLog(`Stepping through the script, ${all.length} command${all.length===1?'':'s'}: Step runs the next one, Run carries on to the end, Restart goes back to the top.`,'o');$('#scrRestart').hidden=false;}
+  if(!SCRIPT.stepper){SCRIPT.stepper={next:all[0].ln};$('#scrLog').replaceChildren();$('#scrRestart').hidden=false;}
   const st=SCRIPT.stepper,L=all.find(q=>q.ln>=st.next);if(!L){scrStepEnd();return;}
-  SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];scrBusy(true,`line ${L.ln}`);
+  SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];scrBusy(true);scrMark(L.ln,'run');
   let ok=false;
   try{ok=await scrExec(L);}
   finally{const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;scrBusy(false);requestRender();await scrDeliver(files);}
   if(!SCRIPT.stepper)return;
   if(ok){st.next=L.ln+1;status(`Step: line ${L.ln} done (${L.s})`);if(!all.some(q=>q.ln>L.ln)){scrStepEnd();return;}}
-  else{status(`Step: line ${L.ln} failed; fix it and press Step again, or Restart`,true);setTab('scr');}
+  else{scrMark(L.ln,'err');status(`Step: line ${L.ln} failed; fix it and press Step again, or Restart`,true);setTab('scr');}
   scrShowNext();
 }
-function scrRestart(){if(SCRIPT.running)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'');scrLog('Back to the top: the next Step runs the first command.','o');}
+function scrRestart(){if(SCRIPT.running)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false);scrMark(null);status('Back to the top of the script: the next Step runs the first command');}
 // a minimal zip writer (stored, no compression), enough for SVG, CSV and .dat files
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
 function makeZip(files){
@@ -5782,7 +5798,9 @@ function scriptInit(){
   const ta=$('#scrText');ta.value=store.get('xpps-script')||SCRIPT_EXAMPLE;
   ta.addEventListener('input',()=>store.set('xpps-script',ta.value));
   $('#scrRun').addEventListener('click',()=>runScript(ta.value));
-  $('#scrStep').addEventListener('click',()=>{SCRIPT.stepper=null;$('#scrRestart').hidden=true;runScript(ta.value,{step:true});});
+  ta.addEventListener('scroll',()=>scrPlaceBar(false));
+  // an edit moves the lines about: a failed line's mark goes, and the next step is shown again where it now is
+  ta.addEventListener('input',()=>{if(SCRIPT.running)return;if(SCRIPT.stepper){SCRIPT.hl=null;scrShowNext();}else scrMark(null);});
   $('#scrStep1').addEventListener('click',stepScript);
   $('#scrRestart').addEventListener('click',scrRestart);
   $('#scrOde').addEventListener('click',()=>{const t=odeScript($('#odeText').value);if(!t.trim()){status('The equations have no #@do lines',true);return;}runScript('apply\n'+t);});
@@ -5811,7 +5829,7 @@ function scriptInit(){
         ta.value=ta.value.replace(/\s+$/,'')+`\n\n# --- new recording, ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} ---\n`;}
       store.set('xpps-script',ta.value);
       SCRIPT.recStart=ta.value.trim()?recLines().length:0; // lines before the first recorded command
-      SCRIPT.rec=true;recButton();$('#scrLine').textContent='';
+      SCRIPT.rec=true;recButton();scrMark(null);
       const id=$('#exSel').value;rec(id&&id!=='custom'?`example ${id}`:'apply');
       status('Recording: what you do is written at the end of the script');
     }else{
@@ -5819,12 +5837,12 @@ function scriptInit(){
       const lines=recLines(),added=lines.slice(SCRIPT.recStart||0).filter(l=>l.trim()&&!/^\s*#/.test(l)).length;
       ta.scrollTop=ta.scrollHeight;
       const msg=added?`Recording stopped: ${added} command${added===1?'':'s'} recorded, script lines ${(SCRIPT.recStart||0)+1} to ${lines.length}`:'Recording stopped: nothing was recorded';
-      $('#scrLine').textContent=added?`${added} command${added===1?'':'s'} recorded`:'';status(msg);
+      status(msg);
     }
   });
   $('#scrHelp').addEventListener('click',()=>{const box=$('#scrLog');box.replaceChildren(...Object.values(CMDS).map(c=>el('div',{class:'h',text:c.help})));});
   $('#scrEx').addEventListener('click',()=>{ta.value=SCRIPT_EXAMPLE;store.set('xpps-script',ta.value);});
-  $('#scrRestore').addEventListener('click',()=>{if(ta.value.trim()&&!confirm('Replace what is in the script box with the old script?'))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;$('#scrLine').textContent='old script restored';});
+  $('#scrRestore').addEventListener('click',()=>{if(ta.value.trim()&&!confirm('Replace what is in the script box with the old script?'))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;status('Old script restored');});
   $('#scrInsert').addEventListener('click',()=>{const t=ta.value.trim();if(!t){status('The script is empty',true);return;}
     const body=t.split('\n').filter(l=>l.trim()&&!/^\s*#/.test(l)&&!/^\s*example\b/i.test(l)).map(l=>'#@do '+l.trim());
     const ot=$('#odeText'),src=ot.value.split('\n').filter(l=>!/^\s*#@do\s/i.test(l));let di=src.length;for(let k=src.length-1;k>=0;k--)if(/^\s*(done|d)\s*$/i.test(src[k])){di=k;break;}
@@ -5977,6 +5995,7 @@ function init(){
   $('#tP3').addEventListener('change',()=>{S.tp.p3i=parseInt($('#tP3').value,10);S.tp.box3=null;fillSliceRange(true);requestRender();});
   $('#tSlices').addEventListener('click',runSlices);
   $('#cFind').addEventListener('click',connFindClick);
+  for(const id of['#cFrom','#cTo','#cRev'])$(id).addEventListener('change',()=>$('#cFind').classList.remove('attn'));
   $('#tRun').addEventListener('click',()=>{if(S.tp.running){S.tp.stop=true;return;}const k=parseInt($('#tStart').value,10);runTwoPar(tpStarts()[k]);});
   $('#tClear').addEventListener('click',()=>{S.tp.curves=S.tp.curves.filter(c=>!(c.p1i===S.bif.pi&&c.p2i===S.tp.p2i));refreshCodim2();fitTP();requestRender();status('Two-parameter curves cleared');});
   const bifPlotChange=()=>{const v=+$('#bVar').value,m=$('#bShow').value;S.bif.vi=v;S.bif.vn=v;S.bif.mode=m;$('#bVar').disabled=m==='T'||m==='f';
@@ -6008,7 +6027,7 @@ function init(){
     if(e.shiftKey){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;status('Stopping…');}else softSkip();
   });
   $('#bDel').addEventListener('click',()=>deleteSelected('bif'));$('#tDel').addEventListener('click',()=>deleteSelected('tp'));
-  $('#bClear').addEventListener('click',()=>{if(S.bif.busy)return;S.bif.branches=S.bif.branches.filter(b=>b.pi!==S.bif.pi);S.bif.sweeps=S.bif.sweeps.filter(s=>s.pi!==S.bif.pi);S.bif.cycles=S.bif.cycles.filter(c=>c.pi!==S.bif.pi);S.bif.bvps=S.bif.bvps.filter(b=>b.pi!==S.bif.pi);S.bif.conns=(S.bif.conns||[]).filter(c=>c.pi!==S.bif.pi);S.bif.connCand=(S.bif.connCand||[]).filter(c=>c.pi!==S.bif.pi);refreshSpecial();buildTpControls();fillConnMenus();fitBif();requestRender();});
+  $('#bClear').addEventListener('click',()=>{if(S.bif.busy)return;S.bif.branches=S.bif.branches.filter(b=>b.pi!==S.bif.pi);S.bif.sweeps=S.bif.sweeps.filter(s=>s.pi!==S.bif.pi);S.bif.cycles=S.bif.cycles.filter(c=>c.pi!==S.bif.pi);S.bif.bvps=S.bif.bvps.filter(b=>b.pi!==S.bif.pi);S.bif.conns=(S.bif.conns||[]).filter(c=>c.pi!==S.bif.pi);S.bif.connCand=(S.bif.connCand||[]).filter(c=>c.pi!==S.bif.pi);$('#cFind').classList.remove('attn');refreshSpecial();buildTpControls();fillConnMenus();fitBif();requestRender();});
   document.addEventListener('keydown',e=>{
     const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;if(e.ctrlKey||e.metaKey||e.altKey)return;
     const k=e.key.toLowerCase();
