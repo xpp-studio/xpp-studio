@@ -1,0 +1,14 @@
+# Morris-Lecar with a saddle: a homoclinic orbit of the saddle (gca = 4, phi = 0.23)
+# Bifurcation view: continue equilibria from the stable focus, then Cycles from HB1. The period grows without bound near
+# i = 35.0068 and the saddle is loaded into From and To; Find gives the homoclinic orbit at i = 35.0067, and Follow follows it in phi.
+dv/dt=(i+gl*(vl-v)+gk*w*(vk-v)+gca*minf(v)*(vca-v))/c
+dw/dt=phi*(winf(v)-w)/tauw(v)
+minf(v)=.5*(1+tanh((v-v1)/v2))
+winf(v)=.5*(1+tanh((v-v3)/v4))
+tauw(v)=1/cosh((v-v3)/(2*v4))
+par i=37,c=20,vk=-84,vl=-60,vca=120,gk=8,gl=2,gca=4,v1=-1.2,v2=18,v3=12,v4=17.4,phi=0.23
+init v=-60,w=0.015
+#@range i 0 40
+#@range phi 0.05 0.6
+@ total=400,dt=0.25,xp=v,yp=w,xlo=-75,xhi=45,ylo=-0.1,yhi=0.55
+done

@@ -2381,8 +2381,8 @@ init x=0,y=0
 done
 `},
 {id:'nagumo',name:'Nagumo front (heteroclinic orbit)',text:`# Nagumo travelling front: a heteroclinic orbit from u=1 to u=0 with speed c
-# u'' + c u' + u(1-u)(u-a) = 0. Two Parameter view: choose From = the saddle at u=1 and To = the saddle at u=0, press Find,
-# then Follow in a. The exact speed is c = (1-2a)/sqrt(2).
+# u'' + c u' + u(1-u)(u-a) = 0. Bifurcation view (parameter c): under Homoclinic and heteroclinic orbits choose
+# From = the saddle at u=1 and To = the saddle at u=0 and press Find; then Follow HET1 in a. The exact speed is c = (1-2a)/sqrt(2).
 u'=v
 v'=-c*v-u*(1-u)*(u-a)
 par c=0.3,a=0.25
@@ -2393,7 +2393,8 @@ init u=0.9,v=0
 done
 `},
 {id:'mlhom',name:'Morris–Lecar homoclinic orbit (class 1 parameters)',text:`# Morris-Lecar with a saddle: a homoclinic orbit of the saddle (gca = 4, phi = 0.23)
-# Two Parameter view: choose From and To = the saddle, press Find (a homoclinic orbit near i = 35.0067), then Follow in phi.
+# Bifurcation view: continue equilibria from the stable focus, then Cycles from HB1. The period grows without bound near
+# i = 35.0068 and the saddle is loaded into From and To; Find gives the homoclinic orbit at i = 35.0067, and Follow follows it in phi.
 dv/dt=(i+gl*(vl-v)+gk*w*(vk-v)+gca*minf(v)*(vca-v))/c
 dw/dt=phi*(winf(v)-w)/tauw(v)
 minf(v)=.5*(1+tanh((v-v1)/v2))

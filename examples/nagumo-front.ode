@@ -1,0 +1,11 @@
+# Nagumo travelling front: a heteroclinic orbit from u=1 to u=0 with speed c
+# u'' + c u' + u(1-u)(u-a) = 0. Bifurcation view (parameter c): under Homoclinic and heteroclinic orbits choose
+# From = the saddle at u=1 and To = the saddle at u=0 and press Find; then Follow HET1 in a. The exact speed is c = (1-2a)/sqrt(2).
+u'=v
+v'=-c*v-u*(1-u)*(u-a)
+par c=0.3,a=0.25
+init u=0.9,v=0
+#@range c 0.05 0.9
+#@range a 0.05 0.45
+@ total=40,dt=0.05,xp=u,yp=v,xlo=-0.3,xhi=1.3,ylo=-0.5,yhi=0.5
+done

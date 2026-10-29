@@ -129,9 +129,11 @@ The window (Figure~\ref{fig:overview}) has three columns.
   \item[Phase plane] Any two variables (state, Markov, Volterra or auxiliary) against each other, with optional nullclines, direction field and equilibria. For a one-dimensional map this view shows a cobweb diagram. \ui{Equal axes} gives both axes the same scale. \ui{Run grid} in the Initial tab starts trajectories from a grid of points, by default covering the window (Section~\ref{sec:many}). Below the plane a strip shows the time series of the current trajectory.
   \item[3D] Three variables (or time) in a rotatable box: drag to rotate, scroll to zoom, \ui{Spin} to animate.
   \item[Time course] Chosen variables against $t$ (or the iteration number $n$ for maps). \ui{Spectrum} shows their power spectra instead, and \ui{Space-time} shows a row of indexed variables as an image (Section~\ref{sec:spacetime}).
-  \item[Bifurcation] Branches of equilibria and periodic orbits, and parameter sweeps, against one parameter. The vertical axis is a variable, or the period or frequency of the periodic orbits.
+  \item[Bifurcation] Branches of equilibria and periodic orbits, parameter sweeps, and homoclinic and heteroclinic orbits, against one parameter. The vertical axis is a variable, or the period or frequency of the periodic orbits.
   \item[Two-parameter] Curves of folds, Hopf points, period doublings and bifurcations of cycles in a parameter plane.
 \end{description}
+\paragraph{The status line} at the bottom of the window reports what the last action did: how many points a trajectory has, why a branch stopped, where a special point was found. \ui{History}, at its right-hand end, lists every message since the page was opened, each with its time, so that a report that has scrolled away can be read again. Progress reports during a long computation are kept as one line, the last one. \ui{Download} saves the list as a text file, \ui{Copy} copies it and \ui{Clear} empties it; in a script, \texttt{history save} does the same (Section~\ref{sec:script}).
+
 In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export .dat} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
 
 \paragraph{Labelling a plot.}\label{sec:notes} The \ui{Note} chip above the plot puts a text label on the figure. It appears in the phase plane, the time course (including the spectrum and the space-time plot), the Bifurcation view and the two-parameter plane, but not in the 3D views. Press it, click the plot where the label should go, and type the text in the small box that opens; a new line in the box starts a new line of text. The box also sets the size (small, medium or large) and the colour: the ordinary text colour, the accent, one of the colours used for curves and trajectories, or any colour from the colour picker. Close the box with \ui{Done}, \key{Ctrl}+\key{Enter}, \key{Esc} or a click elsewhere; a note with no text is discarded.
@@ -141,7 +143,7 @@ In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data,
   \item \textbf{In figures and scripts.} Notes are drawn in \ui{Export SVG}, in the colours of the light theme, along with the legend. A note you make while recording is written into the script as a \texttt{note} line (Section~\ref{sec:script}). Notes are not saved in the \texttt{.ode} file.
 \end{itemize}
 
-\paragraph{Right: the inspector.} The inspector's contents depend on the view. In the phase plane it lists the equilibria (type, coordinates and eigenvalues, with buttons to make one the initial condition, start continuation from it, or draw its separatrices), the variables in the time course, and the trajectories. For large systems, and for boundary value problems, equilibria are not searched for automatically; \ui{Find} next to the list searches the visible window when you want them. In the Bifurcation view it holds the continuation controls and the table of special points. In the Two-parameter view it holds the two-parameter controls.
+\paragraph{Right: the inspector.} The inspector's contents depend on the view. In the phase plane it lists the equilibria (type, coordinates and eigenvalues, with buttons to make one the initial condition, start continuation from it, or draw its separatrices), the variables in the time course, and the trajectories. For large systems, and for boundary value problems, equilibria are not searched for automatically; \ui{Find} next to the list searches the visible window when you want them. In the Bifurcation view it holds the continuation controls, the search for homoclinic and heteroclinic orbits, and the table of special points. In the Two-parameter view it holds the two-parameter controls.
 
 \begin{table}[!htbp]
 \centering\small
@@ -310,7 +312,7 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
   \item The family of orbits connects HB1 to HB2 and turns at two folds of cycles: LPC1 at $i\approx 88.29$ and LPC2 at $i\approx 216.90$ (Figure~\ref{fig:mlbif}). Between LPC1 and HB1 a stable orbit and the stable rest state coexist.
   \item Click any point of a branch to jump there. This sets the parameter and loads that equilibrium, or exactly one period of that orbit, as the current state. Clicking a row of the special-points table does the same.
   \item \ui{Limit cycle} starts orbit continuation from the current trajectory instead. Integrate onto a stable cycle first (e.g.\ at $i=150$), then press it.
-  \item \ui{Show} sets what the vertical axis measures for the variable chosen under \ui{Plot}. The default \emph{hi-lo} draws the maximum and minimum of the variable over each orbit. \emph{L2 norm} draws $\bigl(\frac1T\int_0^T x(t)^2\,dt\bigr)^{1/2}$ over each orbit, and $|x|$ at each equilibrium, so a branch of orbits becomes a single curve that leaves the equilibrium branch at the Hopf point (Figure~\ref{fig:mll2}). The norms are computed the first time you choose this, by integrating one period of each orbit. \emph{Period} and \emph{frequency} draw the period of the orbits, or its inverse, against the parameter (Figure~\ref{fig:mlperiod}). The period grows from about 79 at HB1 to 135 at LPC1 and is about 42 at HB2. Sweeps show their periods too, where the oscillation is regular enough for one to be estimated.
+  \item \ui{Show} sets what the vertical axis measures for the variable chosen under \ui{Plot}. The default \emph{hi-lo} draws the maximum and minimum of the variable over each orbit. \emph{L2 norm} draws $\bigl(\frac1T\int_0^T x(t)^2\,dt\bigr)^{1/2}$ over each orbit, and $|x|$ at each equilibrium, so a branch of orbits becomes a single curve that leaves the equilibrium branch at the Hopf point (Figure~\ref{fig:mll2}). The norms are computed the first time you choose this, by integrating one period of each orbit. \emph{Period} and \emph{frequency} draw the period of the orbits, or its inverse, against the parameter (Figure~\ref{fig:mlperiod}). The period grows from about 79 at HB1 to 135 at LPC1 and is about 42 at HB2. Sweeps show their periods too, where the oscillation is regular enough for one to be estimated. Changing \ui{Show} or \ui{Plot} refits only the vertical axis, to the data in the range of the parameter on screen, so a part of the diagram you have zoomed into stays in view as you switch between hi-lo, L2 norm and period.
   \item Click a point on the orbit branch. As well as loading that orbit, this adds it to the \ui{Special points} table as OR1, marked on the diagram with an open circle (Figure~\ref{fig:mlorbits}). Click another point to add OR2, and so on. Each picked orbit has a \ui{Const.\ T} button, which follows it in two parameters at fixed period (Tutorial~3), and a \ui{Remove} button.
   \item \textbf{Deleting single curves.} Clicking a curve also selects it: the branch, orbit family, sweep or boundary-value branch is outlined in a blue halo (Figure~\ref{fig:select}), and the status line names it. \ui{Delete curve} under the continuation buttons, or the \key{Delete} key, removes that curve and its special points, while the rest of the diagram stays. \key{Esc} clears the selection. \ui{Clear diagram} still removes everything for the current parameter. The Two-parameter view works the same way, with its own \ui{Delete curve} button.
 \end{enumerate}
@@ -767,6 +769,7 @@ export svg ml-twopar.svg
   \item Press \ui{Run} (or \key{Ctrl}+\key{Enter} in the script). The Morris--Lecar model is loaded, a $10\times10$ grid of trajectories is drawn, the equilibria are continued in $i$, the periodic orbits are followed from HB1, the Hopf curve and a curve of constant period are followed in $(i,\phi)$, and five files are saved together in one zip (Figure~\ref{fig:script-out}). It takes about 15 seconds.
   \item Change \texttt{phi=0.04} to \texttt{phi=0.06} and run it again: all five files are remade for the new value.
   \item \ui{Run slowly} pauses after each command, so that you can watch the steps. While a script runs, \ui{Run} becomes \ui{Stop}.
+  \item \ui{Step} (or \key{Ctrl}+\key{Shift}+\key{Enter} in the script) runs one command and stops. The next line is shown next to the buttons and selected in the script, and the files the command exports are saved straight away. If a command fails, correct the line and press \ui{Step} again: the script can be edited between steps, and stepping carries on from the same line. \ui{Run to end} runs the rest, and \ui{Restart} goes back to the first line.
 \end{enumerate}
 \end{tryit}
 
@@ -789,7 +792,7 @@ Command & Effect\\
 \texttt{par i=60 phi=0.04} & set parameters\\
 \texttt{init v=-20 w=0.1} & set initial values\\
 \texttt{set name=value} & either of the two, whichever the name is\\
-\texttt{num total=400 dt=0.05 trans=100} & numerical settings; also \texttt{meth}, \texttt{dir} (forward, backward or both), \texttt{tol}, \texttt{bound}, \texttt{seed}, and continuation settings \texttt{ds}, \texttt{nmax}, \texttt{ntst}, \ldots\\
+\texttt{num total=400 dt=0.05 trans=100} & numerical settings; also \texttt{meth}, \texttt{dir} (forward, backward or both), \texttt{tol}, \texttt{bound}, \texttt{seed}, continuation settings \texttt{ds}, \texttt{nmax}, \texttt{ntst}, \ldots, and the continuation tolerances \texttt{eqtol}, \texttt{potol}, \texttt{tptol}, \texttt{restol}, \texttt{itmax}, \texttt{tgrow} (Section~\ref{sec:numerics}); \texttt{auto} empties a box\\
 \midrule
 \texttt{view pp|3d|tc|bif|tp} & choose the plot\\
 \texttt{axes v w} & phase-plane axes (three names for 3D)\\
@@ -818,10 +821,12 @@ Command & Effect\\
 \texttt{pick 1 i=150} & pick an orbit of family 1 (it becomes OR1, OR2, \ldots)\\
 \texttt{tppar phi 0 0.4}, \texttt{follow HB1} & second parameter; follow a special point (OR1: constant period)\\
 \texttt{slices HB1 gca 3 5.5 6} & follow HB1 at 6 values of a third parameter\\
+\texttt{connect 2}, \texttt{connect 3 1 [backward]}, \texttt{connect end} & find a homoclinic orbit of equilibrium 2, or a heteroclinic orbit from 3 to 1; \texttt{end} is the saddle found at the end of the last branch of orbits (Section~\ref{sec:conn}). \texttt{follow HOM1} follows it\\
 \texttt{clear bif}, \texttt{clear tp} & clear a diagram\\
 \midrule
 \texttt{export svg|csv|dat [file]} & save the current view or its data\\
 \texttt{writestate}, \texttt{echo}, \texttt{wait ms} & write the state into the file; note; pause\\
+\texttt{history save [file]}, \texttt{history clear} & save the status-line history as a text file (with the other exports), or empty it\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -832,6 +837,7 @@ If a command fails (an unknown name, a Hopf point that is not there, a continuat
   \item clicking the phase plane gives a \texttt{traj} line with the starting point (and \texttt{both} for a shift-click);
   \item panning and zooming give a \texttt{window} line once the gesture ends, and rotating or zooming the 3D view a \texttt{rotate} line, so the figure is framed as you left it;
   \item clicking a diagram to load a point (an equilibrium, a point on a boundary value branch or a two-parameter curve) gives a \texttt{set} line with the parameter values and all the initial values it loads, and clicking an orbit branch gives \texttt{pick};
+  \item \ui{Find} for a homoclinic or heteroclinic orbit gives a \texttt{connect} line, and \ui{Follow} on HOM1 or HET1 a \texttt{follow} line;
   \item placing a label with \ui{Note} gives a \texttt{note} line with its position, colour and text. Moving or editing the label afterwards is not recorded, and neither is its size;
   \item switching views, by button or key, gives a \texttt{view} line, and the chips above the plot (spectrum, space-time, legend, 3D) and the variables chosen for the time course are recorded as well.
 \end{itemize}
@@ -881,7 +887,7 @@ Both variables are declared periodic with \texttt{@ fold=}. Plots break where th
   \item Load \ui{Forced phase oscillator} and press \key{G} with $\omega=2$. The trajectory settles onto a locked orbit in which $x$ goes once round while the forcing goes twice (Figure~\ref{fig:torus}, left). Change $\omega$ to $2.3$ and integrate again to see that it is no longer locked.
   \item Return to $\omega=2$, integrate, and open the Bifurcation view. Set the range of \texttt{om} to 1.2--3 and press \ui{Limit cycle}. The locked orbit exists only for $\omega$ between $1.9784$ and $2.0416$: there are two folds of cycles, LPC1 and LPC2, the edges of the 1:2 tongue. The stable and the unstable locked orbit meet at the two folds, so the branch is a closed loop. The continuation stops when it has gone once round, and the status line says that the branch closed up on itself.
   \item Open the Two-parameter view, set the range of \texttt{b} to 0--0.5, and press \ui{Follow} on LPC1 and on LPC2 in the Special points table. The two curves are the edges of the tongue in $(\omega,b)$, and they meet at $b=0$, $\omega=2$.
-  \item To add the 1:1 tongue, press \ui{Clear diagram} in the Bifurcation view. This erases the one-parameter branch and leaves the two-parameter curves. Set $\omega=1$, integrate, continue in \texttt{om} (the folds are at $1.1233$ and $0.8684$), and follow both folds. Turn on \ui{Legend} (Figure~\ref{fig:tongues}).
+  \item To add the 1:1 tongue, press \ui{Clear diagram} in the Bifurcation view. This erases the one-parameter branch and leaves the two-parameter curves. Set $\omega=1$, integrate, set the range of \texttt{om} to 0.5--3, continue in \texttt{om} with \ui{Limit cycle} (the folds are at $1.1233$ and $0.8684$), and follow both folds. Turn on \ui{Legend} and \ui{Colours} (Figure~\ref{fig:tongues}).
 \end{enumerate}
 \end{tryit}
 
@@ -911,17 +917,17 @@ Both variables are declared periodic with \texttt{@ fold=}. Plots break where th
 
 A \emph{homoclinic orbit} leaves a saddle and comes back to it; a \emph{heteroclinic orbit} joins two saddles. Both exist only for special values of a parameter: they are codimension one, so a one-parameter diagram shows them as single points where a family of orbits ends. They matter for waves. Written in a frame moving with speed $c$, a travelling front of a reaction--diffusion equation is a heteroclinic orbit of an ordinary differential equation between two rest states, and a pulse is a homoclinic orbit. The speed $c$ is the parameter that has to be tuned until the connection exists.
 
-\paragraph{How the orbit is found.} The orbit starts a small distance from the first saddle, along the eigenvector of its single unstable eigenvalue, and is integrated until it comes closest to the second. There the program measures on which side of the second saddle's stable manifold it passes, using the unstable eigenvector of the second saddle. The measure changes sign at a connection. \XS{} scans the range of Parameter~1 for a sign change, narrows it by bisection, and accepts the result only if the orbit really goes on to the target. \ui{Follow} then steps Parameter~2 and solves again for Parameter~1 near the previous value, in both directions.
+\paragraph{How the orbit is found.} The orbit starts a small distance from the first saddle, along the eigenvector of its single unstable eigenvalue, and is integrated until it comes closest to the second. There the program measures on which side of the second saddle's stable manifold it passes, using the unstable eigenvector of the second saddle. The measure changes sign at a connection. \XS{} scans the range of the continuation parameter for a sign change, narrows it down by false position (the Illinois variant, which needs far fewer integrations than bisection), and accepts the result only if the orbit really goes on to the target. \ui{Follow} then steps a second parameter and solves again for the first near the previous value, in both directions.
 
-\paragraph{The controls} are in the section \ui{Homoclinic and heteroclinic orbits} of the Two-parameter panel. The menus \ui{From} and \ui{To} list the equilibria found in the phase plane at the current parameters. \ui{Find} searches the range of Parameter~1; \ui{Follow} continues the connection in Parameter~2 over its range. The ranges are those of the two parameters in the panel above. The orbit is drawn in the phase plane, and the curve in the Two-parameter view in its own colour.
+\paragraph{The controls} are in the section \ui{Homoclinic and heteroclinic orbits} of the Bifurcation panel, under the continuation buttons. The menus \ui{From} and \ui{To} list the equilibria found in the phase plane at the current parameters, and any saddle found at the end of a branch of periodic orbits (below). \ui{Find} searches the range of the continuation parameter. The orbit found is drawn in the phase plane and becomes a point of the diagram, HOM1, HET1, \ldots{} in the table of special points. On the diagram it is marked by diamonds at the maximum and minimum of the plotted variable along the orbit, at its $L^2$ norm in the L2 view (for a homoclinic orbit, the norm of the saddle, the limit of the norms of periodic orbits that approach it), at zero frequency, and by a dashed line in the period view, where the period is infinite. Clicking its row moves to it and draws it again. \ui{Follow} in its row continues it in Parameter~2 of the Two-parameter view, over the range set there; the curve is drawn in the Two-parameter view in its own colour, and HOM1 and HET1 also appear under \ui{Start} there.
 
 \begin{tryit}
 \textbf{The Nagumo front.}
 \begin{enumerate}
   \item Load \ui{Nagumo front (heteroclinic orbit)}. The equations are $u'=v$, $v'=-cv-u(1-u)(u-a)$, with the two saddles at $u=0$ and $u=1$ and a focus at $u=a$.
-  \item Open the Two-parameter view. Parameter~1 is $c$ and Parameter~2 is $a$. Under \ui{From} choose the saddle at $u=1$, under \ui{To} the saddle at $u=0$.
-  \item Press \ui{Find}. At $a=0.25$ the speed is $c=0.353553392$, the exact value $(1-2a)/\sqrt2$ to the digits shown. The phase plane shows the orbit (Figure~\ref{fig:nagumo}, left).
-  \item Press \ui{Follow}. In under a second the curve of speeds over $0.05\le a\le0.45$ appears (Figure~\ref{fig:nagumo}, right), and a note placed on it (Section~\ref{sec:notes}) can carry the formula.
+  \item Open the Bifurcation view; the continuation parameter is $c$. Under \ui{From} choose the saddle at $u=1$, under \ui{To} the saddle at $u=0$.
+  \item Press \ui{Find}. At $a=0.25$ the speed is $c=0.353553392$, the exact value $(1-2a)/\sqrt2$ to the digits shown. The phase plane shows the orbit (Figure~\ref{fig:nagumo}, left), and HET1 is added to the special points.
+  \item In the Two-parameter view, Parameter~2 is $a$. Press \ui{Follow} on HET1 in the special points table (or choose HET1 under \ui{Start} and press \ui{Follow curve}). In a second or two the curve of speeds over $0.05\le a\le0.45$ appears (Figure~\ref{fig:nagumo}, right), and a note placed on it (Section~\ref{sec:notes}) can carry the formula.
 \end{enumerate}
 \end{tryit}
 
@@ -938,18 +944,21 @@ A \emph{homoclinic orbit} leaves a saddle and comes back to it; a \emph{heterocl
 \end{figure}
 
 \begin{tryit}
-\textbf{A homoclinic orbit of Morris--Lecar.} The Hopf-regime example has no saddle, so a homoclinic orbit cannot exist there. The example \ui{Morris--Lecar homoclinic orbit (class 1 parameters)} has three equilibria at $i=37$: a stable node, a saddle and a stable focus.
+\textbf{A homoclinic orbit of Morris--Lecar, found from the periodic orbits.} The Hopf-regime example has no saddle, so a homoclinic orbit cannot exist there. The example \ui{Morris--Lecar homoclinic orbit (class 1 parameters)} has three equilibria at $i=37$: a stable node, a saddle and a stable focus.
 \begin{enumerate}
-  \item Load it and open the Two-parameter view, with Parameter~1 $=i$ (range 0 to 40) and Parameter~2 $=\phi$.
-  \item Choose the saddle for both \ui{From} and \ui{To}, and press \ui{Find}. The status line reports a homoclinic orbit at $i=35.0067343$, $\phi=0.23$, found in a couple of seconds (Figure~\ref{fig:mlhom}, left; Figure~\ref{fig:connui} shows the panel).
-  \item Press \ui{Follow}. The curve in the $(i,\phi)$ plane (Figure~\ref{fig:mlhom}, right) falls from $\phi\approx0.35$ at small $i$ to $\phi\approx0.2$ near $i=40$, where the saddle and the node merge and the connection is lost.
+  \item Load it and open the Bifurcation view, with the parameter $i$ over its range 0 to 40. Choose the stable focus under \ui{Start} and press \ui{Continue equilibria}: the branch has a subcritical Hopf point HB1 at $i=36.316$.
+  \item Press \ui{Cycles} on HB1. The unstable orbits grow, turn at the fold LPC1 ($i=40.593$) and come back, and their period grows without bound as $i$ approaches $35.0068$: the branch stops when the period reaches 40 times its starting value (\ui{Period growth stop}, Section~\ref{sec:numerics}).
+  \item Whenever a branch of periodic orbits ends with its period still growing, \XS{} looks at its last orbit. Where the orbit moves most slowly it passes close to an equilibrium; Newton's method from that point finds it, and if it is a saddle with one real unstable direction (or one real stable direction, with time running backwards) it is loaded under \ui{From} and \ui{To}, as \emph{end of HB1 orbits: saddle at \ldots}, and the status line says so. Here it is the saddle at $v=-22.3$.
+  \item Press \ui{Find}. A narrow window round the end of the branch is searched first, and in a second or two the status line reports a homoclinic orbit at $i=35.0067343$. HOM1 appears at the end of the branch of orbits (Figure~\ref{fig:connui}), and the orbit in the phase plane (Figure~\ref{fig:mlhom}, left).
+  \item In the Two-parameter view set Parameter~2 to $\phi$ (range 0.05 to 0.6), and press \ui{Follow} on HOM1. The curve in the $(i,\phi)$ plane (Figure~\ref{fig:mlhom}, right) takes under a minute. It falls from $\phi\approx0.35$ at small $i$ to $\phi\approx0.2$ near $i=40$, where the saddle and the node merge and the connection is lost.
 \end{enumerate}
+The saddle can also be chosen by hand: it is in the \ui{From} and \ui{To} menus as one of the equilibria of the phase plane.
 \end{tryit}
 
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\textwidth]{ui-connect.png}
-  \caption{The Two-parameter view after \ui{Find} and \ui{Follow} on the Morris--Lecar homoclinic orbit. The section \ui{Homoclinic and heteroclinic orbits} is in the right-hand panel, with \ui{From}, \ui{To}, \ui{Run time backwards}, \ui{Find} and \ui{Follow}.}
+  \caption{The Bifurcation view after \ui{Cycles} on HB1 and \ui{Find} for the Morris--Lecar homoclinic orbit. The branch of periodic orbits from HB1 turns at LPC1 and ends, with its period growing, at the homoclinic orbit HOM1, marked by two diamonds at the maximum and minimum of $v$. The section \ui{Homoclinic and heteroclinic orbits} in the right-hand panel holds the saddle found at the end of the branch, under \ui{From} and \ui{To}.}
   \label{fig:connui}
 \end{figure}
 
@@ -960,7 +969,8 @@ A \emph{homoclinic orbit} leaves a saddle and comes back to it; a \emph{heterocl
   \item Both equilibria must be saddles with one real unstable direction (counted backwards in time if \ui{Run time backwards} is ticked). Saddles with complex unstable eigenvalues, or with a two-dimensional unstable manifold at both ends, are not handled.
   \item \ui{Follow} steps Parameter~2 and solves for Parameter~1, so a curve that turns back in Parameter~2 is lost at the turn. The status line says whether the curve ended at the edge of a range or because the connection was lost.
   \item The method has been tested on planar problems, where the answers above are exact or checked. For systems with three or more variables, check an orbit by integrating it, and do not rely on a failure to find one as proof that none exists: the range of Parameter~1 and the choice of equilibria matter.
-  \item The orbit is not tested for stability, codimension-two points are not located on the curve, and the commands are not available in scripts. They are not saved in the \texttt{.ode} file.
+  \item The orbit is not tested for stability, and codimension-two points are not located on the curve. Orbits found are not saved in the \texttt{.ode} file, but a script can find them again with \texttt{connect} and follow them with \texttt{follow} (Section~\ref{sec:script}).
+  \item The saddle at the end of a branch is only looked for when the period is still rising over the last few orbits and has at least doubled along the branch. If the branch stopped for another reason first (the point limit, say), raise the limit and continue again, or choose the saddle by hand.
 \end{itemize}
 
 % ==================================================================
@@ -969,7 +979,7 @@ A \emph{homoclinic orbit} leaves a saddle and comes back to it; a \emph{heterocl
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=0.42\textwidth]{ui-numerics.png}
-  \caption{The Numerics tab: integration settings at the top, continuation settings below.}
+  \caption{The Numerics tab: integration settings at the top, continuation settings below, and the continuation tolerances (Section~\ref{sec:numerics}) further down.}
   \label{fig:numerics}
 \end{figure}
 
@@ -1004,7 +1014,24 @@ Nmax (2-par), Nmax (2-par cycles) & point limits for two-parameter curves\\
 \bottomrule
 \end{tabularx}
 \end{center}
-If a branch stops early, the status line says why: for example, it reached the point limit, the corrector stopped converging, the orbit shrank onto a Hopf point, or the period grew without bound (a homoclinic orbit is near). If it stopped because of a step-size or point limit, adjust the corresponding setting and run it again.
+\paragraph{Continuation tolerances.} Each step of a continuation predicts the next point along the tangent and corrects it with Newton's method. The correction stops when its size falls below a tolerance, and the point is then accepted only if the equations hold to within the residual tolerance; otherwise the step is halved. The section \ui{Continuation tolerances} of the Numerics tab sets these, and \ui{Defaults} puts them back. The file can set them with \texttt{@ eqtol, potol, tptol, restol, itmax, tgrow}, and \ui{Write state} writes those that differ from the defaults.
+\begin{center}\small
+\begin{tabularx}{0.95\textwidth}{@{}llX@{}}
+\toprule
+Setting & Default & Effect\\
+\midrule
+Newton tol (eq.) & $10^{-10}$ & last Newton correction for branches of equilibria and fixed points, relative to the size of the solution (\texttt{eqtol}, like \textsf{AUTO}'s EPSU)\\
+Newton tol (orbits) & $10^{-9}$ & the same for periodic orbits, in the scaled unknowns of the shooting method (\texttt{potol})\\
+Newton tol (2-par) & $10^{-8}$ & the same for two-parameter curves of folds, Hopf points and bifurcations of cycles (\texttt{tptol})\\
+Residual tol & $10^{-6}$ & largest residual of the equations at an accepted point; for orbits, relative to their size (\texttt{restol})\\
+Newton iterations & automatic & most Newton iterations per step before the step is halved: 15 for equilibria, 14 for orbits and two-parameter curves, 12 for curves of cycles (\texttt{itmax}, like \textsf{AUTO}'s ITNW)\\
+Period growth stop & 40 & a branch of periodic orbits, or a curve of cycles, stops when the period reaches this multiple of its starting value (\texttt{tgrow})\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Tighter tolerances give more accurate points and usually smaller steps; looser ones can carry a branch through a stretch where the corrector struggles, at some cost in accuracy, so check such a branch against a tighter run. Raise the period growth stop to follow orbits closer to a homoclinic orbit.
+
+If a branch stops early, the status line says why: for example, it reached the point limit, the corrector stopped converging, the orbit shrank onto a Hopf point, or the period grew without bound (a homoclinic orbit is near). If it stopped because of a step-size or point limit, adjust the corresponding setting and run it again. A branch of orbits whose period grew to its end also loads the saddle it approaches into the homoclinic search (Section~\ref{sec:conn}).
 
 % ==================================================================
 \section{Saving and exporting results}\label{sec:export}
@@ -1051,7 +1078,7 @@ Pressing \ui{Write state} again replaces this block rather than adding another, 
   \item \textbf{Global flags} can set state and Markov variables and \texttt{arret}. The XPP output flag \texttt{out\_put} is accepted and ignored.
   \item \textbf{Not supported:} \texttt{special} and \texttt{export} declarations, and \texttt{set} blocks.
   \item \textbf{Two-parameter Hopf curves} are limited to 12 variables, because the bialternate product grows quadratically with dimension.
-  \item \textbf{Homoclinic and heteroclinic orbits} (Section~\ref{sec:conn}) are found by shooting along the one-dimensional unstable manifold of a saddle, not by \textsf{AUTO}'s \textsf{HomCont} projection boundary conditions, so they are limited to saddles with one real unstable direction. They cannot be scripted.
+  \item \textbf{Homoclinic and heteroclinic orbits} (Section~\ref{sec:conn}) are found by shooting along the one-dimensional unstable manifold of a saddle, not by \textsf{AUTO}'s \textsf{HomCont} projection boundary conditions, so they are limited to saddles with one real unstable direction (or one real stable direction, with time running backwards).
   \item \textbf{Volterra models} cannot be continued, since their state is infinite-dimensional.
   \item \textbf{Browser files.} Files are opened and saved through the browser. Table data files are kept in the browser's local storage until you press \ui{Forget table files}.
 \end{itemize}

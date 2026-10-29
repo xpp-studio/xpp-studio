@@ -11,6 +11,7 @@ A browser workbench for differential equations, maps and stochastic models that 
 - **One-parameter continuation:** equilibria and periodic orbits (multiple shooting with Floquet multipliers), plotted as hi-lo, L2 norm, period or frequency; single curves can be selected and deleted. Detects:
   - folds, Hopf points (sub- or supercritical, from the first Lyapunov coefficient) and branch points;
   - period doublings, torus points and folds of cycles.
+- **Homoclinic and heteroclinic orbits:** found from the Bifurcation view between saddles with one real unstable (or stable) direction, marked on the diagram, and followed in a second parameter. A branch of periodic orbits whose period grows to its end offers the saddle it approaches to the search.
 - **Two-parameter continuation:** curves of folds, Hopf points, period doublings, folds and period doublings of cycles, and periodic orbits of constant period. Detects Bogdanov–Takens, cusp, generalised Hopf (Bautin) and zero-Hopf points. Curves can be repeated at several values of a third parameter and drawn in 3D.
 - **Model types:**
   - maps, with cobweb and orbit diagrams, continuation of orbits of any period, and period-doubling cascades followed by branch switching;
@@ -21,14 +22,17 @@ A browser workbench for differential equations, maps and stochastic models that 
   - delay equations, with stability from the characteristic roots;
   - global flags (events);
   - boundary value problems by shooting, with continuation round folds.
-- **Scripts:** a small command language in the Script tab replays the steps behind a set of figures and saves them together in one zip. A recorder writes commands as you work, including mouse clicks, panning and zooming, and scripts can be stored in `.ode` files as `#@do` lines (see `examples/morris-lecar-figures.ode`).
+- **Scripts:** a small command language in the Script tab replays the steps behind a set of figures and saves them together in one zip, or runs them one step at a time. A recorder writes commands as you work, including mouse clicks, panning and zooming, and scripts can be stored in `.ode` files as `#@do` lines (see `examples/morris-lecar-figures.ode`).
+- **Numerics:** integration settings, and continuation step sizes, point limits and tolerances, all also settable in the `.ode` file.
+- **Status history:** every message of the status line, with its time, can be viewed and downloaded.
+- **Labels:** text notes on any plot, a movable legend and per-curve colours.
 - **Export:** every view as SVG, and trajectories, bifurcation branches and two-parameter curves as CSV or .dat. **Write state** writes the current parameters, initial conditions and settings back into the `.ode` file.
 
 ## Using it
 
 Open `index.html` in any recent browser, or use the GitHub Pages link above. Choose a model from the **Model** menu or paste or open your own `.ode` file in the **Equations** tab. The `examples/` folder has the example models as `.ode` files.
 
-A 34-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
+A 41-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
 
 ## Tests
 
