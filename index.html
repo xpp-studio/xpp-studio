@@ -5114,24 +5114,28 @@ function runSwitch(sp,double){
   M.setParam(pi,ps);
   const v=nullVec(numJac(Mi,xs)),sc=1+norm(xs),t0=performance.now(),found=[];
   const o={pmin:S.bif.pmin,pmax:S.bif.pmax,ds:S.bif.ds/(N>1?N*N:1),dsmin:S.cont.eqDsmin,dsmax:S.cont.eqDsmax,maxPts:S.cont.eqNmax,xmax:S.num.bound};
+  // the branches born at a period doubling shrink by Feigenbaum's alpha (about 2.5) with each doubling, so the first step off
+  // the old branch shrinks with the period; with too large a step Newton's method lands on some other orbit of the same period
+  const shrink=N>2?Math.pow(2/N,1.32):1,range=S.bif.pmax-S.bif.pmin;
   for(const sign of[1,-1]){
-    let start=null,used=0;
-    for(const dl of[0.02,0.006,0.05,0.002]){
+    for(const dl of[0.02,0.006,0.05,0.002,0.0006].map(d=>d*shrink)){
       const delta=sign*dl*sc;M.setParam(pi,ps);const u1=branchStart(Mi,pi,xs,ps,v,delta);if(!u1)continue;
       {let d=0;for(let i=0;i<xs.length;i++)d+=(u1.x[i]-xs[i])**2;     // Newton ran off to a distant solution: try another step
-       if(Math.sqrt(d)>3*Math.abs(delta)||u1.p<S.bif.pmin-0.1*(S.bif.pmax-S.bif.pmin)||u1.p>S.bif.pmax+0.1*(S.bif.pmax-S.bif.pmin))continue;}
+       if(Math.sqrt(d)>3*Math.abs(delta)||Math.abs(u1.p-ps)>0.05*range)continue;}
       if(distToBranch(br.pts,u1.x,u1.p)<0.3*Math.abs(delta))continue; // converged back onto the branch we left
       if(N>1&&minPerAt(M,pi,u1.x,u1.p,N)!==N)continue;                 // an orbit of lower period, not the new one
       if(found.some(b=>distToBranch(b.pts,u1.x,u1.p)<0.3*Math.abs(delta)))break; // already on a branch found from the other side (or an image of it): nothing new this side
-      start=u1;used=Math.abs(delta);break;
+      const used=Math.abs(delta);
+      M.setParam(pi,u1.p);
+      const res=continueBoth(Mi,pi,u1.x,{...o,stopNear:{u:Float64Array.from([...xs,ps]),r:0.3*used}});
+      M.setParam(pi,pOrig);
+      if(res.pts.length<2)continue;
+      // a branch born here must come back to the bifurcation point; one that does not is another orbit, met by accident
+      if(distToBranch(res.pts,xs,ps)>used)continue;
+      annotateMinPeriod(M,pi,res.pts,N);
+      const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:N,from:`from ${sp.label}`};S.bif.branches.push(nb);found.push(nb,...addImages(M,pi,nb,N));
+      break;
     }
-    if(!start)continue;
-    M.setParam(pi,start.p);
-    const res=continueBoth(Mi,pi,start.x,{...o,stopNear:{u:Float64Array.from([...xs,ps]),r:0.3*used}});
-    M.setParam(pi,pOrig);
-    if(res.pts.length<2)continue;
-    annotateMinPeriod(M,pi,res.pts,N);
-    const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:N,from:`from ${sp.label}`};S.bif.branches.push(nb);found.push(nb,...addImages(M,pi,nb,N));
   }
   M.setParam(pi,pOrig);
   if(!found.length){status(`Could not find a second branch at ${sp.label}${N>1?` for the ${N}-th iterate`:''}. Check that the multiplier really passes through ${M.discrete?'+1':'0'} there.`,true);return;}
