@@ -161,3 +161,18 @@ test('recording writes connect for Find and follow for a homoclinic orbit', asyn
     assert.match(text, /^bifpar c /m);
   } finally { P.close(); }
 });
+
+test('logistic map: each doubled branch starts at its period doubling, not on some other orbit of the same period', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example logistic\nview bif\nbifpar r 2.8 4 ds=0.01\ncontinue\ndouble PD1\ndouble PD2\ndouble PD3\ndouble PD4');
+    ok(P);
+    const pd = J(P, "allSpecial().filter(s=>s.type==='PD').map(s=>s.p)");
+    const br = J(P, "S.bif.branches.filter(b=>!b.fam&&b.period>1).map(b=>[b.period,Math.min(...b.pts.map(q=>q.p))])");
+    assert.deepEqual(br.map(b => b[0]), [2, 4, 8, 16]);
+    br.forEach(([N, pmin], k) => assert.ok(Math.abs(pmin - pd[k]) < 2e-3, `period ${N} starts at r = ${pmin}, its period doubling is at ${pd[k]}`));
+    // and is stable only from its own period doubling to the next
+    const stable = J(P, "S.bif.branches.filter(b=>!b.fam&&b.period>1).map(b=>{const s=b.pts.filter(q=>q.stable).map(q=>q.p);return[Math.min(...s),Math.max(...s)];})");
+    stable.forEach(([a, b], k) => assert.ok(a > pd[k] - 2e-3 && b < pd[k + 1] + 2e-3, `stable part of branch ${k + 1}: ${a}–${b}`));
+  } finally { P.close(); }
+});
