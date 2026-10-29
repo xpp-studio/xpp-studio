@@ -150,6 +150,9 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .wgrid label{font-family:var(--f-mono);font-size:12.5px;font-weight:600;max-width:9ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wgrid .lbl{text-align:center}
 .winpop .note{margin:0;min-height:0}
+.notepop{position:fixed;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px;display:flex;flex-direction:column;gap:6px;width:250px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.notepop textarea{width:100%;box-sizing:border-box;font:12px/1.35 ui-monospace,Menlo,monospace;resize:vertical;min-height:54px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px}
+.notepop .nprow{display:flex;gap:6px;align-items:center}
 .winpop .err{color:var(--err)}
 #winBtn[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
 .hint{position:absolute;bottom:38px;right:14px;font-size:11.5px;color:var(--muted);pointer-events:none;text-align:right}
@@ -394,6 +397,8 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button class="chip" id="tgPts" aria-pressed="false" title="Draw orbits as points instead of lines"><i class="dots"></i>Points</button>
         <button class="chip" id="tgEqual" aria-pressed="false" title="Use the same scale on both axes of the phase plane (axis equal)">Equal axes</button>
         <button class="chip" id="tgTp3" aria-pressed="false" hidden title="Draw the two-parameter curves in a 3D box, with a third parameter as the vertical axis: each curve sits at the value of that parameter it was computed with. Drag to rotate, scroll to zoom.">3D</button>
+        <button class="chip" id="tgCurveCol" aria-pressed="false" hidden title="Give each curve its own colour, so the legend can tell them apart (otherwise curves are coloured by kind)">Colours</button>
+        <button class="chip" id="tgNote" aria-pressed="false" hidden title="Add a text note: press this, then click the plot where it should go. Drag a note to move it, double-click it to edit, select it and press Delete to remove it.">Note</button>
         <button class="chip" id="tgLegend" aria-pressed="false" hidden title="Show a legend on the diagram: one line for each curve, with where it came from and any parameter values that differ">Legend</button>
         <button class="chip" id="tgBVP" aria-pressed="false" hidden title="Solve the boundary value problem (b lines) instead of an initial value problem: Newton's method on the initial values, repeated whenever a parameter, an initial value or a numerics setting changes">Solve BVP</button>
         <button class="chip" id="tgSpin" aria-pressed="false" hidden>Spin</button>
@@ -466,6 +471,14 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="tStart">Start</label><select id="tStart"></select>
         </div>
         <div class="row"><button class="btn primary" id="tRun">Follow curve</button><button class="btn" id="tSkip" hidden title="End this direction and carry on with the other (Esc). Shift+Esc stops everything.">Skip direction</button><button class="btn small" id="tClear">Clear curves</button><button class="btn small" id="tDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button></div>
+        <div class="sech" style="margin-top:10px"><span class="lbl">Homoclinic and heteroclinic orbits</span></div>
+        <div class="bgrid">
+          <label for="cFrom">From</label><select id="cFrom"></select>
+          <label for="cTo">To</label><select id="cTo"></select>
+        </div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin:2px 0 6px"><input type="checkbox" id="cRev"> Run time backwards (from To back to From)</label>
+        <div class="row"><button class="btn" id="cFind" title="Search the range of Parameter 1 for a value at which the unstable manifold of the equilibrium chosen under From runs into the stable manifold of the one under To (the same equilibrium: a homoclinic orbit)">Find</button><button class="btn" id="cFollow" title="Continue the connection found, as Parameter 2 changes over its range">Follow</button></div>
+        <p class="note" id="cNote">The equilibria are those found in the phase plane at the current parameters. Both must be saddles with one unstable direction.</p>
         <div class="sech" style="margin-top:10px"><span class="lbl">Slices in a third parameter</span></div>
         <div class="bgrid">
           <label for="tP3">Parameter 3</label><select id="tP3"></select>
@@ -2343,6 +2356,32 @@ init x=0,y=0
 @ total=100,dt=0.05
 done
 `},
+{id:'nagumo',name:'Nagumo front (heteroclinic orbit)',text:`# Nagumo travelling front: a heteroclinic orbit from u=1 to u=0 with speed c
+# u'' + c u' + u(1-u)(u-a) = 0. Two Parameter view: choose From = the saddle at u=1 and To = the saddle at u=0, press Find,
+# then Follow in a. The exact speed is c = (1-2a)/sqrt(2).
+u'=v
+v'=-c*v-u*(1-u)*(u-a)
+par c=0.3,a=0.25
+init u=0.9,v=0
+#@range c 0.05 0.9
+#@range a 0.05 0.45
+@ total=40,dt=0.05,xp=u,yp=v,xlo=-0.3,xhi=1.3,ylo=-0.5,yhi=0.5
+done
+`},
+{id:'mlhom',name:'Morris–Lecar homoclinic orbit (class 1 parameters)',text:`# Morris-Lecar with a saddle: a homoclinic orbit of the saddle (gca = 4, phi = 0.23)
+# Two Parameter view: choose From and To = the saddle, press Find (a homoclinic orbit near i = 35.0067), then Follow in phi.
+dv/dt=(i+gl*(vl-v)+gk*w*(vk-v)+gca*minf(v)*(vca-v))/c
+dw/dt=phi*(winf(v)-w)/tauw(v)
+minf(v)=.5*(1+tanh((v-v1)/v2))
+winf(v)=.5*(1+tanh((v-v3)/v4))
+tauw(v)=1/cosh((v-v3)/(2*v4))
+par i=37,c=20,vk=-84,vl=-60,vca=120,gk=8,gl=2,gca=4,v1=-1.2,v2=18,v3=12,v4=17.4,phi=0.23
+init v=-60,w=0.015
+#@range i 0 40
+#@range phi 0.05 0.6
+@ total=400,dt=0.25,xp=v,yp=w,xlo=-75,xhi=45,ylo=-0.1,yhi=0.55
+done
+`},
 {id:'nfhn',name:'Noisy FitzHugh–Nagumo (SDE)',text:`# FitzHugh-Nagumo in the excitable regime, driven by white noise
 # w is a Wiener variable: integrated with Euler-Maruyama
 wiener w
@@ -2645,7 +2684,7 @@ function loadModel(text,{fromUser}={}){
     if(pv('ds'))S.bif.ds=pv('ds');if(pv('dsmin'))C.eqDsmin=pv('dsmin');if(pv('dsmax'))C.eqDsmax=pv('dsmax');
     if(pv('nmax'))C.eqNmax=C.poNmax=Math.max(10,Math.round(pv('nmax')));if(pv('ntst'))C.poNtst=Math.min(80,Math.max(4,Math.round(pv('ntst'))));
     S.num.trans=Math.max(0,num('trans',0));}
-  S.tp.curves=[];S.bif.sel=null;S.tp.sel=null;
+  S.tp.curves=[];S.bif.sel=null;S.tp.sel=null;S.notes=[];S.noteSel=null;S.noteMode=false;
   {const np=M.parNames.length,nx=rk.find(n=>M.parNames.indexOf(n)!==S.bif.pi);let q=nx?M.parNames.indexOf(nx):-1;if(q<0)q=np>1?(S.bif.pi===0?1:0):0;setP2(q);{const o3=rk.map(n=>M.parNames.indexOf(n)).find(i=>i!==S.bif.pi&&i!==q);S.tp.p3i=o3!==undefined?o3:Math.max(0,M.parNames.findIndex((_,i)=>i!==S.bif.pi&&i!==q));S.tp.three=false;S.tp.box3=null;}}
   $('#modelTitle').textContent=spec.title||'';
   { // a script belongs to a model: clear it when a different model is loaded (not while recording or running a script)
@@ -2925,7 +2964,7 @@ const spColor=t=>TK[SPC[t]]||TK.ink;
 // two-parameter curve colours: the person can override each; null means follow the theme
 const TPC=[{k:'LP',label:'fold (LP)',tok:'lp'},{k:'PD',label:'period doubling (PD)',tok:'pd',map:true},
   {k:'HBsup',label:'Hopf, supercritical',tok:'hb',flow:true},{k:'HBsub',label:'Hopf, subcritical',tok:'bp',flow:true},
-  {k:'NSD',label:'neutral saddle',tok:'muted',flow:true},{k:'LPC',label:'fold of cycles (LPC)',tok:'po',flow:true},{k:'CPER',label:'constant period',tok:'zh',flow:true},{k:'PDC',label:'period doubling of cycles',tok:'pd',flow:true,n3:true}];
+  {k:'NSD',label:'neutral saddle',tok:'muted',flow:true},{k:'LPC',label:'fold of cycles (LPC)',tok:'po',flow:true},{k:'CPER',label:'constant period',tok:'zh',flow:true},{k:'HOM',label:'homoclinic orbit',tok:'bt',flow:true},{k:'HET',label:'heteroclinic orbit',tok:'cp',flow:true},{k:'PDC',label:'period doubling of cycles',tok:'pd',flow:true,n3:true}];
 const tpColor=k=>{const v=S.tpCol&&S.tpCol[k];if(v)return v;const d=TPC.find(q=>q.k===k);return TK[d?d.tok:'ink']||TK.ink;};
 const toHex=c=>/^#[0-9a-f]{6}$/i.test(c)?c:/^#[0-9a-f]{3}$/i.test(c)?'#'+c.slice(1).split('').map(x=>x+x).join(''):'#888888';
 function trajColor(tr){return tr.kind==='wu'?TK.wu:tr.kind==='ws'?TK.ws:TK[tr.ck];}
@@ -3290,7 +3329,9 @@ let spinning=false;
 function spinLoop(){if(spinning)return;spinning=true;const step=()=>{if(!S.p3.spin||S.view!=='p3'){spinning=false;return;}S.p3.yaw+=0.005;render();requestAnimationFrame(step);};requestAnimationFrame(step);}
 const is3=()=>S.view==='p3'||(S.view==='tp'&&S.tp.three);
 function renderView(ctx,w,h){if(S.view==='pp')renderPP(ctx,w,h);else if(S.view==='p3')renderP3(ctx,w,h);else if(S.view==='tc')renderTC(ctx,w,h,false);else if(S.view==='tp')(S.tp.three?renderTP3:renderTP)(ctx,w,h);else renderBif(ctx,w,h);
-  if(S.legend&&(S.view==='bif'||S.view==='tp')&&S.lastFrame){const e=legendEntries(S.view);if(e.length)drawLegend(ctx,S.lastFrame,e);}}
+  S.legendBox=null;
+  if(S.legend&&(S.view==='bif'||S.view==='tp')&&S.lastFrame){const e=legendEntries(S.view);if(e.length)drawLegend(ctx,S.lastFrame,e);}
+  drawNotes(ctx);}
 /* ---- legend for the bifurcation and two-parameter views ---- */
 // Parameters worth mentioning: those that differ from the file, or differ between the curves shown.
 function legendNotes(curves,skip){
@@ -3304,15 +3345,15 @@ function legendEntries(view){
   if(view==='bif'){
     const eq=mode==='var'?S.bif.branches.filter(b=>b.pi===pi):[],cy=mode==='N'?[]:S.bif.cycles.filter(c=>c.pi===pi),sw=mode==='N'?[]:S.bif.sweeps.filter(c=>c.pi===pi),bv=(mode==='T'||mode==='f')?[]:S.bif.bvps.filter(c=>c.pi===pi);
     const note=legendNotes([...eq,...cy,...sw,...bv],[pi]);
-    for(const b of eq.filter(b=>!b.fam))out.push({kind:'line',color:TK.ink,text:`${M.discrete?(b.period>1?`period-${b.period} orbits`:'fixed points'):'equilibria'}${b.from?` (${b.from})`:''}${note(b)}`});
-    for(const c of cy)out.push({kind:'line',color:TK.po,text:`periodic orbits${c.from?` from ${c.from}`:''}${note(c)}`});
-    for(const c of bv)out.push({kind:'line',color:TK.po,text:`boundary value solutions${note(c)}`});
-    for(const c of sw)out.push({kind:'dot',color:TK.sweep,text:`${c.disc?'orbit diagram':'sweep max/min'}${note(c)}`});
+    for(const b of eq.filter(b=>!b.fam))out.push({kind:'line',color:ccol(b,TK.ink),text:`${M.discrete?(b.period>1?`period-${b.period} orbits`:'fixed points'):'equilibria'}${b.from?` (${b.from})`:''}${note(b)}`});
+    for(const c of cy)out.push({kind:'line',color:ccol(c,TK.po),text:`periodic orbits${c.from?` from ${c.from}`:''}${note(c)}`});
+    for(const c of bv)out.push({kind:'line',color:ccol(c,TK.po),text:`boundary value solutions${note(c)}`});
+    for(const c of sw)out.push({kind:'dot',color:ccol(c,TK.sweep),text:`${c.disc?'orbit diagram':'sweep max/min'}${note(c)}`});
   }else{
     const p1=S.bif.pi,p2=S.tp.p2i,mine=S.tp.curves.filter(c=>c.p1i===p1&&c.p2i===p2),note=legendNotes(mine,[p1,p2]);
-    const NAME={LP:'fold',HB:'Hopf',PD:'period doubling',LPC:'fold of cycles',PDC:'period doubling of cycles',CPER:'constant period'};
-    for(const cv of mine){const base=cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
-      out.push({kind:'line',color:tpColor(base),text:`${NAME[cv.type]||cv.type} curve${cv.from?` from ${cv.from}`:''}${cv.start?` (${cv.start})`:''}${note(cv)}`});}
+    const NAME={LP:'fold',HB:'Hopf',PD:'period doubling',LPC:'fold of cycles',PDC:'period doubling of cycles',CPER:'constant period',HOM:'homoclinic orbit',HET:'heteroclinic orbit'};
+    for(const cv of mine){const base=cv.type==='HOM'||cv.type==='HET'?cv.type:cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
+      out.push({kind:'line',color:ccol(cv,tpColor(base)),text:`${NAME[cv.type]||cv.type} curve${cv.from?` from ${cv.from}`:''}${cv.start?` (${cv.start})`:''}${note(cv)}`});}
   }
   return out;
 }
@@ -3320,13 +3361,120 @@ function drawLegend(ctx,fr,entries){
   ctx.save();ctx.font='11px "IBM Plex Sans", system-ui, sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
   const maxW=fr.W*0.62,fit=t=>{while(t.length>8&&ctx.measureText(t).width>maxW)t=t.slice(0,-2);return t;};
   const lines=entries.map(e=>({...e,text:ctx.measureText(e.text).width>maxW?fit(e.text)+'…':e.text}));
-  const tw=Math.max(...lines.map(l=>ctx.measureText(l.text).width)),lh=17,bw=tw+46,bh=lines.length*lh+10,bx=fr.L+fr.W-bw-8,by=fr.T+8;
+  const tw=Math.max(...lines.map(l=>ctx.measureText(l.text).width)),lh=17,bw=tw+46,bh=lines.length*lh+10;
+  let bx=fr.L+fr.W-bw-8,by=fr.T+8;const lp=S.legendPos&&S.legendPos[S.view];
+  if(lp){bx=Math.max(fr.L,Math.min(fr.L+fr.W-bw,fr.L+lp.fx*fr.W));by=Math.max(fr.T,Math.min(fr.T+fr.H-bh,fr.T+lp.fy*fr.H));}
+  S.legendBox={x:bx,y:by,w:bw,h:bh};
   ctx.fillStyle=TK.surface;ctx.globalAlpha=0.9;ctx.fillRect(bx,by,bw,bh);ctx.globalAlpha=1;ctx.strokeStyle=TK.line;ctx.lineWidth=1;ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
   lines.forEach((l,i)=>{const y=by+5+lh*i+lh/2;ctx.strokeStyle=l.color;ctx.fillStyle=l.color;ctx.lineWidth=2.2;ctx.setLineDash([]);
     if(l.kind==='dot'){for(const dx of[6,13,20]){ctx.beginPath();ctx.arc(bx+dx+2,y,2,0,7);ctx.fill();}}
     else{ctx.beginPath();ctx.moveTo(bx+8,y);ctx.lineTo(bx+28,y);ctx.stroke();}
     ctx.fillStyle=TK['ink-2']||TK.ink;ctx.fillText(l.text,bx+36,y);});
   ctx.restore();
+}
+/* ---- per-curve colours, text notes and a movable legend ---- */
+// The curves drawn in a diagram, in drawing order; the images of a period-N orbit share the colour of their family.
+function curveList(view){
+  const pi=S.bif.pi,out=[];
+  if(view==='bif'){
+    for(const b of S.bif.branches)if(b.pi===pi&&!b.fam)out.push(b);
+    for(const c of S.bif.cycles)if(c.pi===pi)out.push(c);
+    for(const c of S.bif.bvps)if(c.pi===pi)out.push(c);
+    for(const c of S.bif.sweeps)if(c.pi===pi)out.push(c);
+  }else for(const c of S.tp.curves)if(c.p1i===pi&&c.p2i===S.tp.p2i)out.push(c);
+  return out;
+}
+function ccol(c,def){if(!S.curveCol)return def;const k=curveList(S.view).indexOf(c.fam||c);return k<0?def:TK[PAL[k%PAL.length]];}
+// Notes live in the data coordinates of one particular plot (a phase plane of two variables, a diagram of one parameter, …)
+function noteKey(){
+  const v=S.view;
+  if(v==='pp')return`pp:${S.pp.xi}:${S.pp.yi}`;
+  if(v==='tc')return`tc:${S.tc.st?'st':S.tc.spec?'spec':'ts'}`;
+  if(v==='bif')return`bif:${S.bif.pi}:${S.bif.mode||'var'}:${S.bif.mode==='N'?S.bif.vn:S.bif.vi}`;
+  if(v==='tp'&&!S.tp.three)return`tp:${S.bif.pi}:${S.tp.p2i}`;
+  return null;
+}
+const NOTE_PX={s:11,m:13,l:17};
+// a note's colour is a palette token (follows the light or dark theme) or a #rrggbb value; none means the ordinary text colour
+function noteColor(n){const c=n.color;if(!c)return TK['ink-2']||TK.ink;if(c[0]==='#')return c;return TK[c]||TK['ink-2']||TK.ink;}
+function drawNotes(ctx){
+  S.noteBoxes=[];const key=noteKey(),fr=S.lastFrame;if(!key||!fr||!S.notes)return;
+  const win=curWin();if(!win)return;const m=mapper(fr,win);
+  clip(ctx,fr);ctx.textBaseline='top';ctx.textAlign='left';
+  for(const n of S.notes){if(n.key!==key)continue;
+    const px=NOTE_PX[n.size||'m'],lh=Math.round(px*1.35),lines=(n.text||' ').split('\n');
+    ctx.font=`${px}px "IBM Plex Sans", system-ui, sans-serif`;
+    const w=Math.max(18,...lines.map(l=>ctx.measureText(l).width))+12,h=lines.length*lh+8,X=m.X(n.x),Y=m.Y(n.y);
+    ctx.fillStyle=TK.surface;ctx.globalAlpha=0.9;ctx.fillRect(X,Y,w,h);ctx.globalAlpha=1;
+    const nc=noteColor(n);
+    ctx.strokeStyle=n.id===S.noteSel?TK.accent:(n.color?nc:TK.line);ctx.lineWidth=n.id===S.noteSel?2:1;ctx.strokeRect(X+.5,Y+.5,w-1,h-1);
+    ctx.fillStyle=nc;lines.forEach((l,i)=>ctx.fillText(l,X+6,Y+4+i*lh));
+    S.noteBoxes.push({n,x:X,y:Y,w,h});}
+  ctx.restore();
+}
+function hitObj(px,py){
+  if(is3()||!noteKey())return null;
+  const B=S.noteBoxes||[];
+  for(let i=B.length-1;i>=0;i--){const b=B[i];if(px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h)return{kind:'note',n:b.n,box:b};}
+  const L=S.legendBox;
+  if(L&&S.legend&&(S.view==='bif'||S.view==='tp')&&px>=L.x&&px<=L.x+L.w&&py>=L.y&&py<=L.y+L.h)return{kind:'legend'};
+  return null;
+}
+let objDrag=null;
+function startObjDrag(e,cv){
+  if(S.noteMode)return false;                                   // placing a note: the click is handled by onPlotClick
+  const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,h=hitObj(px,py);
+  if(!h){if(S.noteSel){S.noteSel=null;requestRender();}return false;}
+  objDrag={h,px0:px,py0:py,moved:false,start:h.kind==='note'?{x:h.box.x,y:h.box.y}:{x:S.legendBox.x,y:S.legendBox.y}};
+  if(h.kind==='note'){S.noteSel=h.n.id;requestRender();}
+  cv.setPointerCapture(e.pointerId);return true;
+}
+function moveObjDrag(e,r){
+  const d=objDrag,px=e.clientX-r.left,py=e.clientY-r.top,dx=px-d.px0,dy=py-d.py0;
+  if(!d.moved&&Math.hypot(dx,dy)<3)return;d.moved=true;
+  const fr=S.lastFrame,X=d.start.x+dx,Y=d.start.y+dy;
+  if(d.h.kind==='note'){const m=mapper(fr,curWin());d.h.n.x=m.ix(X);d.h.n.y=m.iy(Y);}
+  else(S.legendPos=S.legendPos||{})[S.view]={fx:(X-fr.L)/fr.W,fy:(Y-fr.T)/fr.H};
+  requestRender();
+}
+function addNoteAt(px,py){
+  const m=mapper(S.lastFrame,curWin()),n={id:(S.noteId=(S.noteId||0)+1),key:noteKey(),x:m.ix(px),y:m.iy(py),text:'',size:'m'};
+  S.notes.push(n);S.noteSel=n.id;S.noteMode=false;updateToolbar();requestRender();
+  setTimeout(()=>{drawNotesNow();openNoteEditor(n,true);},0);
+}
+function drawNotesNow(){requestRender();}
+function closeNoteEditor(){
+  const pop=document.getElementById('notePop');if(!pop)return;const n=pop._note;pop.remove();
+  if(n){if(!n.text.trim()){S.notes=S.notes.filter(q=>q!==n);S.noteSel=null;}
+    else if(pop._new)rec(`note ${recNum(+n.x.toPrecision(6))} ${recNum(+n.y.toPrecision(6))} ${n.color?`colour=${n.color} `:''}${n.text.replace(/\n/g,'\\n')}`);
+    requestRender();}
+}
+function openNoteEditor(n,isNew){
+  closeNoteEditor();
+  const cvr=$('#plot').getBoundingClientRect(),box=(S.noteBoxes||[]).find(b=>b.n===n);
+  const pop=el('div',{class:'notepop',id:'notePop',role:'dialog','aria-label':'Edit text note'});pop._note=n;pop._new=isNew;
+  const ta=el('textarea',{rows:3,'aria-label':'Note text',placeholder:'Type the note here; a new line starts a new line of text'});ta.value=n.text;
+  const sz=el('select',{'aria-label':'Text size'},...[['s','small'],['m','medium'],['l','large']].map(([v,t])=>el('option',{value:v,text:t})));sz.value=n.size||'m';
+  const del=el('button',{class:'btn small',text:'Delete',title:'Remove this note'}),ok=el('button',{class:'btn small primary',text:'Done'});
+  // colour: the ordinary text colour, the accent, the colours used for curves and trajectories, or any colour
+  const sw=el('div',{class:'nprow',style:'flex-wrap:wrap;gap:4px'}),marks=[];
+  const setCol=c=>{n.color=c||null;marks.forEach(([b,v])=>b.style.outline=((v||null)===(n.color||null))?`2px solid ${TK.accent}`:'none');requestRender();};
+  for(const[tok,label]of[[null,'ordinary text colour'],['accent','accent'],...PAL.map((t,i)=>[t,`colour ${i+1}`])]){
+    const b=el('button',{type:'button',title:label,'aria-label':label,style:`width:18px;height:18px;border-radius:50%;border:1px solid ${TK.line};padding:0;cursor:pointer;background:${tok?TK[tok]:(TK['ink-2']||TK.ink)}`});
+    b.addEventListener('click',()=>setCol(tok));marks.push([b,tok]);sw.append(b);}
+  const custom=el('input',{type:'color','aria-label':'any colour',title:'any colour',style:'width:24px;height:22px;padding:0;border:none;background:none;cursor:pointer'});
+  custom.value=toHex(n.color&&n.color[0]==='#'?n.color:noteColor(n));custom.addEventListener('input',()=>setCol(custom.value));sw.append(custom);
+  setCol(n.color);
+  ta.addEventListener('input',()=>{n.text=ta.value;requestRender();});
+  sz.addEventListener('change',()=>{n.size=sz.value;requestRender();});
+  del.addEventListener('click',()=>{n.text='';closeNoteEditor();});
+  ok.addEventListener('click',closeNoteEditor);
+  pop.addEventListener('keydown',e=>{if(e.key==='Escape'||(e.key==='Enter'&&(e.ctrlKey||e.metaKey))){e.preventDefault();closeNoteEditor();}e.stopPropagation();});
+  pop.append(ta,sw,el('div',{class:'nprow'},sz,el('span',{style:'flex:1'}),del,ok));document.body.append(pop);
+  const x=Math.min(window.innerWidth-258,Math.max(8,cvr.left+(box?box.x:60))),y=Math.min(window.innerHeight-170,Math.max(8,cvr.top+(box?box.y+box.h+6:60)));
+  pop.style.left=x+'px';pop.style.top=y+'px';ta.focus();
+  const off=e=>{if(!pop.isConnected){document.removeEventListener('pointerdown',off,true);return;}if(!pop.contains(e.target)){document.removeEventListener('pointerdown',off,true);closeNoteEditor();}};
+  setTimeout(()=>document.addEventListener('pointerdown',off,true),0);
 }
 function tcFitWin(tr,vars){
   if(!tr||!vars.length)return null;let lo=Infinity,hi=-Infinity;
@@ -3346,7 +3494,7 @@ function renderBif(ctx,w,h){
   const pc=M.getParam(pi),X=m.X(pc);ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X,fr.T);ctx.lineTo(X,fr.T+fr.H);ctx.stroke();ctx.setLineDash([]);
   for(const sw of S.bif.sweeps){if(sw.pi!==pi||mode==='N')continue;
     if(sw===sel){ctx.save();ctx.fillStyle=TK.accent;ctx.globalAlpha=0.25;for(const r of sw.rows){const X=m.X(r.p);const ys=mode==='var'?[r.max[vi],r.min[vi]]:r.per>0?[tv(r.per)]:[];for(const v of ys){ctx.beginPath();ctx.arc(X,m.Y(v),6,0,7);ctx.fill();}}ctx.restore();}
-    ctx.fillStyle=TK.sweep;
+    ctx.fillStyle=ccol(sw,TK.sweep);
     if(mode!=='var'){ctx.globalAlpha=0.9;ctx.beginPath();for(const r of sw.rows){if(!(r.per>0))continue;const X=m.X(r.p),Y=m.Y(tv(r.per));ctx.moveTo(X+2,Y);ctx.arc(X,Y,2,0,7);}ctx.fill();ctx.globalAlpha=1;continue;}
     for(const r of sw.rows){const X=m.X(r.p),pk=r.pk&&r.pk[vi],tr=r.tr&&r.tr[vi];
       if(pk&&(pk.length||(tr&&tr.length))){ctx.globalAlpha=0.85;ctx.beginPath();const seen=new Set(),rr=sw.disc?0.85:1.7;
@@ -3359,21 +3507,21 @@ function renderBif(ctx,w,h){
   for(const br of S.bif.branches){if(br.pi!==pi||(mode!=='var'&&mode!=='N'))continue;const P=br.pts,ey=q=>mode==='N'?eqN(q.x):q.x[vi],low=k=>br.period>1&&P[k].mp<br.period&&P[k+1].mp<br.period;
     if(br===sel||(sel&&sel.pts&&(br.fam||br)===(sel.fam||sel)))halo(P,[ey]);
     if(br.period>1){ctx.beginPath();ctx.strokeStyle=TK.muted;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);for(let k=0;k+1<P.length;k++)if(low(k)){ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}ctx.stroke();}
-    for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=stab?TK.ink:TK.muted;ctx.lineWidth=stab?2.4:1.4;ctx.setLineDash(stab?[]:[5,4]);
+    for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=stab?ccol(br,TK.ink):ccol(br,TK.muted);ctx.lineWidth=stab?2.4:1.4;ctx.setLineDash(stab?[]:[5,4]);
       for(let k=0;k+1<P.length;k++){if(low(k))continue;const s=P[k].stable&&P[k+1].stable;if(s!==stab)continue;ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}
       ctx.stroke();}
     ctx.setLineDash([]);}
   // periodic orbits: max and min of the plotted variable over the orbit
   for(const cb of S.bif.cycles){if(cb.pi!==pi)continue;const P=cb.pts,keys=mode==='var'?['mx','mn']:mode==='N'?['N']:['T'];
     if(cb===sel)halo(P,keys.map(key=>q=>yOf(q,key)));
-    for(const key of keys)for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=TK.po;ctx.lineWidth=stab?2.2:1.3;ctx.setLineDash(stab?[]:[5,4]);
+    for(const key of keys)for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=ccol(cb,TK.po);ctx.lineWidth=stab?2.2:1.3;ctx.setLineDash(stab?[]:[5,4]);
       for(let k=0;k+1<P.length;k++){const s=!!(P[k].stable&&P[k+1].stable);if(s!==stab)continue;ctx.moveTo(m.X(P[k].p),m.Y(yOf(P[k],key)));ctx.lineTo(m.X(P[k+1].p),m.Y(yOf(P[k+1],key)));}
       ctx.stroke();}
     ctx.setLineDash([]);}
   // boundary value problems: max and min of the plotted variable over the solution (or the L2 norm), one curve through folds
   for(const bb of S.bif.bvps){if(bb.pi!==pi||mode==='T'||mode==='f')continue;const P=bb.pts;
     if(bb===sel)halo(P,(mode==='N'?['N']:['mx','mn']).map(key=>q=>bvY(q,key)));
-    for(const key of mode==='N'?['N']:['mx','mn']){ctx.beginPath();ctx.strokeStyle=TK.po;ctx.lineWidth=2.2;ctx.setLineDash([]);
+    for(const key of mode==='N'?['N']:['mx','mn']){ctx.beginPath();ctx.strokeStyle=ccol(bb,TK.po);ctx.lineWidth=2.2;ctx.setLineDash([]);
       for(let k=0;k+1<P.length;k++){ctx.moveTo(m.X(P[k].p),m.Y(bvY(P[k],key)));ctx.lineTo(m.X(P[k+1].p),m.Y(bvY(P[k+1],key)));}
       ctx.stroke();}}
   ctx.font='600 11px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='bottom';ctx.textAlign='left';
@@ -3428,12 +3576,13 @@ function renderTP(ctx,w,h){
   for(const cv of mine){const P=cv.pts;
     if(cv===S.tp.sel){ctx.save();ctx.strokeStyle=TK.accent;ctx.globalAlpha=0.28;ctx.lineWidth=9;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();P.forEach((q,k)=>{const X=m.X(q.p1),Y=m.Y(q.p2);if(k)ctx.lineTo(X,Y);else ctx.moveTo(X,Y);});ctx.stroke();ctx.restore();}
     // each segment gets a class: neutral saddle, Hopf sub/supercritical (sign of l1), or the curve's own kind
-    const hopf=cv.type==='HB'&&!M.discrete,base=cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':'LP';
+    const hopf=cv.type==='HB'&&!M.discrete,base=cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HOM'||cv.type==='HET'?cv.type:'LP';
     const cls=k=>{const a=P[k],b=P[k+1];if(a.ns||b.ns)return'NSD';if(!hopf)return base;const l=Number.isFinite(a.l1)?a.l1:b.l1;return l>0?'HBsub':'HBsup';};
-    for(const c of hopf?['HBsup','HBsub','NSD']:[base,'NSD']){const ns=c==='NSD';ctx.beginPath();ctx.strokeStyle=tpColor(c);ctx.lineWidth=ns?1.3:2.2;ctx.setLineDash(ns?[4,4]:[]);
+    for(const c of hopf?['HBsup','HBsub','NSD']:[base,'NSD']){const ns=c==='NSD';ctx.beginPath();ctx.strokeStyle=ccol(cv,tpColor(c));ctx.lineWidth=ns?1.3:2.2;ctx.setLineDash(ns?[4,4]:[]);
       for(let k=0;k+1<P.length;k++){if(cls(k)!==c)continue;ctx.moveTo(m.X(P[k].p1),m.Y(P[k].p2));ctx.lineTo(m.X(P[k+1].p1),m.Y(P[k+1].p2));}
       ctx.stroke();}
-    ctx.setLineDash([]);}
+    ctx.setLineDash([]);
+    if(P.length===1){ctx.fillStyle=ccol(cv,tpColor(base));ctx.strokeStyle=TK.surface;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(m.X(P[0].p1),m.Y(P[0].p2),4.5,0,7);ctx.stroke();ctx.fill();}}
   const cx=m.X(M.getParam(p1)),cy=m.Y(M.getParam(p2));
   ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,fr.T);ctx.lineTo(cx,fr.T+fr.H);ctx.moveTo(fr.L,cy);ctx.lineTo(fr.L+fr.W,cy);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle=TK.accent;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,4.5,0,7);ctx.stroke();ctx.fill();
@@ -3480,6 +3629,7 @@ function fillSliceRange(force){
   if(force||!$('#tMin3').value){$('#tMin3').value=fmtIn(a);$('#tMax3').value=fmtIn(b);}
 }
 function buildTpControls(){
+  setTimeout(()=>{try{fillConnMenus();}catch(e){}},0);
   const M=S.M,opts=()=>M.parNames.map((n,i)=>el('option',{value:i,text:n}));
   $('#tP1').replaceChildren(...opts());$('#tP1').value=S.bif.pi;
   $('#tP2').replaceChildren(...opts());$('#tP2').value=S.tp.p2i;
@@ -3584,7 +3734,7 @@ function runTwoPar(sp){
 }
 
 /* ---- two-parameter curves stacked in 3D, over a third parameter ---- */
-const tpBase=cv=>cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!S.M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
+const tpBase=cv=>cv.type==='HOM'||cv.type==='HET'?cv.type:cv.type==='LPC'?'LPC':cv.type==='CPER'?'CPER':cv.type==='PDC'?'PDC':cv.type==='PD'?'PD':cv.type==='HB'&&!S.M.discrete?(cv.pts.some(q=>q.l1>0)?'HBsub':'HBsup'):'LP';
 function tp3Curves(){const p1=S.bif.pi,p2=S.tp.p2i,p3=S.tp.p3i;return S.tp.curves.filter(c=>c.p1i===p1&&c.p2i===p2&&c.params&&c.params[p3]!==undefined&&c.pts.length>1);}
 function tp3Box(cs){
   const p3=S.tp.p3i,b=[[Infinity,-Infinity],[Infinity,-Infinity],[Infinity,-Infinity]];
@@ -3647,6 +3797,146 @@ function renderTP3(ctx,w,h){
   ctx.font='600 10px "IBM Plex Mono", ui-monospace, monospace';ctx.textAlign='left';ctx.textBaseline='bottom';
   for(const m of mk){ctx.fillStyle=spColor(m.type);ctx.strokeStyle=TK.surface;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(m.x,m.y-4.5);ctx.lineTo(m.x+4.5,m.y);ctx.lineTo(m.x,m.y+4.5);ctx.lineTo(m.x-4.5,m.y);ctx.closePath();ctx.stroke();ctx.fill();ctx.fillText(m.type,m.x+6,m.y-2);}
   ctx.restore();
+}
+/* ---- homoclinic and heteroclinic connections between saddles ---- */
+// A connection leaves the equilibrium xm along its one-dimensional unstable manifold and arrives on the stable manifold of xp
+// (the same equilibrium for a homoclinic orbit). It exists at the parameter value where the splitting g changes sign: the
+// trajectory started at xm + eps*v on the unstable manifold is followed to its closest approach to xp, and g is the component
+// there along the unstable direction of xp. For a connection the unstable and stable manifolds meet, so g changes sign.
+function connDt(){return Math.min(S.num.dt>0?S.num.dt:0.05,0.05);}
+function realEigenvector(A,lam,left){
+  const n=A.length,B=[];
+  for(let i=0;i<n;i++)B.push(Array.from({length:n},(_,j)=>(left?A[j][i]:A[i][j])-(i===j?lam+1e-9*(1+Math.abs(lam)):0)));
+  let v=Array.from({length:n},(_,i)=>1+0.37*i);
+  for(let it=0;it<8;it++){const w=solve(B,v);if(!w)break;const nr=Math.hypot(...w);if(!(nr>0)||!Number.isFinite(nr))break;v=w.map(x=>x/nr);}
+  return Float64Array.from(v);
+}
+function uniqueUnstable(A){const un=eigvals(A).filter(e=>e.re>1e-9);return un.length===1&&Math.abs(un[0].im)<1e-9*(1+Math.abs(un[0].re))?un[0].re:null;}
+// one trajectory to its closest approach to xp; returns {g,T,r,rmax} or {g:NaN}
+function connShoot(M,x0,xp,wp,Tmax,sg){
+  sg=sg||1;const n=M.n,dt=connDt(),y=Float64Array.from(x0),yn=new Float64Array(n),k1=new Float64Array(n),k2=new Float64Array(n),k3=new Float64Array(n),k4=new Float64Array(n),tmp=new Float64Array(n);
+  const rpOf=(z,f)=>{let a=0;for(let i=0;i<n;i++)a+=(z[i]-xp[i])*f[i];return a;};
+  const F=(z,out)=>{M.rhs(0,z,out);if(sg<0)for(let i=0;i<n;i++)out[i]=-out[i];};
+  F(y,k1);let rp=rpOf(y,k1),t=0,rmax=0;const maxSteps=Math.min(400000,Math.ceil(Tmax/dt));
+  for(let st=0;st<maxSteps;st++){
+    for(let i=0;i<n;i++)tmp[i]=y[i]+0.5*dt*k1[i];F(tmp,k2);
+    for(let i=0;i<n;i++)tmp[i]=y[i]+0.5*dt*k2[i];F(tmp,k3);
+    for(let i=0;i<n;i++)tmp[i]=y[i]+dt*k3[i];F(tmp,k4);
+    for(let i=0;i<n;i++)yn[i]=y[i]+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]);
+    F(yn,k1);const rpn=rpOf(yn,k1);
+    let r2=0;for(let i=0;i<n;i++)r2+=(yn[i]-xp[i])**2;rmax=Math.max(rmax,Math.sqrt(r2));
+    if(!(rmax<1e7))return{g:NaN};
+    {let sp2=0;for(let i=0;i<n;i++)sp2+=k1[i]*k1[i];if(sp2<1e-20&&r2>1e-12&&rpn>=0&&rp>=0)return{g:NaN};}   // settled on a stable equilibrium
+    if(rp<0&&rpn>=0){const sg=rp/(rp-rpn);let g=0,rr=0;for(let i=0;i<n;i++){const xc=y[i]+sg*(yn[i]-y[i]);g+=wp[i]*(xc-xp[i]);rr+=(xc-xp[i])**2;}return{g,T:t+sg*dt,r:Math.sqrt(rr),rmax};}
+    y.set(yn);rp=rpn;t+=dt;
+  }
+  return{g:NaN};
+}
+// the splitting g at parameter value p of Parameter 1 (the others as they are), following the equilibria from their last positions
+function connAt(c,p,sigma){
+  const M=S.M;M.setParam(c.pi,p);
+  const xm=newton(M,c.xm),xp=c.same?xm:newton(M,c.xp);if(!xm||!xp)return{g:NaN,p};
+  const sg=c.rev?-1:1,sc=A=>sg<0?A.map(r=>Array.from(r,x=>-x)):A;
+  const Am=sc(numJac(M,xm)),Ap=c.same?Am:sc(numJac(M,xp)),lm=uniqueUnstable(Am),lp=uniqueUnstable(Ap);if(lm===null||lp===null)return{g:NaN,p};
+  let v=realEigenvector(Am,lm,false),w=realEigenvector(Ap,lp,true);
+  if(!c.vref){c.vref=Float64Array.from(v);c.wref=Float64Array.from(w);}
+  let d=0;for(let i=0;i<v.length;i++)d+=v[i]*c.vref[i];if(d<0)v=v.map(x=>-x);
+  d=0;for(let i=0;i<w.length;i++)d+=w[i]*c.wref[i];if(d<0)w=w.map(x=>-x);
+  const x0=Float64Array.from(xm,(x,i)=>x+sigma*c.eps*v[i]),res=connShoot(M,x0,xp,w,c.Tmax,sg);
+  res.p=p;res.xm=xm;res.xp=xp;res.x0=x0;res.lm=lm;res.lp=lp;return res;
+}
+// bisection of a bracket [a,b] on which g changes sign
+function connBisect(c,a,b,ga,sigma){
+  for(let it=0;it<80;it++){const m=0.5*(a+b);if(b-a<1e-13*(1+Math.abs(m)))break;
+    const r=connAt(c,m,sigma);if(!Number.isFinite(r.g))return null;if(r.g*ga<0)b=m;else{a=m;ga=r.g;}}
+  const p=0.5*(a+b),f=connAt(c,p,sigma);if(!Number.isFinite(f.g))return null;
+  return{p,T:f.T,r:f.r,rmax:f.rmax,xm:f.xm,xp:f.xp,x0:f.x0,sigma};
+}
+function connContext(fromIdx,toIdx,rev){
+  let e0=S.eqs[fromIdx],e1=S.eqs[toIdx];if(!e0||!e1)return null;
+  if(rev)[e0,e1]=[e1,e0];   // backwards in time the orbit starts at the equilibrium it ends on
+  const sz=Math.max(1,...Array.from(e0.x,Math.abs),...Array.from(e1.x,Math.abs));
+  return{pi:S.bif.pi,rev:!!rev,xm:Float64Array.from(e0.x),xp:Float64Array.from(e1.x),same:fromIdx===toIdx,eps:1e-5*sz,Tmax:Math.max(2000,10*(S.num.T||100)),vref:null,wref:null};
+}
+// look for a connection in Parameter 1 over its range: scan, bracket a sign change, bisect
+function connFind(c,pmin,pmax,hint){
+  const N=60,found=[];
+  for(const sigma of[1,-1]){let prev=null;
+    for(let i=0;i<=N;i++){const p=pmin+(pmax-pmin)*i/N,r=connAt(c,p,sigma);
+      if(prev&&Number.isFinite(prev.g)&&Number.isFinite(r.g)&&prev.g*r.g<0)found.push({a:prev.p,b:p,ga:prev.g,sigma});
+      prev={p,g:r.g};}}
+  found.sort((u,v)=>Math.abs(0.5*(u.a+u.b)-hint)-Math.abs(0.5*(v.a+v.b)-hint));
+  for(const f of found){const sol=connBisect(c,f.a,f.b,f.ga,f.sigma);
+    if(sol&&sol.r<1e-3*(1+sol.rmax))return{sol,count:found.length};}   // a real connection ends on xp; a jump of the closest approach does not
+  return{sol:null,count:found.length};
+}
+// the connection for a nearby value of Parameter 2: bracket around the previous value of Parameter 1
+function connNear(c,guess,sigma,width){
+  let d=width;
+  for(let k=0;k<14;k++,d*=2){
+    const a=guess-d,b=guess+d,ra=connAt(c,a,sigma),rb=connAt(c,b,sigma);
+    if(Number.isFinite(ra.g)&&Number.isFinite(rb.g)&&ra.g*rb.g<0){const sol=connBisect(c,a,b,ra.g,sigma);if(sol&&sol.r<1e-3*(1+sol.rmax))return sol;}
+  }
+  return null;
+}
+function fillConnMenus(){
+  const M=S.M,labels=(S.eqs||[]).map((e,k)=>`${k+1}. ${e.label}: ${M.varNames.map((n,i)=>`${n} ${fmt(Math.abs(e.x[i])<1e-10?0:e.x[i],3)}`).join(', ')}`);
+  for(const id of['cFrom','cTo']){const sel=$('#'+id),old=sel.value;sel.replaceChildren(...labels.map((t,k)=>el('option',{value:k,text:t})));if(old&&labels[+old])sel.value=old;}
+  if(!$('#cTo').value&&labels.length)$('#cTo').value=$('#cFrom').value;
+  $('#cFind').disabled=$('#cFollow').disabled=labels.length===0||M.n<2||M.discrete;
+}
+let connLast=null;
+function connFindClick(){
+  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
+  const fi=parseInt($('#cFrom').value,10),ti=parseInt($('#cTo').value,10);
+  const rev=$('#cRev').checked,c=connContext(fi,ti,rev);if(!c){status('Find equilibria first (phase plane): the connection runs between two of them',true);return;}
+  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),t0=performance.now();
+  const sgn=rev?-1:1,sc=A=>sgn<0?A.map(r=>Array.from(r,x=>-x)):A,A=sc(numJac(M,c.xm)),B=sc(numJac(M,c.xp));
+  if(uniqueUnstable(A)===null||uniqueUnstable(B)===null){status(`Both equilibria must be saddles with exactly one real unstable direction${rev?' (counted backwards in time)':''}, the other directions stable. ${rev?'':'If the unstable manifold is two-dimensional, try Run time backwards.'}`,true);return;}
+  const {sol,count}=connFind(c,S.bif.pmin,S.bif.pmax,saved[p1]);
+  if(!sol){saved.forEach((v,i)=>M.setParam(i,v));status(count?`${count} sign change${count>1?'s':''} of the splitting in ${M.parNames[p1]}, but none ends on the equilibrium: no connection found`:`No connection found for ${M.parNames[p1]} between ${fmt(S.bif.pmin)} and ${fmt(S.bif.pmax)}; try another range, or the other equilibria`,true);return;}
+  saved.forEach((v,i)=>M.setParam(i,v));M.setParam(p1,sol.p);
+  const type=c.same?'HOM':'HET',cv={type,p1i:p1,p2i:p2,pts:[{p1:sol.p,p2:M.getParam(p2),T:sol.T}],special:[],from:type==='HOM'?'homoclinic orbit':'heteroclinic orbit',start:`${M.parNames[p1]} = ${fmt(sol.p,6)}`,params:Array.from(M.P.subarray(0,M.parNames.length)),conn:{fi,ti,rev,sigma:sol.sigma,eps:c.eps,Tmax:c.Tmax}};
+  S.tp.curves.push(cv);connLast={cv,c};
+  // show the orbit in the phase plane
+  const o={...numOpts(rev),trans:0,T:Math.min(sol.T*1.02,c.Tmax),dt:connDt()},r=integrate(M,sol.x0,o);
+  S.trajs.push({y0:Float64Array.from(sol.x0),back:rev,both:false,ck:'bt',kind:'conn',Tfix:o.T,...r});
+  refreshTrajList();S.ver++;fitTP();requestRender();
+  status(`${type==='HOM'?'Homoclinic':'Heteroclinic'} orbit at ${M.parNames[p1]} = ${fmt(sol.p,9)} (${M.parNames[p2]} = ${fmt(M.getParam(p2),5)}), time ${fmt(sol.T,4)} from ε = ${fmt(c.eps,2)} to within ${fmt(sol.r,2)} of the end · ${((performance.now()-t0)/1000).toFixed(1)} s`);
+}
+async function connFollowClick(){
+  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
+  if(!connLast||connLast.cv.p1i!==p1||connLast.cv.p2i!==p2||!S.tp.curves.includes(connLast.cv)){status('Press Find first',true);return;}
+  const {cv}=connLast,cn=cv.conn,c=connContext(cn.fi,cn.ti,cn.rev);if(!c){status('The equilibria are no longer in the list: Find again',true);return;}
+  c.eps=cn.eps;c.Tmax=cn.Tmax;
+  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),start=cv.pts[0],lo=S.tp.p2min,hi=S.tp.p2max,tick=()=>new Promise(r=>setTimeout(r,0));
+  const reset=()=>{saved.forEach((v,i)=>M.setParam(i,v));M.setParam(p1,start.p1);M.setParam(p2,start.p2);c.xm=Float64Array.from(S.eqs[cn.rev?cn.ti:cn.fi].x);c.xp=Float64Array.from(S.eqs[cn.rev?cn.fi:cn.ti].x);c.vref=null;c.wref=null;};
+  setTPBusy(true);S.tp.stop=false;
+  const walk=async dir=>{
+    const out=[];let q1=start.p1,q2=start.p2,qprev=null,h=(hi-lo)/80,why='';
+    for(let k=0;k<400&&!S.tp.stop;k++){
+      let n2=q2+dir*h;if(n2<lo||n2>hi){n2=dir>0?hi:lo;if(Math.abs(n2-q2)<1e-12*(1+Math.abs(q2))){why='the end of the range';break;}}
+      M.setParam(p2,n2);
+      const guess=qprev?q1+(q1-qprev.p1)*(n2-q2)/(q2-qprev.p2):q1,range1=S.bif.pmax-S.bif.pmin;
+      let sol=connNear(c,guess,cn.sigma,1e-4*(1+Math.abs(q1)));
+      if(sol&&(sol.p<S.bif.pmin||sol.p>S.bif.pmax)){why=`the edge of the range of ${M.parNames[p1]}`;break;}
+      if(sol&&Math.abs(sol.p-guess)>0.1*range1)sol=null;
+      if(!sol){h/=2;M.setParam(p2,q2);if(h<(hi-lo)*1e-7){why='the connection was lost';break;}continue;}
+      qprev={p1:q1,p2:q2};q1=sol.p;q2=n2;out.push({p1:q1,p2:q2,T:sol.T});
+      c.xm=sol.xm;if(!c.same)c.xp=sol.xp;
+      if(k%4===3){cv.pts=[...(dir>0?[]:out.slice().reverse()),start,...(dir>0?out:[])];requestRender();status(`Following ${dir>0?'up':'down'} in ${M.parNames[p2]}: ${out.length} points…`);await tick();}
+      if(n2===lo||n2===hi){why='the end of the range';break;}
+    }
+    return{out,why};
+  };
+  let up,down;
+  try{
+    reset();up=await walk(1);
+    reset();down=S.tp.stop?{out:[],why:'stopped'}:await walk(-1);
+  }finally{saved.forEach((v,i)=>M.setParam(i,v));setTPBusy(false);}
+  cv.pts=[...down.out.slice().reverse(),start,...up.out];
+  fitTP();requestRender();
+  status(`${cv.type==='HOM'?'Homoclinic':'Heteroclinic'} curve of ${cv.pts.length} points: up in ${M.parNames[p2]}: ${up.why||'stopped'}; down: ${down.why||'stopped'}`);
 }
 // Follow one curve again at each of a series of values of a third parameter, moving the starting point from slice to slice.
 async function runSlices(){
@@ -3861,6 +4151,7 @@ function updateReadout(px,py){
 }
 function onPlotClick(px,py,shift){
   if(is3())return;
+  if(S.noteMode&&noteKey()){const f=S.lastFrame;if(f&&px>=f.L&&px<=f.L+f.W&&py>=f.T&&py<=f.T+f.H)addNoteAt(px,py);return;}
   const fr=S.lastFrame;if(!fr||px<fr.L||px>fr.L+fr.W||py<fr.T||py>fr.T+fr.H)return;
   if(S.view==='p3')return;
   const m=mapper(fr,curWin()),M=S.M;
@@ -3950,9 +4241,11 @@ function grabCycle(cb,k,what,pick){
 }
 function attachPlot(cv){
   let drag=null;
-  cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;drag={x:e.clientX,y:e.clientY,moved:false,win:{...curWin()},yaw:S.p3.yaw,pitch:S.p3.pitch,pan:{...S.p3.pan},shift:e.shiftKey};cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;if(startObjDrag(e,cv))return;drag={x:e.clientX,y:e.clientY,moved:false,win:{...curWin()},yaw:S.p3.yaw,pitch:S.p3.pitch,pan:{...S.p3.pan},shift:e.shiftKey};cv.setPointerCapture(e.pointerId);});
   cv.addEventListener('pointermove',e=>{
     const r=cv.getBoundingClientRect();
+    if(objDrag){moveObjDrag(e,r);return;}
+    if(!drag)cv.style.cursor=S.noteMode?'crosshair':hitObj(e.clientX-r.left,e.clientY-r.top)?'move':'';
     if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
       if(!drag.moved&&Math.hypot(dx,dy)>4){drag.moved=true;S.interacting=true;cv.classList.add('panning');}
       if(drag.moved&&is3()){
@@ -3962,9 +4255,11 @@ function attachPlot(cv){
       else if(drag.moved){const fr=S.lastFrame,w=drag.win,ux=dx*(w.xhi-w.xlo)/fr.W,uy=dy*(w.yhi-w.ylo)/fr.H;setWin({xlo:w.xlo-ux,xhi:w.xhi-ux,ylo:w.ylo+uy,yhi:w.yhi+uy});requestRender();}}
     updateReadout(e.clientX-r.left,e.clientY-r.top);
   });
-  cv.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;cv.classList.remove('panning');
+  cv.addEventListener('pointerup',e=>{if(objDrag){objDrag=null;return;}if(!drag)return;const d=drag;drag=null;cv.classList.remove('panning');
     if(d.moved){S.interacting=false;afterWindowChange();}else{const r=cv.getBoundingClientRect();onPlotClick(e.clientX-r.left,e.clientY-r.top,e.shiftKey);}});
-  cv.addEventListener('pointercancel',()=>{drag=null;S.interacting=false;cv.classList.remove('panning');});
+  cv.addEventListener('dblclick',e=>{const r=cv.getBoundingClientRect(),h=hitObj(e.clientX-r.left,e.clientY-r.top);
+    if(!h)return;e.preventDefault();if(h.kind==='note')openNoteEditor(h.n,false);else{if(S.legendPos)delete S.legendPos[S.view];requestRender();status('The legend is back in its corner');}});
+  cv.addEventListener('pointercancel',()=>{objDrag=null;drag=null;S.interacting=false;cv.classList.remove('panning');});
   cv.addEventListener('pointerleave',()=>{if(!drag)updateReadout(null);});
   let wt=null;
   cv.addEventListener('wheel',e=>{
@@ -4238,7 +4533,7 @@ function updateToolbar(){
   $('#ppAxes').hidden=v!=='pp'||cob;$('#p3Axes').hidden=v!=='p3';
   $('#ppToggles').hidden=v!=='pp';$('#tgNc').hidden=$('#tgField').hidden=cob;
   $('#styleToggles').hidden=!(v==='pp'||v==='p3'||v==='tc'||v==='bif'||v==='tp')||(v==='pp'&&cob);
-  $('#tgPts').hidden=v==='bif'||v==='tp';$('#tgLegend').hidden=!(v==='bif'||v==='tp');$('#tgTp3').hidden=v!=='tp';$('#tgTp3').setAttribute('aria-pressed',!!S.tp.three);$('#tgLegend').setAttribute('aria-pressed',!!S.legend);
+  $('#tgPts').hidden=v==='bif'||v==='tp';$('#tgLegend').hidden=!(v==='bif'||v==='tp');$('#tgCurveCol').hidden=!(v==='bif'||v==='tp');$('#tgCurveCol').setAttribute('aria-pressed',!!S.curveCol);if(!noteKey())S.noteMode=false;$('#tgNote').hidden=!noteKey();$('#tgNote').setAttribute('aria-pressed',!!S.noteMode);$('#tgTp3').hidden=v!=='tp';$('#tgTp3').setAttribute('aria-pressed',!!S.tp.three);$('#tgLegend').setAttribute('aria-pressed',!!S.legend);
   $('#tgSpin').hidden=v!=='p3';$('#tgSpec').hidden=v!=='tc';$('#tgLog').hidden=$('#tgSmooth').hidden=!(v==='tc'&&S.tc.spec);
   const fams=S.tc.fams||[],inST=v==='tc'&&S.tc.st;$('#tgST').hidden=!(v==='tc'&&fams.length>0);$('#tgST').setAttribute('aria-pressed',!!S.tc.st);
   // menu of ready-made sets of rows: each family, all variables, or "custom" for anything else
@@ -4282,7 +4577,7 @@ function buildChips(){
   });
 }
 function refreshEqList(){
-  const box=$('#eqList'),M=S.M;box.replaceChildren();
+  const box=$('#eqList'),M=S.M;box.replaceChildren();setTimeout(()=>{try{fillConnMenus();}catch(e){}},0);
   $('#eqCount').textContent=S.eqs.length?String(S.eqs.length):'';$('#eqLbl').textContent=M.discrete?'Fixed points':'Equilibria';
   const big=(M.n>EQ_AUTO_MAX||M.nbc>0)&&!M.hasVolt;$('#eqFind').hidden=!big;
   if(!S.eqs.length){box.append(el('p',{class:'empty',text:big?(M.nbc>0?'This is a boundary value problem, so equilibria are not searched automatically. Press Find equilibria to search the visible window.':`This system has ${M.n} variables, so equilibria are not searched automatically. Press Find equilibria to search the visible window; it can take a while (about 15 seconds for 400 variables).`):S.M.hasVolt?'Not computed for Volterra equations: their state is the whole history, not a point. Use trajectories or Sweep max/min.':'None found near the current window. Pan or zoom out to search a wider region.'}));refreshBifStart();return;}
@@ -4829,7 +5124,7 @@ function tpCSV(){
   const M=S.M,V=M.varNames,P=M.parNames,p1=S.bif.pi,p2=S.tp.p2i;
   const head=['curve','type','label',P[p1],P[p2],'period','l1','criticality',...V,...V.map(v=>v+'_max'),...V.map(v=>v+'_min')];
   const rows=[head.join(',')],blank=V.map(()=>''),vec=x=>x?Array.from(x,csvNum):blank;
-  const NAME={LP:'fold',HB:'Hopf',PD:'period doubling',LPC:'fold of cycles',PDC:'period doubling of cycles',CPER:'constant period'};
+  const NAME={LP:'fold',HB:'Hopf',PD:'period doubling',LPC:'fold of cycles',PDC:'period doubling of cycles',CPER:'constant period',HOM:'homoclinic orbit',HET:'heteroclinic orbit'};
   const cnt={};let k=0;
   for(const cv of S.tp.curves){if(cv.p1i!==p1||cv.p2i!==p2)continue;const c=`${cv.type}${++k}`;
     for(const q of cv.pts)rows.push([c,NAME[cv.type]||cv.type,'',csvNum(q.p1),csvNum(q.p2),csvNum(q.T??(cv.type==='HB'&&q.omega>0&&!M.discrete?2*Math.PI/q.omega:null)),csvNum(q.l1),cv.type==='HB'&&!M.discrete?(q.ns?'neutral saddle':Number.isFinite(q.l1)?(q.l1>0?'subcritical':'supercritical'):''):'',...vec(q.x),...vec(q.mx),...vec(q.mn)].map(csvStr).join(','));
@@ -4974,7 +5269,7 @@ function showAbout(){
     el('p',{text:'October 2026. Created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5, an AI model made by Anthropic.'}),
     el('p',null,'Source code, example models, the tutorial and new versions: ',a('https://github.com/xpp-studio/xpp-studio','github.com/xpp-studio/xpp-studio'),'.'),
     el('h3',{text:'Credits'}),
-    el('p',null,'XPP Studio is built on the ideas, file format and conventions of ',a('https://sites.pitt.edu/~phase/bard/bardware/xpp/xpp.html','XPPAUT'),', created by G. Bard Ermentrout (Department of Mathematics, University of Pittsburgh), with Daniel Dougherty and other contributors. XPPAUT’s continuation tools use AUTO, by Eusebius J. Doedel and collaborators. Thank you to Bard Ermentrout for decades of freely shared software, documentation and example models that this project leans on.'),
+    el('p',null,'XPP Studio is built on the ideas, file format and conventions of ',a('https://sites.pitt.edu/~phase/bard/bardware/xpp/xpp.html','XPPAUT'),', created by G. Bard Ermentrout (Department of Mathematics, University of Pittsburgh), with Daniel Dougherty and other contributors. XPPAUT’s continuation tools use AUTO, by Eusebius J. Doedel and collaborators. '),
     el('p',{class:'cite'},'G. B. Ermentrout, ',el('em',{text:'Simulating, Analyzing, and Animating Dynamical Systems: A Guide to XPPAUT for Researchers and Students'}),', SIAM, Philadelphia, 2002.'),
     el('p',{class:'cite'},'E. J. Doedel et al., ',el('em',{text:'AUTO: continuation and bifurcation software for ordinary differential equations'}),', ',a('https://github.com/auto-07p/auto-07p','AUTO-07P'),'.'),
     el('p',{text:'XPP Studio is an independent re-implementation and contains no XPPAUT or AUTO source code. Problems you find here are this project’s, not theirs.'}),
@@ -5046,6 +5341,11 @@ const CMDS={
   axes:{help:'axes X Y [Z] — variables on the phase-plane (or 3D) axes',run:a=>{if(a.length<2)throw new Error('give two variables');if(a.length>2||S.view==='p3'){for(const[k,id]of[[0,'#x3Sel'],[1,'#y3Sel'],[2,'#z3Sel']])if(a[k])fire(id,a[k]==='t'?-1:varIndex(a[k],true));}else{fire('#xSel',varIndex(a[0],true));fire('#ySel',varIndex(a[1],true));}}},
   window:{help:'window xlo xhi ylo yhi — axis limits of the current plot',run:a=>{const w={xlo:scrNum(a[0],'xlo'),xhi:scrNum(a[1],'xhi'),ylo:scrNum(a[2],'ylo'),yhi:scrNum(a[3],'yhi')};if(!(w.xhi>w.xlo&&w.yhi>w.ylo))throw new Error('each max must exceed its min');setWin(w);S.lock[S.view]=true;if(S.view==='pp'){S.pp.eqExpand=true;S.ver++;computeEquilibria();refreshEqList();}requestRender();}},
   fit:{help:'fit — fit the axes to the data',run:()=>fit()},
+  note:{help:'note X Y text — add a text note at (X, Y) of the current plot; \\n in the text starts a new line',run:a=>{const k=noteKey();if(!k)throw new Error('notes are for the flat plots, not the 3D views');if(a.length<3)throw new Error('give X, Y and the text');
+    S.noteId=(S.noteId||0)+1;let rest=a.slice(2),col=null;if(/^colou?r=/i.test(rest[0])){col=rest[0].split('=')[1];rest=rest.slice(1);if(!rest.length)throw new Error('give the text of the note');if(col[0]!=='#'&&!['accent',...PAL].includes(col))throw new Error('colour is #rrggbb, accent or t1 to t8');}
+    S.notes.push({id:S.noteId,key:k,x:scrNum(a[0],'X'),y:scrNum(a[1],'Y'),text:rest.join(' ').replace(/\\n/g,'\n'),size:'m',color:col});requestRender();}},
+  notes:{help:'notes clear — remove the notes of the current plot',run:a=>{if(a[0]!=='clear')throw new Error('use: notes clear');const k=noteKey();S.notes=S.notes.filter(n=>n.key!==k);S.noteSel=null;requestRender();}},
+  colours:{help:'colours on|off — a colour for each curve in the diagrams',run:a=>{if(onoff(a[0],!!S.curveCol)!==!!S.curveCol)$('#tgCurveCol').click();}},
   legend:{help:'legend on|off',run:a=>{if(onoff(a[0],S.legend)!==S.legend)$('#tgLegend').click();}},
   nullclines:{help:'nullclines on|off',run:a=>{if(onoff(a[0],S.pp.nc)!==S.pp.nc)$('#tgNc').click();}},
   field:{help:'field on|off — direction field',run:a=>{if(onoff(a[0],S.pp.field)!==S.pp.field)$('#tgField').click();}},
@@ -5257,7 +5557,7 @@ function scriptInit(){
   $('#tab-ic').addEventListener('change',e=>{const m=/^ic-(\d+)$/.exec(e.target.id||'');if(m){const i=+m[1];rec(`init ${S.M.varNames[i]}=${recNum(S.ic[i])}`,'init:'+i);}});
   $('#icDir').addEventListener('change',e=>rec(`num dir=${e.target.value==='fb'?'both':e.target.value==='b'?'backward':'forward'}`,'num:dir'));
   for(const id of['#xSel','#ySel'])$(id).addEventListener('change',()=>rec(`axes ${S.M.names[S.pp.xi]} ${S.M.names[S.pp.yi]}`,'axes'));
-  for(const[id,nm,get]of[['#tgNc','nullclines',()=>S.pp.nc],['#tgField','field',()=>S.pp.field],['#tgEq','equilibria',()=>S.pp.eq],['#tgPts','points',()=>S.pp.points],['#tgEqual','equal',()=>S.pp.equal],['#tgLegend','legend',()=>S.legend],['#tgTp3','tp3d',()=>S.tp.three],['#tgSpec','spectrum',()=>S.tc.spec],['#tgST','spacetime',()=>S.tc.st],['#tgLog','logscale',()=>S.tc.log],['#tgSmooth','smooth',()=>S.tc.smooth],['#tgBVP','solvebvp',()=>!!S.bvp]])$(id).addEventListener('click',()=>rec(`${nm} ${get()?'on':'off'}`));
+  for(const[id,nm,get]of[['#tgNc','nullclines',()=>S.pp.nc],['#tgField','field',()=>S.pp.field],['#tgEq','equilibria',()=>S.pp.eq],['#tgPts','points',()=>S.pp.points],['#tgEqual','equal',()=>S.pp.equal],['#tgLegend','legend',()=>S.legend],['#tgCurveCol','colours',()=>S.curveCol],['#tgTp3','tp3d',()=>S.tp.three],['#tgSpec','spectrum',()=>S.tc.spec],['#tgST','spacetime',()=>S.tc.st],['#tgLog','logscale',()=>S.tc.log],['#tgSmooth','smooth',()=>S.tc.smooth],['#tgBVP','solvebvp',()=>!!S.bvp]])$(id).addEventListener('click',()=>rec(`${nm} ${get()?'on':'off'}`));
   $('#varChips').addEventListener('click',e=>{if(!e.target.closest('button'))return;const set=S.view==='tc'&&S.tc.st?S.tc.stVars:S.tc.vars;if(set.size)rec(`tcvars ${[...set].sort((a,b)=>a-b).map(i=>S.M.names[i]).join(' ')}`,'tcvars');});
   for(const id of['#x3Sel','#y3Sel','#z3Sel'])$(id).addEventListener('change',()=>{const n=i=>i<0?'t':S.M.names[i];rec(`axes ${n(S.p3.xi)} ${n(S.p3.yi)} ${n(S.p3.zi)}`,'axes3');});
   $('#bPer').addEventListener('change',()=>rec(`period ${S.bif.period}`,'period'));
@@ -5366,6 +5666,9 @@ function init(){
   const tog=(id,key)=>$(id).addEventListener('click',()=>{S.pp[key]=!S.pp[key];$(id).setAttribute('aria-pressed',S.pp[key]);requestRender();});
   tog('#tgNc','nc');tog('#tgField','field');tog('#tgEq','eq');
   S.legend=store.get('xpps-legend')==='1';$('#tgLegend').setAttribute('aria-pressed',S.legend);
+  S.curveCol=store.get('xpps-curvecol')==='1';S.notes=S.notes||[];
+  $('#tgCurveCol').addEventListener('click',()=>{S.curveCol=!S.curveCol;store.set('xpps-curvecol',S.curveCol?'1':'0');updateToolbar();requestRender();});
+  $('#tgNote').addEventListener('click',()=>{S.noteMode=!S.noteMode;updateToolbar();status(S.noteMode?'Click the plot where the note should go':'Note mode off');requestRender();});
   $('#tgLegend').addEventListener('click',()=>{S.legend=!S.legend;store.set('xpps-legend',S.legend?'1':'0');$('#tgLegend').setAttribute('aria-pressed',S.legend);requestRender();});
   $('#fitBtn').addEventListener('click',fit);
   $('#eqFind').addEventListener('click',findEquilibria);
@@ -5389,6 +5692,7 @@ function init(){
   $('#tgTp3').addEventListener('click',()=>{S.tp.three=!S.tp.three;S.tp.box3=null;updateToolbar();requestRender();});
   $('#tP3').addEventListener('change',()=>{S.tp.p3i=parseInt($('#tP3').value,10);S.tp.box3=null;fillSliceRange(true);requestRender();});
   $('#tSlices').addEventListener('click',runSlices);
+  $('#cFind').addEventListener('click',connFindClick);$('#cFollow').addEventListener('click',connFollowClick);
   $('#tRun').addEventListener('click',()=>{if(S.tp.running){S.tp.stop=true;return;}const k=parseInt($('#tStart').value,10);runTwoPar(tpStarts()[k]);});
   $('#tClear').addEventListener('click',()=>{S.tp.curves=S.tp.curves.filter(c=>!(c.p1i===S.bif.pi&&c.p2i===S.tp.p2i));refreshCodim2();fitTP();requestRender();status('Two-parameter curves cleared');});
   const bifPlotChange=()=>{const v=+$('#bVar').value,m=$('#bShow').value;S.bif.vi=v;S.bif.vn=v;S.bif.mode=m;$('#bVar').disabled=m==='T'||m==='f';
@@ -5423,6 +5727,7 @@ function init(){
   document.addEventListener('keydown',e=>{
     const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;if(e.ctrlKey||e.metaKey||e.altKey)return;
     const k=e.key.toLowerCase();
+    if((k==='delete'||k==='backspace')&&S.noteSel&&noteKey()){e.preventDefault();S.notes=S.notes.filter(n=>n.id!==S.noteSel);S.noteSel=null;requestRender();return;}
     if((k==='delete'||k==='backspace')&&(S.view==='bif'||S.view==='tp')){if((S.view==='tp'?S.tp.sel:S.bif.sel)){e.preventDefault();deleteSelected();}return;}
     if(k==='g'){rec('go');runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();}
     else if(k==='e')erase();
