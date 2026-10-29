@@ -1,0 +1,14 @@
+# Forced phase oscillator on a torus: Arnold tongues
+# x is the phase of an oscillator forced at frequency om, y is the phase of the forcing. Both are periodic (folded).
+# Locked solutions satisfy x(T)=x(0)+2*pi*n and y(T)=y(0)+2*pi*m with T=2*pi*m/om; their edges in (om,b) are the tongues.
+p(x)=-sin(x)/(1+a*cos(x))
+x'=1+b*p(x)*cos(y)
+y'=om
+par om=2,b=.25,a=.25
+init x=0,y=0
+#@range om 0.5 3.2
+#@range b 0 0.5
+@ fold=x,fold=y,tor_per=6.283185
+@ xp=x,yp=y,xlo=0,xhi=6.3,ylo=0,yhi=6.3
+@ total=100,dt=0.05
+done
