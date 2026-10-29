@@ -203,6 +203,7 @@ table.sp tr:hover td{background:var(--surface-2)}
 .tag.PD{color:var(--pd)} .tag.NS{color:var(--ns)} .tag.R1{color:var(--bt)} .tag.R2{color:var(--cp)} .tag.LPPD{color:var(--zh)}
 .lg.lp{border-top-color:var(--lp)} .lg.hb{border-top-color:var(--hb)} .lg.pd{border-top-color:var(--pd)} .lg.po{border-top-color:var(--po)}
 .tag.OR{color:var(--po)} .tag.LPC{color:var(--lp)} .tag.TR{color:var(--ns)} .tag.CPC{color:var(--cp)} .tag.GH{color:var(--hb)}
+.tag.HOM{color:var(--bt)} .tag.HET{color:var(--cp)}
 .fl .acts{display:flex;flex-direction:column;gap:2px;align-items:stretch}
 .chip i.dots{background:radial-gradient(circle,var(--ink-2) 1.2px,transparent 1.5px) 0 0/4.5px 4.5px;border-radius:0}
 table.sp td.fl{padding:2px 0 2px 4px;width:1%}
@@ -219,6 +220,13 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
 
 .status{font:12px/1.4 var(--f-mono);color:var(--muted);padding-top:7px;min-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .status.err{color:var(--err)}
+.statusbar{display:flex;align-items:flex-end;gap:8px;min-width:0}
+.statusbar .status{flex:1;min-width:0}
+.statusbar #histBtn{margin-bottom:1px;flex:none}
+.histlist{font:12px/1.45 var(--f-mono);max-height:min(60vh,520px);overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);padding:6px 8px;white-space:pre-wrap;word-break:break-word}
+.histlist .h{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:1px 0}
+.histlist .h time{color:var(--muted)}
+.histlist .h.err span{color:var(--err)}
 
 .sheet{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
 .sheet>div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;width:min(640px,100%);display:flex;flex-direction:column;gap:10px}
@@ -295,7 +303,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <li><code>par a=1, b=2</code> parameters · <code>number c=3</code> constants · <code>!d=a*b</code> derived</li>
           <li><code>f(x,y)=…</code> functions · <code>q=…</code> fixed quantities · <code>aux s=…</code> outputs</li>
           <li><code>@ total, trans, dt, meth, xp, yp, zp, axes=3, xlo…yhi, bound, toler</code>; <code>trans=50</code> keeps only t ≥ 50 of each trajectory</li>
-          <li><code>@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax</code> set the continuation numerics (also editable in the Numerics tab)</li>
+          <li><code>@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax</code> set the continuation numerics, and <code>@ eqtol, potol, tptol, restol, itmax, tgrow</code> its tolerances (all also editable in the Numerics tab)</li>
           <li><code>sin cos tanh exp ln sqrt abs heav max min mod atan2</code>, <code>if(c)then(a)else(b)</code></li>
           <li><code>#@range p lo hi</code> sets a slider range (a comment, so XPPAUT ignores it); <code>#@irange u lo hi</code> gives the initial value of u a slider in the Initial tab</li>
           <li><code>#@do command</code> stores a script command in the file (see the Script tab); <b>Run file script</b> replays them, so an .ode file can carry its own figures</li>
@@ -349,7 +357,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="ffield"><label for="nSeed">Noise seed</label><input type="text" id="nSeed" inputmode="numeric" placeholder="new noise each run"></div>
       <p class="note" id="nNote" hidden></p>
       <div class="sech" style="margin-top:6px"><span class="lbl">Continuation</span></div>
-      <p class="note" style="margin:0">As in XPP's AUTO numerics menu. Leave a box empty for the automatic choice. The file can set these with <code>@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax</code>.</p>
+      <p class="note" style="margin:0">As in XPP's AUTO numerics menu. Leave a box empty for the automatic choice. The file can set these with <code>@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax</code>, and the tolerances below with <code>@ eqtol, potol, tptol, restol, itmax, tgrow</code>.</p>
       <div class="ffield"><label for="cDs" title="Initial (and typical) arclength step for equilibrium branches; also in the Bifurcation panel">Ds</label><input type="number" id="cDs" step="any" min="0"></div>
       <div class="ffield"><label for="cEqDsmin" title="Smallest step before an equilibrium branch gives up (default Ds × 10⁻⁴)">Dsmin</label><input type="number" id="cEqDsmin" step="any" min="0" placeholder="auto (Ds × 1e-4)"></div>
       <div class="ffield"><label for="cEqDsmax" title="Largest step along an equilibrium branch (default 4 × Ds)">Dsmax</label><input type="number" id="cEqDsmax" step="any" min="0" placeholder="auto (4 × Ds)"></div>
@@ -360,11 +368,21 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="ffield"><label for="cPoNmax" title="Most points on each direction of a periodic-orbit branch">Nmax (orbits)</label><input type="number" id="cPoNmax" step="1" min="10"></div>
       <div class="ffield"><label for="cTpNmax" title="Most points on each direction of a fold, Hopf or period-doubling curve of equilibria or fixed points">Nmax (2-par)</label><input type="number" id="cTpNmax" step="1" min="10"></div>
       <div class="ffield"><label for="cTcNmax" title="Most points on each direction of a fold or period-doubling curve of cycles">Nmax (2-par cycles)</label><input type="number" id="cTcNmax" step="1" min="10"></div>
+      <div class="sech" style="margin-top:6px"><span class="lbl">Continuation tolerances</span><button class="btn small" id="cTolReset" style="margin-left:auto" title="Put all the tolerances back to their default values">Defaults</button></div>
+      <p class="note" style="margin:0">The Newton corrector of each step stops when its correction is smaller than the tolerance, and the point is accepted only if the equations are then satisfied to within the residual tolerance. Smaller values give more accurate branches and smaller steps; larger values help a branch through a difficult stretch.</p>
+      <div class="ffield"><label for="cEqTol" title="Newton tolerance for branches of equilibria and fixed points: the size of the last correction, relative to the size of the solution (AUTO's EPSU). Default 1e-10">Newton tol (eq.)</label><input type="number" id="cEqTol" step="any" min="0"></div>
+      <div class="ffield"><label for="cPoTol" title="Newton tolerance for periodic orbits, in the scaled variables of the shooting method. Default 1e-9">Newton tol (orbits)</label><input type="number" id="cPoTol" step="any" min="0"></div>
+      <div class="ffield"><label for="cTpTol" title="Newton tolerance for two-parameter curves of folds, Hopf points and bifurcations of cycles. Default 1e-8">Newton tol (2-par)</label><input type="number" id="cTpTol" step="any" min="0"></div>
+      <div class="ffield"><label for="cResTol" title="Largest residual of the equations at an accepted point (for orbits, relative to their size). Default 1e-6">Residual tol</label><input type="number" id="cResTol" step="any" min="0"></div>
+      <div class="ffield"><label for="cItMax" title="Most Newton iterations in each step before the step is halved (AUTO's ITNW). Automatic: 15 for equilibria, 14 for orbits and two-parameter curves, 12 for curves of cycles">Newton iterations</label><input type="number" id="cItMax" step="1" min="2" max="100" placeholder="auto (12–15)"></div>
+      <div class="ffield"><label for="cTGrow" title="A branch of periodic orbits stops when the period grows to this many times its starting value: the orbits are then probably approaching a homoclinic orbit. Default 40">Period growth stop</label><input type="number" id="cTGrow" step="any" min="1.5"></div>
       <p class="note">Tolerance applies to the adaptive methods; for them dt is the largest step. Integration stops when any variable exceeds the bound. Shift-click in the phase plane integrates both forward and backward.</p>
     </section>
     <section class="tabbody" id="tab-scr" hidden>
       <div class="row">
         <button class="btn primary" id="scrRun" title="Run the script from the top (Ctrl+Enter)">Run</button>
+        <button class="btn" id="scrStep1" title="Run the next command only (Ctrl+Shift+Enter). The next line is shown on the right and selected in the script; you can edit the script between steps.">Step</button>
+        <button class="btn small" id="scrRestart" hidden title="Go back to the first command; the next Step starts from the top">Restart</button>
         <button class="btn" id="scrStep" title="Run slowly, so you can watch each command">Run slowly</button>
         <button class="btn" id="scrRec" aria-pressed="false" title="Write what you do in the interface into the script">Record</button>
         <span id="scrLine" style="color:var(--muted);font-size:12px"></span>
@@ -455,6 +473,16 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <div class="row"><button class="btn primary" id="bBvp" hidden title="Follow the solution of the boundary value problem as the parameter changes: pseudo-arclength continuation in the initial values and the parameter, so it turns round folds">Continue BVP</button><button class="btn primary" id="bRun">Continue equilibria</button><button class="btn" id="bSweep" title="XPP-style range integration">Sweep max/min</button><button class="btn" id="bPO" title="Continue the limit cycle that the active trajectory has settled onto">Limit cycle</button><button class="btn" id="bSkip" hidden title="End this direction or branch and carry on with the rest (Esc). Shift+Esc stops everything.">Skip direction</button></div>
         <div class="row"><button class="btn small" id="bClear">Clear diagram</button><button class="btn small" id="bDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button><span class="note" id="bNote"></span></div>
         <div class="prog" id="bProg" hidden><i></i></div>
+        <div id="cSec" hidden>
+          <div class="sech" style="margin-top:10px"><span class="lbl">Homoclinic and heteroclinic orbits</span></div>
+          <div class="bgrid">
+            <label for="cFrom">From</label><select id="cFrom" title="The saddle the orbit leaves"></select>
+            <label for="cTo">To</label><select id="cTo" title="The saddle the orbit arrives at: the same one for a homoclinic orbit"></select>
+          </div>
+          <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin:2px 0 6px"><input type="checkbox" id="cRev"> Run time backwards (from To back to From)</label>
+          <div class="row"><button class="btn" id="cFind" title="Search the range of the parameter for a value at which the unstable manifold of the equilibrium chosen under From runs into the stable manifold of the one under To (the same equilibrium: a homoclinic orbit). The orbit found is marked HOM or HET on the diagram and drawn in the phase plane.">Find</button></div>
+          <p class="note" id="cNote"></p>
+        </div>
         <div class="legend"><span><i class="lg"></i>stable</span><span><i class="lg dash"></i>unstable</span><span><i class="lgd"></i><span id="sweepLg">sweep max/min</span></span><span id="poLg"><i class="lg po"></i>periodic orbit (max/min)</span><span id="bvpLg" hidden><i class="lg po"></i>boundary value solution (max/min)</span></div>
       </section>
       <section class="sec" id="secSpecial" hidden>
@@ -471,14 +499,6 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="tStart">Start</label><select id="tStart"></select>
         </div>
         <div class="row"><button class="btn primary" id="tRun">Follow curve</button><button class="btn" id="tSkip" hidden title="End this direction and carry on with the other (Esc). Shift+Esc stops everything.">Skip direction</button><button class="btn small" id="tClear">Clear curves</button><button class="btn small" id="tDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button></div>
-        <div class="sech" style="margin-top:10px"><span class="lbl">Homoclinic and heteroclinic orbits</span></div>
-        <div class="bgrid">
-          <label for="cFrom">From</label><select id="cFrom"></select>
-          <label for="cTo">To</label><select id="cTo"></select>
-        </div>
-        <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin:2px 0 6px"><input type="checkbox" id="cRev"> Run time backwards (from To back to From)</label>
-        <div class="row"><button class="btn" id="cFind" title="Search the range of Parameter 1 for a value at which the unstable manifold of the equilibrium chosen under From runs into the stable manifold of the one under To (the same equilibrium: a homoclinic orbit)">Find</button><button class="btn" id="cFollow" title="Continue the connection found, as Parameter 2 changes over its range">Follow</button></div>
-        <p class="note" id="cNote">The equilibria are those found in the phase plane at the current parameters. Both must be saddles with one unstable direction.</p>
         <div class="sech" style="margin-top:10px"><span class="lbl">Slices in a third parameter</span></div>
         <div class="bgrid">
           <label for="tP3">Parameter 3</label><select id="tP3"></select>
@@ -504,7 +524,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
     </div>
   </aside>
 </div>
-<footer class="status" id="status" role="status"></footer>
+<div class="statusbar"><footer class="status" id="status" role="status"></footer><button class="btn small" id="histBtn" title="The history of messages in this status line, with the time of each: view, download or clear it">History</button></div>
 
 <script>
 // SPDX-License-Identifier: GPL-3.0-or-later — XPP Studio, Copyright (C) 2026 the XPP Studio authors. See the header comment and LICENSE.txt.
@@ -1499,6 +1519,10 @@ function mkPt(J,u,disc,M){
   else for(const e of eig)if(e.re>1e-9){if(e.im===0)nur++;else nuc++;}
   return{p:u[n],x:Float64Array.from(u.subarray(0,n)),eig,nur,nuc,nurn,stable:nur+nuc+nurn===0};
 }
+// Tolerances of the continuation correctors (Numerics tab, Continuation tolerances). null for itMax means the method's own
+// default (15 Newton iterations for equilibria, 14 for orbits and two-parameter curves, 12 for curves of cycles).
+const CTOL_DEF={eqTol:1e-10,poTol:1e-9,tpTol:1e-8,resTol:1e-6,itMax:null,tGrow:40};
+const CTOL=Object.assign({},CTOL_DEF);
 function contRun(M,pi,x0,o,dir){
   const n=M.n,N=n+1;let u=new Float64Array(N);for(let i=0;i<n;i++)u[i]=x0[i];u[n]=M.getParam(pi);
   const ePar=new Float64Array(N);ePar[n]=1;
@@ -1512,15 +1536,15 @@ function contRun(M,pi,x0,o,dir){
   while(pts.length<o.maxPts&&guard++<o.maxPts*8){
     for(let k=0;k<N;k++)up[k]=u[k]+ds*tau[k];
     const v=Float64Array.from(up);let ok=false,its=0;
-    for(its=0;its<15;its++){
+    for(its=0;its<(CTOL.itMax||15);its++){
       const r=jacFull(M,pi,v);const A=[];for(let i=0;i<n;i++)A.push(Array.from(r.J[i]));A.push(Array.from(tau));
       const b=new Array(N);for(let i=0;i<n;i++)b[i]=-r.f0[i];let d=0;for(let k=0;k<N;k++)d+=tau[k]*(v[k]-up[k]);b[n]=-d;
       const dx=solve(A,b);if(!dx)break;
       let nd=0;for(let k=0;k<N;k++){v[k]+=dx[k];nd+=dx[k]*dx[k];}
       if(!v.every(Number.isFinite))break;
-      if(Math.sqrt(nd)<1e-10*(1+norm(v))){ok=true;break;}
+      if(Math.sqrt(nd)<CTOL.eqTol*(1+norm(v))){ok=true;break;}
     }
-    if(ok){const f=new Float64Array(n);M.setParam(pi,v[n]);M.rhs(0,v,f);if(!(norm(f)<1e-6))ok=false;}
+    if(ok){const f=new Float64Array(n);M.setParam(pi,v[n]);M.rhs(0,v,f);if(!(norm(f)<CTOL.resTol))ok=false;}
     if(!ok){ds*=0.5;if(ds<dsmin)break;continue;}
     const r2=jacFull(M,pi,v);let tn=augSolve(r2.J,n,tau);
     if(tn){nt=norm(tn);tn=Float64Array.from(tn,x=>x/nt);}else tn=tau;
@@ -1639,12 +1663,12 @@ function paRun(G,u0,tau0,m,o,hooks){
   let ds=o.ds,closed=false,guard=0;const dsmin=o.ds*1e-4,dsmax=Math.max(o.ds*5,o.dsmax||0);
   while(pts.length<o.maxPts&&guard++<o.maxPts*8){
     const up=u.map((v,k)=>v+ds*tau[k]),v=Float64Array.from(up);let ok=false,its;
-    for(its=0;its<14;its++){
+    for(its=0;its<(CTOL.itMax||14);its++){
       const{J,g0}=fdJac(G,v,m);const A=J.map(r=>Array.from(r));A.push(Array.from(tau));
       const b=Array.from(g0,x=>-x);let d=0;for(let k=0;k<N;k++)d+=tau[k]*(v[k]-up[k]);b.push(-d);
       const dx=solve(A,b);if(!dx)break;let nd=0;for(let k=0;k<N;k++){v[k]+=dx[k];nd+=dx[k]*dx[k];}
       if(!v.every(Number.isFinite))break;
-      if(Math.sqrt(nd)<1e-8*(1+norm(v))){ok=true;break;}
+      if(Math.sqrt(nd)<CTOL.tpTol*(1+norm(v))){ok=true;break;}
     }
     if(ok&&!hooks.accept(v))ok=false;
     if(!ok){ds*=0.5;if(ds<dsmin)break;continue;}
@@ -1888,7 +1912,7 @@ function poMultipliers(Phi,lnDet){
 }
 function poCorrect(M,pi,u0,sys,arc){
   const n=M.n,m=sys.m,N=m*n+2,sig=sys.sig,cols=arc?N:N-1;let u=Float64Array.from(u0),its=0;
-  for(;its<14;its++){
+  for(;its<(CTOL.itMax||14);its++){
     const R=poSys(M,pi,u,sys),A=[];
     for(const row of R.J){const r=new Array(cols);for(let k=0;k<cols;k++)r[k]=row[k]*sig[k];A.push(r);}
     const b=Array.from(R.F,v=>-v);
@@ -1896,11 +1920,11 @@ function poCorrect(M,pi,u0,sys,arc){
     const dx=solve(A,b);if(!dx)return null;
     let nd=0;for(let k=0;k<cols;k++){u[k]+=dx[k]*sig[k];nd+=dx[k]*dx[k];}
     if(!u.every(Number.isFinite)||!(u[N-2]>0))return null;
-    if(Math.sqrt(nd)<1e-9){its++;break;}
+    if(Math.sqrt(nd)<CTOL.poTol){its++;break;}
   }
   const R=poSys(M,pi,u,{...sys,liou:true});let fm=0;for(const v of R.F)fm=Math.max(fm,Math.abs(v));
   let sc=0;for(let i=0;i<n;i++)sc=Math.max(sc,sig[i]);
-  if(!(fm<1e-6*(1+sc)))return null;
+  if(!(fm<CTOL.resTol*(1+sc)))return null;
   return{u,R,its};
 }
 function poTangent(R,sig,prev){
@@ -1951,7 +1975,7 @@ function poStep(st){
     const p=st.u[N-1],T=st.u[N-2],mg=(o.pmax-o.pmin)*0.02;
     if(p<o.pmin-mg||p>o.pmax+mg){st.done='left the parameter range';return false;}
     // a period far beyond where the branch started means it is heading into a homoclinic orbit
-    if(T>Math.min(o.Tmax,40*st.pts[0].T)){st.done=`the period passed ${Math.round(T)}, so the branch is probably approaching a homoclinic orbit`;return false;}
+    if(T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(T)}, so the branch is probably approaching a homoclinic orbit`;return false;}
     // arriving at a Hopf point: the orbit shrinks, or steps through zero amplitude and comes back phase-flipped
     let amp=0;for(let i=0;i<n;i++)amp=Math.max(amp,(res.R.mx[i]-res.R.mn[i])/st.xsig[i]);
     st.ampMax=Math.max(st.ampMax||0,amp);
@@ -2107,7 +2131,7 @@ function cycTPEval(M,p1i,p2i,u,sys,type,bd){
 function cycTPCorrect(M,p1i,p2i,u0,sys,type,bd,arc,fixP2,gradIn){
   const n=M.n,m=sys.m,mn=m*n,N=mn+3,sig=sys.sig;let u=Float64Array.from(u0),E=null,its=0,grad=gradIn||null;
   const cols=fixP2?N-1:N;
-  for(;its<12;its++){
+  for(;its<(CTOL.itMax||12);its++){
     E=cycTPEval(M,p1i,p2i,u,sys,type,bd);if(!E)return null;
     // the gradient of the test function is the costly row; one evaluation per step is enough for Newton
     if(!grad)grad=type==='CPER'?cperGrad(N,mn,sys):cycTestGrad(M,p1i,p2i,u,sys,type,E.v,E.w);
@@ -2118,11 +2142,11 @@ function cycTPCorrect(M,p1i,p2i,u0,sys,type,bd,arc,fixP2,gradIn){
     const dx=solve(A,b);if(!dx)return null;
     let nd=0;for(let k=0;k<cols;k++){u[k]+=dx[k]*sig[k];nd+=dx[k]*dx[k];}
     if(!u.every(Number.isFinite)||!(u[mn]>0))return null;
-    if(Math.sqrt(nd)<1e-8){its++;break;}
+    if(Math.sqrt(nd)<CTOL.tpTol){its++;break;}
   }
   E=cycTPEval(M,p1i,p2i,u,sys,type,bd);if(!E)return null;
   let fm=0;for(const v of E.R.F)fm=Math.max(fm,Math.abs(v));let sc=0;for(let i=0;i<n;i++)sc=Math.max(sc,sig[i]);
-  if(!(fm<1e-6*(1+sc)))return null;
+  if(!(fm<CTOL.resTol*(1+sc)))return null;
   // the test function is scaled by the bordering; require it small relative to its typical size
   if(!(Math.abs(E.g)<(type==='CPER'?1e-9:1e-5)))return null;
   return{u,E,its};
@@ -2187,7 +2211,7 @@ function cycCurveStep(st){
     st.ampMax=Math.max(st.ampMax||0,P.amp);
     if(P.amp<0.06*st.ampMax&&st.pts.length>3){if(type==='CPER'){st.done='the orbit shrank onto an equilibrium (a Hopf point with this period)';st.endHB=true;return false;}st.done='the cycles shrank onto an equilibrium at a generalised Hopf (Bautin) point';st.endGH=true;return false;}
     if(P.p1<o.p1min-mg1||P.p1>o.p1max+mg1||P.p2<o.p2min-mg2||P.p2>o.p2max+mg2){st.done='left the parameter window';return false;}
-    if(P.T>Math.min(o.Tmax,40*st.pts[0].T)){st.done=`the period passed ${Math.round(P.T)}, so the curve is probably approaching a homoclinic orbit`;return false;}
+    if(P.T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(P.T)}, so the curve is probably approaching a homoclinic orbit`;return false;}
     if(st.pts.length>8){let d=0;for(let k=0;k<N;k++)d+=((st.u[k]-st.start[k])/sig[k])**2;if(Math.sqrt(d)<0.6*st.ds){st.done='the curve closed on itself';st.closed=true;return false;}}
     // let the orbit scales grow with the cycles
     {const nx=st.xsig.map((s,i)=>Math.max(s,0.2*(P.mx[i]-P.mn[i]))),sT=Math.max(sig[mn],P.T);
@@ -2606,7 +2630,45 @@ function fmt(v,sig=4){
 function fmtIn(v){if(!Number.isFinite(v))return'0';return String(+v.toPrecision(10));}
 function el(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const[k,v]of Object.entries(attrs)){if(k==='class')e.className=v;else if(k==='text')e.textContent=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?'':v);}for(const c of kids)if(c!=null)e.append(c);return e;}
 let statusT=null;
-function status(msg,isErr){const s=$('#status');s.textContent=msg;s.classList.toggle('err',!!isErr);}
+function status(msg,isErr){const s=$('#status');s.textContent=msg;s.classList.toggle('err',!!isErr);logStatus(msg,isErr);}
+// the history of the status line: every message with its time. Progress reports that only update numbers in the same
+// message (“… 12 points …”, “… 16 points …”) replace each other, so a long run leaves one line, its last report.
+const HIST={list:[],max:5000,t0:Date.now()};
+function logStatus(msg,isErr){
+  msg=String(msg??'');if(!msg)return;const now=Date.now(),L=HIST.list,last=L[L.length-1];
+  const shape=msg.replace(/[−-]?\d[\d.,e+−-]*/g,'#');
+  if(last&&last.shape===shape&&/…/.test(last.msg)&&now-last.t<5000){last.msg=msg;last.t=now;last.err=!!isErr;}
+  else{if(last&&last.msg===msg&&now-last.t<1000)return;L.push({t:now,msg,err:!!isErr,shape});if(L.length>HIST.max)L.splice(0,L.length-HIST.max);}
+  const p=document.getElementById('histPop');if(p&&p._refresh)p._refresh();
+}
+const histStamp=t=>{const d=new Date(t),z=v=>String(v).padStart(2,'0');return`${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;};
+function historyText(){
+  const d=new Date(),z=v=>String(v).padStart(2,'0');
+  const head=[`# XPP Studio status history, saved ${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${histStamp(d)}`,`# model: ${(S.spec&&S.spec.title)||$('#exSel').selectedOptions[0]?.textContent||'custom'}`,`# ${HIST.list.length} message${HIST.list.length===1?'':'s'}; ! marks an error`,''];
+  return head.concat(HIST.list.map(h=>`${histStamp(h.t)}${h.err?' !':'  '} ${h.msg}`)).join('\n')+'\n';
+}
+function saveHistory(name){return deliverFile(historyText(),name||`${fileBase()}-status-history.txt`);}
+function openHistory(){
+  const old=document.getElementById('histPop');if(old){old.remove();return;}
+  const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':'Status history',id:'histPop'});
+  const list=el('div',{class:'histlist',tabindex:'0','aria-label':'Messages, oldest first'}),cnt=el('span',{class:'note',style:'margin:0;flex:1'});
+  const close=()=>{sh.remove();document.removeEventListener('keydown',esc,true);},esc=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
+  sh._refresh=()=>{const atEnd=list.scrollTop+list.clientHeight>=list.scrollHeight-4;
+    list.replaceChildren(...(HIST.list.length?HIST.list.map(h=>el('div',{class:'h'+(h.err?' err':'')},el('time',{text:histStamp(h.t)}),el('span',{text:h.msg}))):[el('p',{class:'empty',text:'No messages yet.'})]));
+    cnt.textContent=`${HIST.list.length} message${HIST.list.length===1?'':'s'} since the page was opened${HIST.list.length>=HIST.max?` (the oldest are dropped after ${HIST.max})`:''}`;
+    if(atEnd)list.scrollTop=list.scrollHeight;};
+  sh.addEventListener('click',e=>{if(e.target===sh)close();});
+  sh.append(el('div',{class:'about'},
+    el('h3',{text:'Status history'}),
+    el('p',{text:'Every message shown in the status line, oldest first. Download saves them as a text file with their times; a script can do the same with history save.'}),
+    list,
+    el('div',{class:'row',style:'margin-top:8px'},cnt,
+      el('button',{class:'btn',text:'Copy',onclick:()=>copyText(historyText(),'Status history')}),
+      el('button',{class:'btn',text:'Clear',onclick:()=>{HIST.list=[];sh._refresh();}}),
+      el('button',{class:'btn primary',text:'Download',onclick:()=>saveHistory()}),
+      el('button',{class:'btn',text:'Close',onclick:close}))));
+  document.body.append(sh);document.addEventListener('keydown',esc,true);sh._refresh();list.scrollTop=list.scrollHeight;list.focus();
+}
 function numOpts(back,seed){return{hist:S.histFns,t0:S.num.t0||0,trans:S.num.trans,method:S.num.method,T:S.num.T,dt:S.num.dt,tol:S.num.tol,bound:S.num.bound,back:!!back,maxPts:40000,seed,mk0:S.mkIC};}
 const isStoch=M=>!!(M&&(M.nw||M.nm));
 const delayNo=what=>{const M=S.M;if(M&&M.hasDelay){status(`${what} isn't available for delay equations yet. Equilibria, their stability (from the characteristic roots) and continuation of equilibria in one parameter work, as do trajectories and sweeps.`,true);return true;}return false;};
@@ -2676,13 +2738,15 @@ function loadModel(text,{fromUser}={}){
   else if(S.ncSaved!==undefined){S.pp.nc=S.ncSaved;S.ncSaved=undefined;}
   $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
-  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];
+  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
   setBifRange();
   {const C=S.cont,pv=k=>{const v=parseFloat(o[k]);return Number.isFinite(v)&&v>0?v:null;};
     Object.assign(C,{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300});
     if(pv('ds'))S.bif.ds=pv('ds');if(pv('dsmin'))C.eqDsmin=pv('dsmin');if(pv('dsmax'))C.eqDsmax=pv('dsmax');
     if(pv('nmax'))C.eqNmax=C.poNmax=Math.max(10,Math.round(pv('nmax')));if(pv('ntst'))C.poNtst=Math.min(80,Math.max(4,Math.round(pv('ntst'))));
+    Object.assign(CTOL,CTOL_DEF);for(const[k,f]of[['eqtol','eqTol'],['potol','poTol'],['tptol','tpTol'],['restol','resTol'],['tgrow','tGrow']])if(pv(k))CTOL[f]=pv(k);
+    if(pv('itmax'))CTOL.itMax=Math.min(100,Math.max(2,Math.round(pv('itmax'))));if(CTOL.tGrow<1.5)CTOL.tGrow=1.5;
     S.num.trans=Math.max(0,num('trans',0));}
   S.tp.curves=[];S.bif.sel=null;S.tp.sel=null;S.notes=[];S.noteSel=null;S.noteMode=false;
   {const np=M.parNames.length,nx=rk.find(n=>M.parNames.indexOf(n)!==S.bif.pi);let q=nx?M.parNames.indexOf(nx):-1;if(q<0)q=np>1?(S.bif.pi===0?1:0):0;setP2(q);{const o3=rk.map(n=>M.parNames.indexOf(n)).find(i=>i!==S.bif.pi&&i!==q);S.tp.p3i=o3!==undefined?o3:Math.max(0,M.parNames.findIndex((_,i)=>i!==S.bif.pi&&i!==q));S.tp.three=false;S.tp.box3=null;}}
@@ -2724,7 +2788,7 @@ function writeState(){
   const pv=new Map(M.parNames.map((nm,i)=>[nm,M.getParam(i)])),iv=new Map();
   M.varNames.forEach((nm,i)=>iv.set(nm,S.histText[i]?null:S.ic[i]));M.mkNames.forEach((nm,k)=>iv.set(nm,S.mkIC[k]));
   const doneP=new Set(),doneI=new Set(),skipped=[];
-  const MANAGED=new Set(['t0','total','dt','meth','method','trans','transient','toler','tol','bound','xp','yp','zp','xlo','xhi','ylo','yhi','ds','dsmin','dsmax','nmax','ntst','parmin','parmax','seed']);
+  const MANAGED=new Set(['t0','total','dt','meth','method','trans','transient','toler','tol','bound','xp','yp','zp','xlo','xhi','ylo','yhi','ds','dsmin','dsmax','nmax','ntst','parmin','parmax','seed','eqtol','potol','tptol','restol','itmax','tgrow']);
   const sub=(body,map,done)=>body.replace(/([a-z_][a-z0-9_]*)(\s*=\s*)([^,\s]+)/gi,(m0,nm,eq,val)=>{const k=nm.toLowerCase();if(!map.has(k)||map.get(k)===null)return m0;done.add(k);return nm+eq+f(map.get(k));});
   const out=[];let changed=0;
   for(const line of lines){
@@ -2762,6 +2826,8 @@ function writeState(){
   const C=S.cont,co=[`ds=${f(S.bif.ds)}`];if(C.eqDsmin)co.push(`dsmin=${f(C.eqDsmin)}`);if(C.eqDsmax)co.push(`dsmax=${f(C.eqDsmax)}`);co.push(`nmax=${C.eqNmax}`);if(C.poNtst)co.push(`ntst=${C.poNtst}`);
   if(M.parNames.length)co.push(`parmin=${f(S.bif.pmin)}`,`parmax=${f(S.bif.pmax)}`);
   block.push('@ '+co.join(', '));
+  {const tl=[];for(const[k,fk]of[['eqtol','eqTol'],['potol','poTol'],['tptol','tpTol'],['restol','resTol'],['itmax','itMax'],['tgrow','tGrow']])if(CTOL[fk]!==CTOL_DEF[fk])tl.push(`${k}=${CTOL[fk]<1e-3?CTOL[fk].toExponential().replace('e+','e'):f(CTOL[fk])}`);
+    if(tl.length)block.push('@ '+tl.join(', '));}
   let di=-1;for(let k=out.length-1;k>=0;k--)if(/^\s*(done|d)\s*$/i.test(out[k])){di=k;break;}
   while((di>0?out[di-1]:out[out.length-1])?.trim()==='')di>0?(out.splice(di-1,1),di--):out.pop();
   if(di<0){out.push(...block,'done');}else out.splice(di,0,...block);
@@ -3530,6 +3596,12 @@ function renderBif(ctx,w,h){
     ctx.fillText(sp.label,x+7,y-4);});
   for(const o of pickedOrbits()){if(o.pi!==pi)continue;const yv=spVal(o);if(!Number.isFinite(yv))continue;const x=m.X(o.p),y=m.Y(yv);
     ctx.fillStyle=TK.surface;ctx.strokeStyle=TK.po;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4.5,0,7);ctx.fill();ctx.stroke();ctx.fillStyle=TK.po;ctx.fillText(o.label,x+7,y-4);}
+  // homoclinic and heteroclinic orbits: diamonds at the maximum and minimum (or L2 norm) of the orbit; in the period view,
+  // where the period is infinite, a dashed line; in the frequency view a diamond at zero
+  for(const o of connPoints()){if(o.pi!==pi)continue;const c=o.conn,col=tpColor(o.type),x=m.X(o.p);
+    if(mode==='T'){ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.4;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(x,fr.T);ctx.lineTo(x,fr.T+fr.H);ctx.stroke();ctx.restore();ctx.fillStyle=col;ctx.textBaseline='top';ctx.fillText(o.label+' (T → ∞)',x+6,fr.T+4);ctx.textBaseline='bottom';continue;}
+    const ys=mode==='var'?[c.mx[vi],c.mn[vi]]:mode==='N'?[c.nr[S.bif.vn||0]]:[0];
+    ys.forEach((v,j)=>{const y=m.Y(v);ctx.fillStyle=col;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-6);ctx.lineTo(x+6,y);ctx.lineTo(x,y+6);ctx.lineTo(x-6,y);ctx.closePath();ctx.stroke();ctx.fill();if(j===0)ctx.fillText(o.label,x+8,y-4);});}
   ctx.restore();
   if(!S.bif.branches.some(b=>b.pi===pi)&&!S.bif.sweeps.some(s=>s.pi===pi)&&!S.bif.cycles.some(c=>c.pi===pi)&&!S.bif.bvps.some(b=>b.pi===pi)){
     ctx.fillStyle=TK.muted;ctx.font='12.5px "IBM Plex Sans", system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -3566,7 +3638,7 @@ const eqN=x=>Math.abs(x[S.bif.vn||0]);
 const bifYName=()=>{const m=S.bif.mode||'var';return m==='T'?'period':m==='f'?'frequency (1/period)':m==='N'?`L2 norm of ${S.M.varNames[S.bif.vn||0]}`:S.M.varNames[S.bif.vi];};
 // period of a special point: the orbit's period for bifurcations of cycles, 2π/ω at a Hopf point, otherwise none
 function spPeriod(sp){if(sp.cyc)return Number.isFinite(sp.T)?sp.T:null;return(sp.type==='HB'||sp.type==='NS')&&sp.omega>0&&!S.M.discrete?2*Math.PI/sp.omega:null;}
-function spVal(sp){const m=S.bif.mode||'var';if(m==='var')return spY(sp,S.bif.vi);if(m==='N'){if(sp.bvp)return sp.nr[S.bif.vn||0];if(!sp.cyc)return sp.x?eqN(sp.x):null;const P=sp.cyc.pts,a=P[sp.k],b=P[Math.min(sp.k+1,P.length-1)];if(!a.nr||!b.nr)return null;const j=S.bif.vn||0;return a.nr[j]+(sp.t||0)*(b.nr[j]-a.nr[j]);}const T=spPeriod(sp);return T>0?(m==='f'?1/T:T):null;}
+function spVal(sp){const m=S.bif.mode||'var';if(sp.conn){const c=sp.conn;return m==='var'?c.mx[S.bif.vi]:m==='N'?c.nr[S.bif.vn||0]:m==='f'?0:null;}if(m==='var')return spY(sp,S.bif.vi);if(m==='N'){if(sp.bvp)return sp.nr[S.bif.vn||0];if(!sp.cyc)return sp.x?eqN(sp.x):null;const P=sp.cyc.pts,a=P[sp.k],b=P[Math.min(sp.k+1,P.length-1)];if(!a.nr||!b.nr)return null;const j=S.bif.vn||0;return a.nr[j]+(sp.t||0)*(b.nr[j]-a.nr[j]);}const T=spPeriod(sp);return T>0?(m==='f'?1/T:T):null;}
 function allCodim2(){const out=[],cnt={},p1=S.bif.pi,p2=S.tp.p2i;for(const cv of S.tp.curves){if(cv.p1i!==p1||cv.p2i!==p2)continue;for(const sp of cv.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,curve:cv.type,label:sp.type+cnt[sp.type]});}}return out;}
 function renderTP(ctx,w,h){
   const M=S.M,fr=frameOf(w,h),win=S.tp.win,m=mapper(fr,win),p1=S.bif.pi,p2=S.tp.p2i;S.lastFrame=fr;
@@ -3619,6 +3691,7 @@ function pickedOrbits(){
 }
 function tpStarts(){const L=allSpecial().filter(s=>s.pi===S.bif.pi&&followSp(s));
   if(!S.M.discrete)for(const o of pickedOrbits())if(o.pi===S.bif.pi)L.push({...o,type:'CPER',label:`${o.label} (T=${fmt(o.T,4)})`});
+  for(const o of connPoints())if(o.pi===S.bif.pi)L.push(o);
   return L;}
 function followConstT(o){if(S.M.parNames.length<2){status('Constant-period curves need a second parameter',true);return;}runCycTwoPar({...o,type:'CPER',label:`${o.label} (T=${fmt(o.T,4)})`});}
 // default values for the slices: the slider range of the third parameter
@@ -3640,7 +3713,7 @@ function buildTpControls(){
   $('#tStart').replaceChildren(...(st.length?st.map((s,k)=>el('option',{value:k,text:`${s.label} · ${M.parNames[s.pi]} ${fmt(s.p,5)}`})):[el('option',{value:-1,text:'No LP or HB points yet'})]));
   $('#tRun').disabled=!st.length||M.parNames.length<2;
   $('#tNote').textContent=M.parNames.length<2?'Two-parameter continuation needs at least two parameters.':st.length?'':`Run “Continue ${M.discrete?'fixed points':'equilibria'}” in ${M.parNames[S.bif.pi]} on the Bifurcation view first; its ${M.discrete?'LP and PD':'LP and HB'} points${M.discrete?'':', and the LPC and PD points of periodic-orbit branches,'} become starting points here.`;
-  if(!M.discrete)$('#tNote').textContent+=(($('#tNote').textContent?' ':'')+'To follow a periodic orbit at constant period, click a point on an orbit branch in the Bifurcation view; it then appears under Start.');
+  if(!M.discrete)$('#tNote').textContent+=(($('#tNote').textContent?' ':'')+'To follow a periodic orbit at constant period, click a point on an orbit branch in the Bifurcation view; it then appears under Start. Homoclinic and heteroclinic orbits found in the Bifurcation view (HOM, HET) appear there too.');
   const lg=$('#tpLegend');lg.replaceChildren();
   for(const d of TPC){if(d.map&&!M.discrete)continue;if(d.flow&&M.discrete)continue;if(d.n3&&M.n<3)continue;
     const inp=el('input',{type:'color','aria-label':`Colour for ${d.label}`,title:'Choose the colour for '+d.label});inp.value=toHex(tpColor(d.k));
@@ -3670,7 +3743,7 @@ function grab2(a,b,x,what){
 function setTPBusy(on){
   S.bif.busy=on;S.tp.running=on;
   const b=$('#tRun');b.textContent=on?'Stop':'Follow curve';b.disabled=false;$('#tSkip').hidden=!on;
-  $('#bRun').disabled=$('#bSweep').disabled=$('#bPO').disabled=$('#tClear').disabled=on;
+  $('#bRun').disabled=$('#bSweep').disabled=$('#bPO').disabled=$('#tClear').disabled=$('#cFind').disabled=on;
   document.querySelectorAll('#spList button').forEach(x=>x.disabled=on);
 }
 async function runCycTwoPar(sp){
@@ -3712,6 +3785,7 @@ async function runCycTwoPar(sp){
   status(`${type==='LPC'?'Fold-of-cycles':type==='CPER'?`Constant-period (T = ${fmt(sts[0].sys.T0,5)})`:'Period-doubling-of-cycles'} curve from ${sp.label}: ${curve.pts.length} points in ${((performance.now()-t0)/1000).toFixed(1)} s · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no codimension-two points'} · ends: ${why||'finished'}`);
 }
 function runTwoPar(sp){
+  if(sp&&sp.conn)return connFollow(sp.conn,sp.label);
   if(sp&&sp.cyc)return runCycTwoPar(sp);
   const M=iterModel(S.M,(sp&&sp.br&&sp.br.period)||1),p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
   if(!sp){status('Pick a fold or Hopf point to start from',true);return;}
@@ -3846,29 +3920,45 @@ function connAt(c,p,sigma){
   res.p=p;res.xm=xm;res.xp=xp;res.x0=x0;res.lm=lm;res.lp=lp;return res;
 }
 // bisection of a bracket [a,b] on which g changes sign
+// the root of the splitting on a bracket [a,b] where it changes sign: false position with the Illinois modification
+// (a bisection step whenever the bracket stops shrinking fast), so it needs a fraction of the evaluations of bisection
 function connBisect(c,a,b,ga,sigma){
-  for(let it=0;it<80;it++){const m=0.5*(a+b);if(b-a<1e-13*(1+Math.abs(m)))break;
-    const r=connAt(c,m,sigma);if(!Number.isFinite(r.g))return null;if(r.g*ga<0)b=m;else{a=m;ga=r.g;}}
+  const rb=connAt(c,b,sigma);let gb=rb.g;
+  if(!Number.isFinite(gb)||!(ga*gb<0))return null;
+  let side=0,lastW=b-a,k=0;
+  for(let it=0;it<100;it++){
+    const W=b-a;if(W<1e-13*(1+Math.abs(a)+Math.abs(b)))break;
+    let m=null;if(++k%3===0){if(W>0.5*lastW)m=0.5*(a+b);lastW=W;}
+    if(m===null){m=(a*gb-b*ga)/(gb-ga);const e=0.01*W;if(!(m>a+e))m=a+e;else if(!(m<b-e))m=b-e;}
+    const r=connAt(c,m,sigma);if(!Number.isFinite(r.g))return null;
+    if(r.g===0){a=b=m;break;}
+    if(r.g*ga<0){b=m;gb=r.g;if(side<0)ga*=0.5;side=-1;}else{a=m;ga=r.g;if(side>0)gb*=0.5;side=1;}
+  }
   const p=0.5*(a+b),f=connAt(c,p,sigma);if(!Number.isFinite(f.g))return null;
   return{p,T:f.T,r:f.r,rmax:f.rmax,xm:f.xm,xp:f.xp,x0:f.x0,sigma};
 }
-function connContext(fromIdx,toIdx,rev){
-  let e0=S.eqs[fromIdx],e1=S.eqs[toIdx];if(!e0||!e1)return null;
-  if(rev)[e0,e1]=[e1,e0];   // backwards in time the orbit starts at the equilibrium it ends on
-  const sz=Math.max(1,...Array.from(e0.x,Math.abs),...Array.from(e1.x,Math.abs));
-  return{pi:S.bif.pi,rev:!!rev,xm:Float64Array.from(e0.x),xp:Float64Array.from(e1.x),same:fromIdx===toIdx,eps:1e-5*sz,Tmax:Math.max(2000,10*(S.num.T||100)),vref:null,wref:null};
+// The equilibria between which an orbit can be sought. Each choice is an equilibrium found in the phase plane, or a saddle
+// that a branch of periodic orbits approached as its period grew (see homCandidate). x0 and x1 are where they sit, rev runs
+// time backwards: the orbit then starts at the equilibrium it ends on.
+function connContext(x0,x1,same,rev){
+  let a=x0,b=x1;if(rev)[a,b]=[b,a];
+  const sz=Math.max(1,...Array.from(a,Math.abs),...Array.from(b,Math.abs));
+  return{pi:S.bif.pi,rev:!!rev,xm:Float64Array.from(a),xp:Float64Array.from(b),same:!!same,eps:1e-5*sz,Tmax:Math.max(2000,10*(S.num.T||100)),vref:null,wref:null};
 }
-// look for a connection in Parameter 1 over its range: scan, bracket a sign change, bisect
-function connFind(c,pmin,pmax,hint){
-  const N=60,found=[];
-  for(const sigma of[1,-1]){let prev=null;
-    for(let i=0;i<=N;i++){const p=pmin+(pmax-pmin)*i/N,r=connAt(c,p,sigma);
-      if(prev&&Number.isFinite(prev.g)&&Number.isFinite(r.g)&&prev.g*r.g<0)found.push({a:prev.p,b:p,ga:prev.g,sigma});
-      prev={p,g:r.g};}}
-  found.sort((u,v)=>Math.abs(0.5*(u.a+u.b)-hint)-Math.abs(0.5*(v.a+v.b)-hint));
-  for(const f of found){const sol=connBisect(c,f.a,f.b,f.ga,f.sigma);
-    if(sol&&sol.r<1e-3*(1+sol.rmax))return{sol,count:found.length};}   // a real connection ends on xp; a jump of the closest approach does not
-  return{sol:null,count:found.length};
+// look for a connection in Parameter 1: scan, bracket a sign change, bisect. With a hint from the end of a branch of
+// orbits, a narrow window round it is searched first.
+function connFind(c,pmin,pmax,hint,local){
+  const scan=(lo,hi,N)=>{const found=[];
+    for(const sigma of[1,-1]){let prev=null;
+      for(let i=0;i<=N;i++){const p=lo+(hi-lo)*i/N,r=connAt(c,p,sigma);
+        if(prev&&Number.isFinite(prev.g)&&Number.isFinite(r.g)&&prev.g*r.g<0)found.push({a:prev.p,b:p,ga:prev.g,sigma});
+        prev={p,g:r.g};}}
+    found.sort((u,v)=>Math.abs(0.5*(u.a+u.b)-hint)-Math.abs(0.5*(v.a+v.b)-hint));
+    for(const f of found){const sol=connBisect(c,f.a,f.b,f.ga,f.sigma);
+      if(sol&&sol.r<1e-3*(1+sol.rmax))return{sol,count:found.length};}   // a real connection ends on xp; a jump of the closest approach does not
+    return{sol:null,count:found.length};};
+  if(local){const w=0.04*(pmax-pmin),r=scan(Math.max(pmin,hint-w),Math.min(pmax,hint+w),32);if(r.sol)return r;}
+  return scan(pmin,pmax,60);
 }
 // the connection for a nearby value of Parameter 2: bracket around the previous value of Parameter 1
 function connNear(c,guess,sigma,width){
@@ -3879,66 +3969,153 @@ function connNear(c,guess,sigma,width){
   }
   return null;
 }
+const connOK=()=>{const M=S.M;return!!M&&!M.discrete&&M.n>=2&&!(M.nbc>0)&&!M.hasDelay&&!M.hasVolt&&M.parNames.length>0;};
+function connChoices(){
+  const M=S.M,out=(S.eqs||[]).map((e,k)=>({key:'e'+k,x:e.x,label:`${k+1}. ${e.label}: ${M.varNames.slice(0,4).map((n,i)=>`${n} ${fmt(Math.abs(e.x[i])<1e-10?0:e.x[i],3)}`).join(', ')}${M.n>4?', …':''}`}));
+  (S.bif.connCand||[]).forEach((c,k)=>{if(c.pi===S.bif.pi)out.push({key:'c'+k,x:c.x,cand:c,label:c.label});});
+  return out;
+}
 function fillConnMenus(){
-  const M=S.M,labels=(S.eqs||[]).map((e,k)=>`${k+1}. ${e.label}: ${M.varNames.map((n,i)=>`${n} ${fmt(Math.abs(e.x[i])<1e-10?0:e.x[i],3)}`).join(', ')}`);
-  for(const id of['cFrom','cTo']){const sel=$('#'+id),old=sel.value;sel.replaceChildren(...labels.map((t,k)=>el('option',{value:k,text:t})));if(old&&labels[+old])sel.value=old;}
-  if(!$('#cTo').value&&labels.length)$('#cTo').value=$('#cFrom').value;
-  $('#cFind').disabled=$('#cFollow').disabled=labels.length===0||M.n<2||M.discrete;
+  const sec=$('#cSec');if(!sec||!S.M)return;sec.hidden=!connOK();if(sec.hidden)return;
+  const ch=connChoices();
+  for(const id of['cFrom','cTo']){const sel=$('#'+id),old=sel.value;sel.replaceChildren(...ch.map(c=>el('option',{value:c.key,text:c.label})));if(old&&ch.some(c=>c.key===old))sel.value=old;}
+  if(!ch.some(c=>c.key===$('#cTo').value)&&ch.length)$('#cTo').value=$('#cFrom').value;
+  $('#cFind').disabled=!ch.length||S.bif.busy;
+  $('#cNote').textContent=ch.length?'Both must be saddles with one real unstable direction (or, with time backwards, one stable direction). Find searches the range of the parameter above.':'No equilibria yet: they are found in the phase plane at the current parameters. A branch of periodic orbits whose period grows at its end also adds the saddle it approaches here.';
 }
-let connLast=null;
+// connections found, as points of the one-parameter diagram: HOM1, HET1, …
+function connPoints(){const cnt={};return(S.bif.conns||[]).map(c=>{cnt[c.type]=(cnt[c.type]||0)+1;return{type:c.type,p:c.p,pi:c.pi,T:Infinity,x:c.x0,conn:c,label:c.type+cnt[c.type]};});}
+// find a connection from the equilibrium chosen as From to the one chosen as To (keys of connChoices), in the parameter of the
+// Bifurcation view over its range; it is added to the diagram, and the orbit is drawn in the phase plane
+function connFindRun(fromKey,toKey,rev){
+  const M=S.M,pi=S.bif.pi;readBifInputs();
+  if(!connOK())throw new Error('Homoclinic and heteroclinic orbits are found for ordinary differential equations with at least two variables and a parameter');
+  if(S.bif.busy)throw new Error('Wait for the computation that is running to finish');
+  const ch=connChoices(),A0=ch.find(c=>c.key===fromKey),B0=ch.find(c=>c.key===toKey);
+  if(!A0||!B0)throw new Error('Choose the equilibria under From and To. They are the ones found in the phase plane, and saddles found at the end of a branch of periodic orbits');
+  const cand=A0.cand||B0.cand,same=A0===B0||(!!A0.cand&&A0.cand===B0.cand);
+  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),restore=()=>saved.forEach((v,i)=>M.setParam(i,v));
+  // a saddle from a branch of orbits belongs to that branch's parameter values
+  if(cand&&cand.params)cand.params.forEach((v,i)=>M.setParam(i,v));
+  const p0=cand?cand.p:M.getParam(pi),c=connContext(A0.x,B0.x,same,rev);M.setParam(pi,p0);
+  const sgn=rev?-1:1,sc=A=>sgn<0?A.map(r=>Array.from(r,x=>-x)):A,xa=newton(M,c.xm),xb=same?xa:newton(M,c.xp);
+  if(!xa||!xb){restore();throw new Error(`Newton's method lost ${!xa?'the first':'the second'} equilibrium at ${M.parNames[pi]} = ${fmt(p0,6)}`);}
+  if(uniqueUnstable(sc(numJac(M,xa)))===null||uniqueUnstable(sc(numJac(M,xb)))===null){restore();
+    throw new Error(`Both equilibria must be saddles with exactly one real unstable direction${rev?' (counted backwards in time)':''}, the other directions stable.${rev?'':' If the unstable manifold is two-dimensional, try Run time backwards.'}`);}
+  c.xm=Float64Array.from(xa);c.xp=Float64Array.from(xb);
+  const t0=performance.now(),{sol,count}=connFind(c,S.bif.pmin,S.bif.pmax,p0,!!cand);
+  if(!sol){restore();throw new Error(count?`${count} sign change${count>1?'s':''} of the splitting in ${M.parNames[pi]}, but none ends on the equilibrium: no connection found`:`No connection found for ${M.parNames[pi]} between ${fmt(S.bif.pmin)} and ${fmt(S.bif.pmax)}; try another range, or other equilibria`);}
+  M.setParam(pi,sol.p);const params=Array.from(M.P.subarray(0,M.parNames.length));
+  // the orbit, for its place on the diagram (max, min and L2 norm) and for the phase plane
+  const o={...numOpts(rev),trans:0,T:Math.min(sol.T*1.02,c.Tmax),dt:connDt()},r=integrate(M,sol.x0,o);restore();
+  const n=M.n,mx=new Float64Array(n).fill(-Infinity),mn=new Float64Array(n).fill(Infinity),nr=new Float64Array(n);
+  for(let i=0;i<n;i++){const col=r.cols[i];for(const v of[...col,sol.xm[i],sol.xp[i]]){if(v>mx[i])mx[i]=v;if(v<mn[i])mn[i]=v;}
+    // the time average of x² over a homoclinic orbit is that of the saddle, where the orbit spends almost all its time
+    if(same)nr[i]=Math.abs(sol.xm[i]);else{let a=0;const t=r.t;for(let k=0;k+1<t.length;k++)a+=0.5*(col[k]*col[k]+col[k+1]*col[k+1])*Math.abs(t[k+1]-t[k]);nr[i]=Math.sqrt(a/(Math.abs(t[t.length-1]-t[0])||1));}}
+  const type=same?'HOM':'HET',rec={type,pi,p:sol.p,T:sol.T,r:sol.r,x0:Float64Array.from(sol.x0),xm:Float64Array.from(sol.xm),xp:Float64Array.from(sol.xp),same,rev:!!rev,sigma:sol.sigma,eps:c.eps,Tmax:c.Tmax,
+    vref:c.vref&&Float64Array.from(c.vref),wref:c.wref&&Float64Array.from(c.wref),params,mx,mn,nr,from:cand?cand.from:null,secs:(performance.now()-t0)/1000};
+  // the same connection found again replaces the old one
+  S.bif.conns=(S.bif.conns||[]).filter(q=>!(q.pi===pi&&q.type===type&&Math.abs(q.p-sol.p)<1e-7*(1+Math.abs(sol.p))&&Math.abs(q.xm[0]-rec.xm[0])<1e-6*(1+Math.abs(rec.xm[0]))));
+  S.bif.conns.push(rec);
+  connShow(rec,true);
+  refreshSpecial();buildTpControls();fitBif();requestRender();
+  return rec;
+}
+// move to the parameter values of a connection and draw it in the phase plane
+function connShow(rec,quiet){
+  const M=S.M;rec.params.forEach((v,i)=>{if(M.getParam(i)!==v)setParamVal(i,v,true);});
+  S.ic=Float64Array.from(rec.x0);refreshIC();S.ver++;liveUpdate();
+  const o={...numOpts(rec.rev),trans:0,T:Math.min(rec.T*1.02,rec.Tmax),dt:connDt()},r=integrate(M,rec.x0,o);
+  S.trajs.push({y0:Float64Array.from(rec.x0),back:rec.rev,both:false,ck:'bt',kind:'conn',Tfix:o.T,...r});
+  refreshTrajList();fitPP(true);requestRender();
+  if(!quiet)status(`Moved to the ${rec.type==='HOM'?'homoclinic':'heteroclinic'} orbit at ${M.parNames[rec.pi]} = ${fmt(rec.p,9)}; it is drawn in the phase plane`);
+}
+// how a choice is named in a script: the number of the equilibrium, or end (the last saddle found at the end of a branch), endK
+const connKeyArg=k=>{const j=+k.slice(1);return k[0]==='e'?String(j+1):j===(S.bif.connCand||[]).length-1?'end':'end'+(j+1);};
 function connFindClick(){
-  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
-  const fi=parseInt($('#cFrom').value,10),ti=parseInt($('#cTo').value,10);
-  const rev=$('#cRev').checked,c=connContext(fi,ti,rev);if(!c){status('Find equilibria first (phase plane): the connection runs between two of them',true);return;}
-  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),t0=performance.now();
-  const sgn=rev?-1:1,sc=A=>sgn<0?A.map(r=>Array.from(r,x=>-x)):A,A=sc(numJac(M,c.xm)),B=sc(numJac(M,c.xp));
-  if(uniqueUnstable(A)===null||uniqueUnstable(B)===null){status(`Both equilibria must be saddles with exactly one real unstable direction${rev?' (counted backwards in time)':''}, the other directions stable. ${rev?'':'If the unstable manifold is two-dimensional, try Run time backwards.'}`,true);return;}
-  const {sol,count}=connFind(c,S.bif.pmin,S.bif.pmax,saved[p1]);
-  if(!sol){saved.forEach((v,i)=>M.setParam(i,v));status(count?`${count} sign change${count>1?'s':''} of the splitting in ${M.parNames[p1]}, but none ends on the equilibrium: no connection found`:`No connection found for ${M.parNames[p1]} between ${fmt(S.bif.pmin)} and ${fmt(S.bif.pmax)}; try another range, or the other equilibria`,true);return;}
-  saved.forEach((v,i)=>M.setParam(i,v));M.setParam(p1,sol.p);
-  const type=c.same?'HOM':'HET',cv={type,p1i:p1,p2i:p2,pts:[{p1:sol.p,p2:M.getParam(p2),T:sol.T}],special:[],from:type==='HOM'?'homoclinic orbit':'heteroclinic orbit',start:`${M.parNames[p1]} = ${fmt(sol.p,6)}`,params:Array.from(M.P.subarray(0,M.parNames.length)),conn:{fi,ti,rev,sigma:sol.sigma,eps:c.eps,Tmax:c.Tmax}};
-  S.tp.curves.push(cv);connLast={cv,c};
-  // show the orbit in the phase plane
-  const o={...numOpts(rev),trans:0,T:Math.min(sol.T*1.02,c.Tmax),dt:connDt()},r=integrate(M,sol.x0,o);
-  S.trajs.push({y0:Float64Array.from(sol.x0),back:rev,both:false,ck:'bt',kind:'conn',Tfix:o.T,...r});
-  refreshTrajList();S.ver++;fitTP();requestRender();
-  status(`${type==='HOM'?'Homoclinic':'Heteroclinic'} orbit at ${M.parNames[p1]} = ${fmt(sol.p,9)} (${M.parNames[p2]} = ${fmt(M.getParam(p2),5)}), time ${fmt(sol.T,4)} from ε = ${fmt(c.eps,2)} to within ${fmt(sol.r,2)} of the end · ${((performance.now()-t0)/1000).toFixed(1)} s`);
+  const f=$('#cFrom').value,t=$('#cTo').value,rv=$('#cRev').checked;
+  if(SCRIPT.rec&&!SCRIPT.running&&!SCRIPT.mute){try{recBif();rec(`connect ${connKeyArg(f)}${t!==f?' '+connKeyArg(t):''}${rv?' backward':''}`);}catch(e){}}
+  try{const rc=connFindRun(f,t,rv),M=S.M;
+    status(`${rc.type==='HOM'?'Homoclinic':'Heteroclinic'} orbit ${connPoints().find(q=>q.conn===rc).label} at ${M.parNames[rc.pi]} = ${fmt(rc.p,9)}, time ${fmt(rc.T,4)} from ε = ${fmt(rc.eps,2)} to within ${fmt(rc.r,2)} of the end · ${rc.secs.toFixed(1)} s. ${M.parNames.length>1?'Follow it in two parameters from the Special points table.':''}`);}
+  catch(e){status(e.message,true);}
 }
-async function connFollowClick(){
-  const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
-  if(!connLast||connLast.cv.p1i!==p1||connLast.cv.p2i!==p2||!S.tp.curves.includes(connLast.cv)){status('Press Find first',true);return;}
-  const {cv}=connLast,cn=cv.conn,c=connContext(cn.fi,cn.ti,cn.rev);if(!c){status('The equilibria are no longer in the list: Find again',true);return;}
-  c.eps=cn.eps;c.Tmax=cn.Tmax;
-  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),start=cv.pts[0],lo=S.tp.p2min,hi=S.tp.p2max,tick=()=>new Promise(r=>setTimeout(r,0));
-  const reset=()=>{saved.forEach((v,i)=>M.setParam(i,v));M.setParam(p1,start.p1);M.setParam(p2,start.p2);c.xm=Float64Array.from(S.eqs[cn.rev?cn.ti:cn.fi].x);c.xp=Float64Array.from(S.eqs[cn.rev?cn.fi:cn.ti].x);c.vref=null;c.wref=null;};
-  setTPBusy(true);S.tp.stop=false;
+// follow a connection in two parameters: step Parameter 2 and solve again for Parameter 1 near the last value, both ways
+async function connFollow(rec,label){
+  const M=S.M,p1=rec.pi,p2=S.tp.p2i;readTpInputs();
+  if(S.bif.busy)return;
+  if(M.parNames.length<2||p1===p2){status('Choose a second parameter, different from the first, in the Two-parameter view',true);return;}
+  if(p1!==S.bif.pi){status(`${label} was found in ${M.parNames[p1]}; choose it as the parameter first`,true);return;}
+  const c={pi:p1,rev:rec.rev,xm:null,xp:null,same:rec.same,eps:rec.eps,Tmax:rec.Tmax,vref:null,wref:null};
+  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),start={p1:rec.p,p2:rec.params[p2],T:rec.T},lo=S.tp.p2min,hi=S.tp.p2max,tick=()=>new Promise(r=>setTimeout(r,0));
+  const reset=()=>{rec.params.forEach((v,i)=>M.setParam(i,v));c.xm=Float64Array.from(rec.xm);c.xp=Float64Array.from(rec.xp);c.vref=rec.vref&&Float64Array.from(rec.vref);c.wref=rec.wref&&Float64Array.from(rec.wref);};
+  const cv={type:rec.type,p1i:p1,p2i:p2,pts:[start],special:[],from:label,start:`${M.parNames[p1]} = ${fmt(rec.p,6)}`,params:Array.from(rec.params),conn:rec};
+  S.tp.curves.push(cv);if(S.view!=='tp')setView('tp');
+  setTPBusy(true);S.tp.stop=false;S.tp.skip=false;const t0=performance.now();
   const walk=async dir=>{
     const out=[];let q1=start.p1,q2=start.p2,qprev=null,h=(hi-lo)/80,why='';
-    for(let k=0;k<400&&!S.tp.stop;k++){
+    for(let k=0;k<400&&!S.tp.stop&&!S.tp.skip;k++){
       let n2=q2+dir*h;if(n2<lo||n2>hi){n2=dir>0?hi:lo;if(Math.abs(n2-q2)<1e-12*(1+Math.abs(q2))){why='the end of the range';break;}}
       M.setParam(p2,n2);
       const guess=qprev?q1+(q1-qprev.p1)*(n2-q2)/(q2-qprev.p2):q1,range1=S.bif.pmax-S.bif.pmin;
-      let sol=connNear(c,guess,cn.sigma,1e-4*(1+Math.abs(q1)));
+      let sol=connNear(c,guess,rec.sigma,1e-4*(1+Math.abs(q1)));
       if(sol&&(sol.p<S.bif.pmin||sol.p>S.bif.pmax)){why=`the edge of the range of ${M.parNames[p1]}`;break;}
       if(sol&&Math.abs(sol.p-guess)>0.1*range1)sol=null;
       if(!sol){h/=2;M.setParam(p2,q2);if(h<(hi-lo)*1e-7){why='the connection was lost';break;}continue;}
       qprev={p1:q1,p2:q2};q1=sol.p;q2=n2;out.push({p1:q1,p2:q2,T:sol.T});
       c.xm=sol.xm;if(!c.same)c.xp=sol.xp;
-      if(k%4===3){cv.pts=[...(dir>0?[]:out.slice().reverse()),start,...(dir>0?out:[])];requestRender();status(`Following ${dir>0?'up':'down'} in ${M.parNames[p2]}: ${out.length} points…`);await tick();}
+      if(k%4===3){cv.pts=[...(dir>0?[]:out.slice().reverse()),start,...(dir>0?out:[])];requestRender();status(`Following ${label} ${dir>0?'up':'down'} in ${M.parNames[p2]}: ${out.length} points…`);await tick();}
       if(n2===lo||n2===hi){why='the end of the range';break;}
     }
+    if(S.tp.skip){S.tp.skip=false;if(!why)why='you skipped this direction';}
     return{out,why};
   };
   let up,down;
-  try{
-    reset();up=await walk(1);
-    reset();down=S.tp.stop?{out:[],why:'stopped'}:await walk(-1);
-  }finally{saved.forEach((v,i)=>M.setParam(i,v));setTPBusy(false);}
+  try{reset();up=await walk(1);reset();down=S.tp.stop?{out:[],why:'stopped'}:await walk(-1);}
+  catch(e){status(`Following ${label} failed: ${e.message}`,true);up=up||{out:[],why:'failed'};down=down||{out:[],why:'failed'};}
+  finally{saved.forEach((v,i)=>M.setParam(i,v));setTPBusy(false);}
+  if(S.M!==M)return;
   cv.pts=[...down.out.slice().reverse(),start,...up.out];
-  fitTP();requestRender();
-  status(`${cv.type==='HOM'?'Homoclinic':'Heteroclinic'} curve of ${cv.pts.length} points: up in ${M.parNames[p2]}: ${up.why||'stopped'}; down: ${down.why||'stopped'}`);
+  fitTP();refreshCodim2();requestRender();
+  status(`${rec.type==='HOM'?'Homoclinic':'Heteroclinic'} curve from ${label}: ${cv.pts.length} points in ${((performance.now()-t0)/1000).toFixed(1)} s · up in ${M.parNames[p2]}: ${up.why||'stopped'}; down: ${down.why||'stopped'}`);
 }
-// Follow one curve again at each of a series of values of a third parameter, moving the starting point from slice to slice.
+// At the end of a branch of periodic orbits whose period keeps growing, the orbits are probably approaching a homoclinic
+// orbit. The last orbit is slowest where it passes the saddle: Newton's method from that point gives the saddle, and if
+// it has one real unstable direction (or one real stable direction, with time backwards) it is offered under From and To.
+function homCandidate(cb){
+  const M=S.M,P=cb.pts;if(!connOK()||P.length<6)return null;
+  const last=P[P.length-1];let Tmin=Infinity;for(const q of P)Tmin=Math.min(Tmin,q.T);
+  for(let k=P.length-4;k<P.length-1;k++)if(!(P[k+1].T>P[k].T))return null;   // the period is rising at the end
+  if(!(last.T>2*Tmin))return null;                                          // and has grown well beyond its smallest value
+  const saved=Float64Array.from(M.P.subarray(0,M.parNames.length)),n=M.n;
+  try{
+    if(cb.params)cb.params.forEach((v,i)=>M.setParam(i,v));M.setParam(cb.pi,last.p);
+    const dt=Math.min(S.num.dt>0?S.num.dt:0.05,last.T/400),r=integrate(M,last.x,{T:last.T,dt,method:S.num.method==='ros23'?'ros23':'rk4',tol:1e-8,noise:false,trans:0,maxPts:20000,bound:1e12});
+    const L=r.t.length;if(L<10)return null;
+    const f=new Float64Array(n),y=new Float64Array(n),sz=new Float64Array(n);
+    for(let i=0;i<n;i++)sz[i]=Math.max(1e-9,last.mx[i]-last.mn[i]);
+    let best=-1,bs=Infinity;
+    for(let k=0;k<L;k++){for(let i=0;i<n;i++)y[i]=r.cols[i][k];M.rhs(0,y,f);let sp=0;for(let i=0;i<n;i++)sp+=(f[i]/sz[i])**2;if(sp<bs){bs=sp;best=k;}}
+    for(let i=0;i<n;i++)y[i]=r.cols[i][best];
+    const xe=newton(M,y);if(!xe)return null;
+    // the orbit must really come close to it
+    let dmin=Infinity;for(let k=0;k<L;k++){let d=0;for(let i=0;i<n;i++)d=Math.max(d,Math.abs(r.cols[i][k]-xe[i])/sz[i]);dmin=Math.min(dmin,d);}
+    if(!(dmin<0.05))return null;
+    const A=numJac(M,xe),fw=uniqueUnstable(A)!==null,bw=!fw&&uniqueUnstable(A.map(row=>Array.from(row,v=>-v)))!==null;
+    if(!fw&&!bw)return null;
+    const ev=eigvals(A);if(!ev.some(e=>e.re<-1e-9)||!ev.some(e=>e.re>1e-9))return null;      // a saddle
+    const params=Array.from(M.P.subarray(0,M.parNames.length));
+    return{pi:cb.pi,p:last.p,x:Float64Array.from(xe),rev:bw,params,T:last.T,from:cb.from,cb,dist:dmin,
+      label:`end of ${String(cb.from).length>12?'orbit branch':cb.from+' orbits'}: saddle at ${M.varNames.slice(0,3).map((nm,i)=>`${nm} ${fmt(xe[i],3)}`).join(', ')}${n>3?', …':''} (${M.parNames[cb.pi]} ${fmt(last.p,6)})`};
+  }catch(e){return null;}
+  finally{saved.forEach((v,i)=>M.setParam(i,v));}
+}
+// offer the saddle found at the end of a branch under From and To; returns a sentence for the status line, or ''
+function loadHomCandidate(cb){
+  const c=homCandidate(cb);if(!c)return'';
+  S.bif.connCand=(S.bif.connCand||[]).filter(q=>q.cb!==cb&&S.bif.cycles.includes(q.cb));S.bif.connCand.push(c);
+  fillConnMenus();const k='c'+(S.bif.connCand.length-1);$('#cFrom').value=k;$('#cTo').value=k;$('#cRev').checked=c.rev;
+  return ` · the last orbits pass close to a saddle with one ${c.rev?'stable':'unstable'} direction, now loaded under Homoclinic and heteroclinic orbits${c.rev?' with time backwards':''}: press Find`;
+}
 async function runSlices(){
   if(S.bif.busy)return;
   const M=S.M,p1=S.bif.pi,p2=S.tp.p2i,p3=S.tp.p3i,np=M.parNames.length;readTpInputs();
@@ -4042,7 +4219,8 @@ function curWin(){return S.view==='pp'?S.pp.win:S.view==='tc'?(S.tc.st?S.tc.stwi
 function setWin(wn){if(S.view==='pp')S.pp.win=wn;else if(S.view==='tc'){if(S.tc.st)S.tc.stwin=wn;else if(S.tc.spec)S.tc.swin=wn;else S.tc.win=wn;}else if(S.view==='tp')S.tp.win=wn;else S.bif.win=wn;}
 
 /* ======================= fitting ======================= */
-function bounds(pairs,pad=0.08){
+function bounds(pairs,pad=0.08){return fitBounds(pairs,pad);}
+function fitBounds(pairs,pad=0.08){
   let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
   for(const[xs,ys]of pairs)for(let k=0;k<xs.length;k++){const x=xs[k],y=ys[k];if(!Number.isFinite(x)||!Number.isFinite(y))continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
   if(!Number.isFinite(x0))return null;
@@ -4063,18 +4241,22 @@ function fitPP(silent,force){
   if(!silent){computeEquilibria();refreshEqList();}
 }
 function fitTC(force){if(S.lock.tc&&!force)return;if(S.tc.st){const w=stFitWin(activeTraj());if(w)S.tc.stwin=w;return;}if(S.tc.spec){const sw=specFitWin(activeTraj(),[...S.tc.vars]);if(sw)S.tc.swin=sw;return;}const w=tcFitWin(activeTraj(),[...S.tc.vars]);if(w)S.tc.win=w;}
-function fitBif(force){
+// keepX {xlo,xhi}: keep the horizontal axis and fit only the vertical one, to the data in that range of the parameter
+function fitBif(force,keepX){
   if(S.lock.bif&&!force)return;
+  const inX=pr=>keepX?pr.map(([xs,ys])=>{const X=[],Y=[];for(let k=0;k<xs.length;k++)if(xs[k]>=keepX.xlo&&xs[k]<=keepX.xhi){X.push(xs[k]);Y.push(ys[k]);}return[X,Y];}):pr;
+  const bounds=(pr,pad)=>fitBounds(inX(pr),pad);
+  const setW=w=>{S.bif.win=keepX?{xlo:keepX.xlo,xhi:keepX.xhi,ylo:w.ylo,yhi:w.yhi}:w;};
   const vi=S.bif.vi,pi=S.bif.pi,pairs=[],sp=[];
   if(S.bif.mode==='N'){const pr=[],j=S.bif.vn||0;ensureL2All();for(const bb of S.bif.bvps)if(bb.pi===pi)pr.push([bb.pts.map(q=>q.p),bb.pts.map(q=>q.nr[j])]);
     for(const br of S.bif.branches)if(br.pi===pi)pr.push([br.pts.map(q=>q.p),br.pts.map(q=>eqN(q.x))]);
     for(const cb of S.bif.cycles)if(cb.pi===pi)pr.push([cb.pts.map(q=>q.p),cb.pts.map(q=>q.nr?q.nr[j]:NaN)]);
-    const b2=bounds(pr);if(b2){b2.xlo=Math.min(b2.xlo,S.bif.pmin);b2.xhi=Math.max(b2.xhi,S.bif.pmax);S.bif.win=b2;}else S.bif.win={xlo:S.bif.pmin,xhi:S.bif.pmax,ylo:0,yhi:1};return;}
+    const b2=bounds(pr);if(b2){b2.xlo=Math.min(b2.xlo,S.bif.pmin);b2.xhi=Math.max(b2.xhi,S.bif.pmax);setW(b2);}else setW({xlo:S.bif.pmin,xhi:S.bif.pmax,ylo:0,yhi:1});return;}
   if(S.bif.mode==='T'||S.bif.mode==='f'){const f=S.bif.mode==='f',tv=T=>f?1/T:T,pr=[];
     for(const cb of S.bif.cycles)if(cb.pi===pi)pr.push([cb.pts.map(q=>q.p),cb.pts.map(q=>tv(q.T))]);
     for(const sw of S.bif.sweeps)if(sw.pi===pi){const R=sw.rows.filter(r=>r.per>0);if(R.length)pr.push([R.map(r=>r.p),R.map(r=>tv(r.per))]);}
     const bb=bounds(pr);
-    if(bb){bb.xlo=Math.min(bb.xlo,S.bif.pmin);bb.xhi=Math.max(bb.xhi,S.bif.pmax);S.bif.win=bb;}else S.bif.win={xlo:S.bif.pmin,xhi:S.bif.pmax,ylo:0,yhi:1};
+    if(bb){bb.xlo=Math.min(bb.xlo,S.bif.pmin);bb.xhi=Math.max(bb.xhi,S.bif.pmax);setW(bb);}else setW({xlo:S.bif.pmin,xhi:S.bif.pmax,ylo:0,yhi:1});
     return;}
   for(const sw of S.bif.sweeps)if(sw.pi===pi){sp.push([sw.rows.map(r=>r.p),sw.rows.map(r=>r.max[vi])]);sp.push([sw.rows.map(r=>r.p),sw.rows.map(r=>r.min[vi])]);}
   // when there is an orbit diagram, keep branches that run off to infinity from flattening it
@@ -4084,8 +4266,8 @@ function fitBif(force){
   for(const bb of S.bif.bvps)if(bb.pi===pi){pairs.push([bb.pts.map(p=>p.p),bb.pts.map(p=>p.mx[vi])]);pairs.push([bb.pts.map(p=>p.p),bb.pts.map(p=>p.mn[vi])]);}
   pairs.push(...sp);
   const b=bounds(pairs);
-  if(b){b.xlo=Math.min(b.xlo,S.bif.pmin);b.xhi=Math.max(b.xhi,S.bif.pmax);S.bif.win=b;}
-  else{const pw=S.pp.win;let ylo=-1,yhi=1;if(vi===S.pp.xi&&pw){ylo=pw.xlo;yhi=pw.xhi;}else if(vi===S.pp.yi&&pw){ylo=pw.ylo;yhi=pw.yhi;}S.bif.win={xlo:S.bif.pmin,xhi:S.bif.pmax,ylo,yhi};}
+  if(b){b.xlo=Math.min(b.xlo,S.bif.pmin);b.xhi=Math.max(b.xhi,S.bif.pmax);setW(b);}
+  else{const pw=S.pp.win;let ylo=-1,yhi=1;if(vi===S.pp.xi&&pw){ylo=pw.xlo;yhi=pw.xhi;}else if(vi===S.pp.yi&&pw){ylo=pw.ylo;yhi=pw.yhi;}setW({xlo:S.bif.pmin,xhi:S.bif.pmax,ylo,yhi});}
 }
 function fit(){
   if(S.view in S.lock)S.lock[S.view]=false;
@@ -4560,6 +4742,8 @@ function buildNumerics(){
   const C=S.cont,setc=(id,v)=>{$(id).value=v==null?'':fmtIn(v);};
   setc('#cEqNmax',C.eqNmax);setc('#cEqDsmin',C.eqDsmin);setc('#cEqDsmax',C.eqDsmax);setc('#cPoNtst',C.poNtst);setc('#cPoDs',C.poDs);setc('#cPoDsmax',C.poDsmax);setc('#cPoNmax',C.poNmax);setc('#cTpNmax',C.tpNmax);setc('#cTcNmax',C.tcNmax);
   $('#cDs').value=fmtIn(S.bif.ds);
+  {const se=(id,v)=>{$(id).value=v<1e-3?v.toExponential().replace('e+','e'):fmtIn(v);};se('#cEqTol',CTOL.eqTol);se('#cPoTol',CTOL.poTol);se('#cTpTol',CTOL.tpTol);se('#cResTol',CTOL.resTol);}
+  setc('#cItMax',CTOL.itMax);setc('#cTGrow',CTOL.tGrow);
   const nd=!!(S.M&&S.M.discrete);for(const id of['#cPoNtst','#cPoDs','#cPoDsmax','#cPoNmax','#cTcNmax'])$(id).disabled=nd;
 }
 function buildChips(){
@@ -4629,7 +4813,7 @@ function buildBifControls(){
   $('#bPO').hidden=$('#poLg').hidden=!!M.discrete;$('#bPO').disabled=!M.parNames.length;
   $('#bPer').hidden=$('#lblPer').hidden=!M.discrete;$('#bPer').value=S.bif.period||1;
   {const bv=M.nbc>0;$('#bBvp').hidden=$('#bvpLg').hidden=!bv;$('#bBvp').disabled=!M.parNames.length;if(bv){$('#bRun').hidden=$('#bSweep').hidden=$('#bPO').hidden=$('#poLg').hidden=true;}else{$('#bRun').hidden=$('#bSweep').hidden=false;}}
-  refreshBifStart();refreshSpecial();
+  refreshBifStart();refreshSpecial();fillConnMenus();
 }
 function refreshBifStart(){
   const sel=$('#bStart');if(!sel)return;
@@ -4640,13 +4824,13 @@ function refreshBifStart(){
   const want=S.eqSel>=0?S.eqSel:(S.bif.userStart&&S.bif.start<S.eqs.length?S.bif.start:near);sel.value=String(S.eqs.length?want:-1);
 }
 function refreshSpecial(){
-  const box=$('#spList'),M=S.M,vi=S.bif.vi,sp=[...allSpecial().filter(s=>s.pi===S.bif.pi),...pickedOrbits().filter(o=>o.pi===S.bif.pi)];
+  const box=$('#spList'),M=S.M,vi=S.bif.vi,sp=[...allSpecial().filter(s=>s.pi===S.bif.pi),...pickedOrbits().filter(o=>o.pi===S.bif.pi),...connPoints().filter(o=>o.pi===S.bif.pi)];
   $('#spCount').textContent=sp.length?String(sp.length):'';
   if(!sp.length){box.replaceChildren(el('p',{class:'empty',text:M.discrete?'Folds (LP), period doublings (PD) and Neimark–Sacker points (NS) found during continuation are listed here.':'Folds (LP), Hopf points (HB) and branch points (BP) of equilibria, and folds (LPC), period doublings (PD) and torus points (TR) of periodic orbits, are listed here.'}));return;}
   const tb=el('table',{class:'sp'});
   tb.append(el('tr',null,el('th',{text:'Pt'}),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
   tb.firstChild.append(el('th',{text:''}));
-  const per=s=>{const N=(s.br&&s.br.period)||1;return s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?String(2*N):N>1?String(N):'—';};
+  const per=s=>{if(s.conn)return'∞';const N=(s.br&&s.br.period)||1;return s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?String(2*N):N>1?String(N):'—';};
   const NAMES={HB:'Hopf',LP:'fold',BP:'branch-point',PD:'period-doubling',NS:'Neimark–Sacker',LPC:'fold-of-cycles',TR:'torus'};
   const btn=(text,title,fn)=>el('button',{class:'btn small',text,title,onclick:ev=>{ev.stopPropagation();fn();}});
   sp.forEach(s=>{
@@ -4657,11 +4841,14 @@ function refreshSpecial(){
     if(!s.cyc&&!s.bvp&&s.type==='HB'&&!M.discrete)acts.append(btn('Cycles','Continue the periodic orbits born at this Hopf point',()=>runPOFromHopf(s)));
     if(s.cyc&&s.type==='PD')acts.append(btn('Double','Switch to the period-doubled branch of orbits',()=>runPODouble(s)));
     if(s.cyc&&s.type!=='OR'&&followSp(s)&&M.parNames.length>1)acts.append(btn('Follow','Continue this bifurcation of cycles in two parameters',()=>runTwoPar(s)));
+    if(s.conn){if(M.parNames.length>1)acts.append(btn('Follow',`Follow this ${s.type==='HOM'?'homoclinic':'heteroclinic'} orbit in two parameters (Parameter 2 of the Two-parameter view)`,()=>runTwoPar(s)));
+      acts.append(btn('Remove','Take this orbit off the diagram',()=>{S.bif.conns=S.bif.conns.filter(q=>q!==s.conn);refreshSpecial();buildTpControls();requestRender();}));}
     if(s.type==='OR'){if(M.parNames.length>1)acts.append(btn('Const. T',`Follow this orbit in two parameters keeping its period fixed at ${fmt(s.T,5)}`,()=>followConstT(s)));
       acts.append(btn('Remove','Take this orbit off the list',()=>{S.bif.picked=S.bif.picked.filter(o=>o!==s.ref);refreshSpecial();buildTpControls();requestRender();}));}
     const crit=s.type==='HB'&&Number.isFinite(s.l1)?el('span',{class:'crit',text:s.l1>0?'sub':'super',title:`First Lyapunov coefficient l1 = ${fmt(s.l1,3)}: ${s.l1>0?'subcritical, unstable orbits are born':'supercritical, stable orbits are born'}`}):null;
-    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
-    tr.addEventListener('click',()=>{if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
+    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
+    if(s.conn)tr.title=`Click to move here and draw the orbit; it takes time ${fmt(s.conn.T,4)} from ε = ${fmt(s.conn.eps,2)} of the ${s.conn.rev?'last':'first'} saddle to its closest approach to the ${s.conn.rev?'first':'last'}`;
+    tr.addEventListener('click',()=>{if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
   box.replaceChildren(tb);
 }
 
@@ -4676,7 +4863,7 @@ function poOptions(){
 function setPOBusy(on){
   S.bif.busy=on;$('#bRun').disabled=$('#bSweep').disabled=on;
   const b=$('#bPO');b.textContent=on?'Stop':'Limit cycle';b.classList.toggle('primary',on);b.disabled=false;$('#bSkip').hidden=!on;
-  $('#bProg').hidden=!on;if(!on)$('#bProg').firstElementChild.style.width='0';
+  $('#bProg').hidden=!on;if(!on)$('#bProg').firstElementChild.style.width='0';$('#cFind').disabled=on;
   document.querySelectorAll('#spList button').forEach(x=>x.disabled=on);
 }
 async function runCycles(states,from){
@@ -4709,10 +4896,12 @@ async function runCycles(states,from){
   finally{saved.forEach((v,i)=>M.setParam(i,v));setPOBusy(false);}
   if(S.M!==M)return;
   S.bif.cycles=S.bif.cycles.filter(c=>c.pts.length>1);
+  // a branch whose period keeps growing to its end: offer the saddle it approaches to the homoclinic finder
+  let homNote='';for(const{cb}of branches)if(!homNote&&S.bif.cycles.includes(cb))homNote=loadHomCandidate(cb);
   fitBif();refreshSpecial();buildTpControls();requestRender();
   const cnt={};for(const{cb}of branches)for(const s of cb.special)cnt[s.type]=(cnt[s.type]||0)+1;
   const npts=branches.reduce((s,b)=>s+b.cb.pts.length,0),why=[...new Set(branches.map(b=>b.st.done).filter(Boolean))].join('; ');
-  status(`Periodic orbits from ${from}: ${npts} points in ${(performance.now()-t0)/1000<1?Math.round(performance.now()-t0)+' ms':((performance.now()-t0)/1000).toFixed(1)+' s'} · ${Object.entries(cnt).map(([t,n])=>`${n} ${t}`).join(', ')||'no bifurcations of cycles'} · stopped because ${why||'it finished'}`);
+  status(`Periodic orbits from ${from}: ${npts} points in ${(performance.now()-t0)/1000<1?Math.round(performance.now()-t0)+' ms':((performance.now()-t0)/1000).toFixed(1)+' s'} · ${Object.entries(cnt).map(([t,n])=>`${n} ${t}`).join(', ')||'no bifurcations of cycles'} · stopped because ${why||'it finished'}${homNote}`);
 }
 function poGuard(){
   const M=S.M;if(S.bif.busy)return false;
@@ -5303,7 +5492,8 @@ function copyText(txt,label){
 // script are collected and saved together at the end, as a single file or a zip.
 const SCRIPT={mute:0,running:false,stop:false,files:null,rec:false,stepIdx:-1,lines:null};
 const NUMMAP={total:'#nTotal',t0:'#nT0',trans:'#nTrans',transient:'#nTrans',dt:'#nDt',tol:'#nTol',toler:'#nTol',bound:'#nBound',meth:'#nMeth',method:'#nMeth',dir:'#nDir',direction:'#nDir',seed:'#nSeed',res:'#nRes',sweep:'#nSweepN',
-  ds:'#cDs',dsmin:'#cEqDsmin',dsmax:'#cEqDsmax',nmax:'#cEqNmax',ntst:'#cPoNtst',pods:'#cPoDs',podsmax:'#cPoDsmax',ponmax:'#cPoNmax',tpnmax:'#cTpNmax',tcnmax:'#cTcNmax'};
+  ds:'#cDs',dsmin:'#cEqDsmin',dsmax:'#cEqDsmax',nmax:'#cEqNmax',ntst:'#cPoNtst',pods:'#cPoDs',podsmax:'#cPoDsmax',ponmax:'#cPoNmax',tpnmax:'#cTpNmax',tcnmax:'#cTcNmax',
+  eqtol:'#cEqTol',potol:'#cPoTol',tptol:'#cTpTol',restol:'#cResTol',itmax:'#cItMax',tgrow:'#cTGrow'};
 const VIEWS={pp:'pp',phase:'pp',plane:'pp','3d':'p3',p3:'p3',tc:'tc',time:'tc',timecourse:'tc',bif:'bif',bifurcation:'bif',tp:'tp',two:'tp',twopar:'tp'};
 const SHOWS={hilo:'var','hi-lo':'var',var:'var',max:'var',l2:'N',norm:'N',n:'N',period:'T',t:'T',frequency:'f',freq:'f',f:'f'};
 const scrNum=(v,what)=>{const x=Number(v);if(v===undefined||v===''||!Number.isFinite(x))throw new Error(`${what||'a value'} should be a number, not “${v??''}”`);return x;};
@@ -5312,7 +5502,7 @@ const fire=(id,v,ev='change')=>{const e=$(id);if(!e)throw new Error(`no control 
 const idle=()=>!S.bif.busy&&!S.tp.running&&!gridRun;
 async function waitIdle(){await new Promise(r=>setTimeout(r,0));while(!idle()){if(SCRIPT.stop){S.bif.poStop=true;S.tp.stop=true;if(gridRun)gridRun.stop=true;}await new Promise(r=>setTimeout(r,40));}}
 function findSpecialLabel(lab){
-  const L=String(lab).toUpperCase(),all=[...allSpecial(),...pickedOrbits()].filter(s=>s.pi===S.bif.pi);
+  const L=String(lab).toUpperCase(),all=[...allSpecial(),...pickedOrbits(),...connPoints()].filter(s=>s.pi===S.bif.pi);
   const sp=all.find(s=>s.label.toUpperCase()===L);
   if(!sp)throw new Error(`there is no special point ${lab} for ${S.M.parNames[S.bif.pi]} (have: ${all.map(s=>s.label).join(', ')||'none'})`);return sp;}
 const varIndex=(nm,all)=>{const i=(all?S.M.names:S.M.varNames).indexOf(String(nm).toLowerCase());if(i<0)throw new Error(`there is no variable called “${nm}”`);return i;};
@@ -5326,7 +5516,7 @@ const CMDS={
   par:{help:'par a=1 b=2 — set parameter values',run:a=>{for(const[k,v]of kv(a)){const i=parIndex(k);setParamVal(i,scrNum(v,k),true);}liveUpdate();}},
   init:{help:'init x=1 y=0 — set initial values (Markov states too)',run:a=>{for(const[k,v]of kv(a)){const i=S.M.varNames.indexOf(k);if(i>=0){S.ic[i]=scrNum(v,k);continue;}const j=S.M.mkNames.indexOf(k);if(j>=0){S.mkIC[j]=Math.round(scrNum(v,k));S.M.mk[j]=S.mkIC[j];continue;}throw new Error(`there is no variable called “${k}”`);}refreshIC();S.ver++;computeEquilibria();refreshEqList();requestRender();}},
   set:{help:'set name=value … — parameter or initial value, whichever the name is',run:a=>{for(const[k,v]of kv(a)){if(S.M.parNames.includes(k))CMDS.par.run([`${k}=${v}`]);else CMDS.init.run([`${k}=${v}`]);}}},
-  num:{help:'num total=200 dt=0.05 trans=0 meth=rk4 dir=both tol=1e-6 bound=1e4 seed=7 ds=… nmax=… ntst=…',run:a=>{for(const[k,v0]of kv(a)){const id=NUMMAP[k];if(!id)throw new Error(`unknown setting “${k}”; use ${Object.keys(NUMMAP).join(', ')}`);let v=v0;
+  num:{help:'num total=200 dt=0.05 trans=0 meth=rk4 dir=both tol=1e-6 bound=1e4 seed=7 ds=… nmax=… ntst=… eqtol=1e-10 potol=1e-9 tptol=1e-8 restol=1e-6 itmax=auto tgrow=40',run:a=>{for(const[k,v0]of kv(a)){const id=NUMMAP[k];if(!id)throw new Error(`unknown setting “${k}”; use ${Object.keys(NUMMAP).join(', ')}`);let v=v0;if(/^auto$/i.test(v))v='';
     if(k==='meth'||k==='method'){const m=METH[v.toLowerCase()]||(['rk4','dp45','euler','ros23'].includes(v)?v:null);if(!m)throw new Error(`unknown method “${v}”`);v=m;}
     if(k==='dir'||k==='direction'){v=dirArg(v);if(!v)throw new Error('dir is forward, backward or both');}
     fire(id,v);}}},
@@ -5382,6 +5572,12 @@ const CMDS={
   pick:{help:'pick K NAME=value — pick the orbit of family K nearest that parameter value (becomes OR1, OR2, …)',run:a=>{const fam=S.bif.cycles.filter(c=>c.pi===S.bif.pi),cb=fam[scrNum(a[0],'K')-1];if(!cb)throw new Error(`there are ${fam.length} orbit families for this parameter`);const[[k,v]]=kv([a[1]]);if(parIndex(k)!==S.bif.pi)throw new Error(`orbits are parametrised by ${S.M.parNames[S.bif.pi]}`);const p=scrNum(v);let best=0;cb.pts.forEach((q,j)=>{if(Math.abs(q.p-p)<Math.abs(cb.pts[best].p-p))best=j;});grabCycle(cb,best,null,true);}},
   tppar:{help:'tppar NAME [lo hi] — second parameter (and its range) for two-parameter curves',run:a=>{const i=parIndex(a[0]);if(i===S.bif.pi)throw new Error('the second parameter must differ from the first');fire('#tP2',i);if(a.length===3){fire('#tMin2',scrNum(a[1],'lo'));fire('#tMax2',scrNum(a[2],'hi'));}else if(a.length!==1)throw new Error('give both ends of the range');}},
   follow:{help:'follow LABEL — follow HB1, LP1, LPC1, PD1 … in two parameters, or OR1 at constant period',run:async a=>{const sp=findSpecialLabel(a[0]);const n=S.tp.curves.length;if(sp.type==='OR')followConstT(sp);else runTwoPar(sp);await waitIdle();if(S.tp.curves.length===n)throw new Error($('#status').textContent);}},
+  connect:{help:'connect FROM [TO] [backward] — find a homoclinic (TO = FROM, or no TO) or heteroclinic orbit in the bifurcation parameter. FROM and TO are equilibrium numbers, or end for the saddle found at the end of the last branch of periodic orbits whose period grew',run:a=>{
+    const w=a.slice(),back=w.length&&/^b(ack(ward)?)?$/i.test(w[w.length-1]);if(back)w.pop();if(!w.length||w.length>2)throw new Error('give FROM and optionally TO');
+    const key=v=>{v=String(v).toLowerCase();const C=S.bif.connCand||[];if(/^end\d*$/.test(v)){const j=v==='end'?C.length-1:+v.slice(3)-1;if(!C[j]||C[j].pi!==S.bif.pi)throw new Error('no saddle has been found at the end of a branch of periodic orbits in this parameter');return'c'+j;}
+      const k=scrNum(v,'the equilibrium number')-1;if(!S.eqs[k])throw new Error(`there are ${S.eqs.length} equilibria in view`);return'e'+k;};
+    const f=key(w[0]),t=w[1]?key(w[1]):f,cand=[f,t].map(k=>k[0]==='c'?S.bif.connCand[+k.slice(1)]:null).find(Boolean),rv=back||!!(cand&&cand.rev);
+    connFindRun(f,t,rv);}},
   clear:{help:'clear bif|tp — clear the bifurcation or two-parameter diagram',run:a=>{const w=String(a[0]||'').toLowerCase();if(w==='bif')$('#bClear').click();else if(w==='tp')$('#tClear').click();else throw new Error('clear bif or clear tp');}},
   export:{help:'export svg|csv|dat [FILE] — save the current plot or its data',run:async a=>{const kind=String(a[0]||'').toLowerCase(),name=a[1];
     const sink=SCRIPT.files,before=sink?sink.length:0;
@@ -5390,6 +5586,9 @@ const CMDS={
     if(sink){const got=sink.slice(before);if(!got.length)throw new Error($('#status').textContent||'nothing to export');
       if(name){if(got.length===1)got[0].name=/\.\w+$/.test(name)?name:`${name}.${kind}`;else got.forEach(f=>{f.name=`${name.replace(/\.\w+$/,'')}-${f.name}`;});}}}},
   writestate:{help:'writestate — write the current state into the equations text',run:()=>writeState()},
+  history:{help:'history save [FILE] | history clear — save the status-line messages, with their times, as a text file (in the script’s zip), or forget them',run:async a=>{const w=String(a[0]||'').toLowerCase();
+    if(w==='clear'){HIST.list=[];return;}if(w!=='save')throw new Error('use history save [FILE] or history clear');
+    let nm=a[1];if(nm&&!/\.\w+$/.test(nm))nm+='.txt';await saveHistory(nm);}},
   echo:{help:'echo TEXT — write a line in the log',run:(a,log)=>log(a.join(' '),'o')},
   wait:{help:'wait MS — pause (for watching a script run)',run:async a=>{await new Promise(r=>setTimeout(r,Math.min(10000,scrNum(a[0],'ms'))));}}
 };
@@ -5399,37 +5598,81 @@ function scrParse(text){const L=[];text.split(/\r?\n/).forEach((raw,i)=>{const s
 // the commands in an .ode file: lines of the form  #@do command
 const odeScript=txt=>txt.split(/\r?\n/).map(l=>/^\s*#@do\s+(.*)$/i.exec(l)).filter(Boolean).map(m=>m[1]).join('\n');
 function scrLog(msg,cls){const box=$('#scrLog');const d=el('div',{class:cls||'',text:msg});box.append(d);box.scrollTop=box.scrollHeight;}
-async function runScript(text,{step}={}){
+// run one parsed line: true if it worked; errors and the line are written in the log
+async function scrExec(L){
+  const w=scrWords(L.s),cmd=(w.shift()||'').toLowerCase(),C=CMDS[cmd];
+  if(!C){scrLog(`Line ${L.ln}: unknown command “${cmd}”. Press Commands for the list.`,'e');return false;}
+  if(!S.M&&cmd!=='example'&&cmd!=='apply'){scrLog(`Line ${L.ln}: load a model first`,'e');return false;}
+  try{await C.run(w,scrLog);await waitIdle();scrLog(`${L.ln}  ${L.s}`,'d');return true;}
+  catch(e){scrLog(`Line ${L.ln}: ${L.s}\n  ${e.message}`,'e');return false;}
+}
+// the files exported by a script (or by one step of it) are saved together: one file, or a zip
+async function scrDeliver(files,quiet){
+  if(!files||!files.length)return;
+  const dupe=new Map();for(const f of files){const k=dupe.get(f.name)||0;dupe.set(f.name,k+1);if(k)f.name=f.name.replace(/(\.\w+)?$/,`-${k+1}$1`);}
+  if(files.length===1&&/\.(svg|csv|txt)$/i.test(files[0].name))await deliverFile(files[0].data,files[0].name);
+  else{const zipName=files.length===1?files[0].name.replace(/\.\w+$/,'')+'.zip':`${fileBase()}-script.zip`;await deliverFile(makeZip(files),zipName);}
+  if(!quiet)scrLog(`Saved ${files.length} file${files.length>1?'s':''}${files.length>1||!/\.(svg|csv|txt)$/i.test(files[0].name)?' in a zip':''}: ${files.map(f=>f.name).join(', ')}`,'o');
+}
+function scrBusy(on,label){
+  $('#scrRun').textContent=on?'Stop':(SCRIPT.stepper?'Run to end':'Run');$('#scrStep').disabled=on;$('#scrStep1').disabled=on;$('#scrRestart').disabled=on;
+  if(label!==undefined)$('#scrLine').textContent=label;
+}
+async function runScript(text,{step,from}={}){
   if(SCRIPT.running){SCRIPT.stop=true;return;}
-  const lines=scrParse(text);if(!lines.length){status('The script is empty',true);return;}
-  SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];const t0=performance.now();
-  $('#scrRun').textContent='Stop';$('#scrStep').disabled=true;$('#scrLog').replaceChildren();
+  // while stepping, Run carries on from the next command instead of starting again
+  if(from===undefined&&SCRIPT.stepper&&!step){from=SCRIPT.stepper.next;}
+  const all=scrParse(text),lines=from?all.filter(L=>L.ln>=from):all;
+  if(!all.length){status('The script is empty',true);return;}
+  if(!lines.length){scrStepEnd();status('No commands left: the script has been stepped to its end',true);return;}
+  SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];const t0=performance.now(),cont=!!from&&!!SCRIPT.stepper;
+  scrBusy(true);if(!cont)$('#scrLog').replaceChildren();else scrLog(`Running from line ${lines[0].ln} to the end`,'o');
   let ok=true,done=0;
   try{
     for(const L of lines){
       if(SCRIPT.stop){scrLog('Stopped.','w');ok=false;break;}
-      const w=scrWords(L.s),cmd=(w.shift()||'').toLowerCase(),C=CMDS[cmd];
       $('#scrLine').textContent=`line ${L.ln}`;
-      if(!C){scrLog(`Line ${L.ln}: unknown command “${cmd}”. Press Commands for the list.`,'e');ok=false;break;}
-      if(!S.M&&cmd!=='example'&&cmd!=='apply'){scrLog(`Line ${L.ln}: load a model first`,'e');ok=false;break;}
-      try{await C.run(w,scrLog);await waitIdle();done++;scrLog(`${L.ln}  ${L.s}`,'d');}
-      catch(e){scrLog(`Line ${L.ln}: ${L.s}\n  ${e.message}`,'e');ok=false;break;}
+      if(!(await scrExec(L))){ok=false;break;}
+      done++;
       if(step)await new Promise(r=>setTimeout(r,350));
     }
   }finally{
-    const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;$('#scrRun').textContent='Run';$('#scrStep').disabled=false;$('#scrLine').textContent='';
+    const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'');
     requestRender();
-    if(files&&files.length){
-      const dupe=new Map();for(const f of files){const k=dupe.get(f.name)||0;dupe.set(f.name,k+1);if(k)f.name=f.name.replace(/(\.\w+)?$/,`-${k+1}$1`);}
-      if(files.length===1&&/\.(svg|csv|txt)$/i.test(files[0].name))await deliverFile(files[0].data,files[0].name);
-      else{const zipName=files.length===1?files[0].name.replace(/\.\w+$/,'')+'.zip':`${fileBase()}-script.zip`;await deliverFile(makeZip(files),zipName);}
-      scrLog(`Saved ${files.length} file${files.length>1?'s':''}${files.length>1||!/\.(svg|csv|txt)$/i.test(files[0].name)?' in a zip':''}: ${files.map(f=>f.name).join(', ')}`,'o');
-    }
+    await scrDeliver(files);
   }
   const secs=((performance.now()-t0)/1000).toFixed(1);
   status(ok?`Script finished: ${done} command${done===1?'':'s'} in ${secs} s`:`Script stopped after ${done} command${done===1?'':'s'}; see the log in the Script tab`,!ok);
   if(!ok)setTab('scr');
 }
+// Step: run the next command only. The position is kept as a line number, so the script can be edited between steps
+// (fix a failing line and Step again); Run then carries on to the end, and Restart goes back to the top.
+function scrShowNext(){
+  const st=SCRIPT.stepper,ta=$('#scrText');if(!st)return;
+  const L=scrParse(ta.value).find(q=>q.ln>=st.next);
+  if(!L){scrStepEnd();return;}
+  st.next=L.ln;$('#scrLine').textContent=`next: line ${L.ln} · ${L.s.length>34?L.s.slice(0,33)+'…':L.s}`;
+  // select the next line in the box (visible when the box has the focus), and scroll it into view
+  const rows=ta.value.split('\n'),a=rows.slice(0,L.ln-1).reduce((n,r)=>n+r.length+1,0);
+  try{ta.setSelectionRange(a,a+rows[L.ln-1].length);}catch(e){}
+  const lh=parseFloat(getComputedStyle(ta).lineHeight)||16;ta.scrollTop=Math.max(0,(L.ln-3)*lh);
+}
+function scrStepEnd(){if(!SCRIPT.stepper)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'end of script');scrLog('End of the script.','o');status('Stepped to the end of the script');}
+async function stepScript(){
+  if(SCRIPT.running)return;
+  const ta=$('#scrText'),all=scrParse(ta.value);if(!all.length){status('The script is empty',true);return;}
+  if(!SCRIPT.stepper){SCRIPT.stepper={next:all[0].ln};$('#scrLog').replaceChildren();scrLog(`Stepping through the script, ${all.length} command${all.length===1?'':'s'}: Step runs the next one, Run carries on to the end, Restart goes back to the top.`,'o');$('#scrRestart').hidden=false;}
+  const st=SCRIPT.stepper,L=all.find(q=>q.ln>=st.next);if(!L){scrStepEnd();return;}
+  SCRIPT.running=true;SCRIPT.stop=false;SCRIPT.files=[];scrBusy(true,`line ${L.ln}`);
+  let ok=false;
+  try{ok=await scrExec(L);}
+  finally{const files=SCRIPT.files;SCRIPT.files=null;SCRIPT.running=false;scrBusy(false);requestRender();await scrDeliver(files);}
+  if(!SCRIPT.stepper)return;
+  if(ok){st.next=L.ln+1;status(`Step: line ${L.ln} done (${L.s})`);if(!all.some(q=>q.ln>L.ln)){scrStepEnd();return;}}
+  else{status(`Step: line ${L.ln} failed; fix it and press Step again, or Restart`,true);setTab('scr');}
+  scrShowNext();
+}
+function scrRestart(){if(SCRIPT.running)return;SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrBusy(false,'');scrLog('Back to the top: the next Step runs the first command.','o');}
 // a minimal zip writer (stored, no compression), enough for SVG, CSV and .dat files
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
 function makeZip(files){
@@ -5505,7 +5748,9 @@ function scriptInit(){
   const ta=$('#scrText');ta.value=store.get('xpps-script')||SCRIPT_EXAMPLE;
   ta.addEventListener('input',()=>store.set('xpps-script',ta.value));
   $('#scrRun').addEventListener('click',()=>runScript(ta.value));
-  $('#scrStep').addEventListener('click',()=>runScript(ta.value,{step:true}));
+  $('#scrStep').addEventListener('click',()=>{SCRIPT.stepper=null;$('#scrRestart').hidden=true;runScript(ta.value,{step:true});});
+  $('#scrStep1').addEventListener('click',stepScript);
+  $('#scrRestart').addEventListener('click',scrRestart);
   $('#scrOde').addEventListener('click',()=>{const t=odeScript($('#odeText').value);if(!t.trim()){status('The equations have no #@do lines',true);return;}runScript('apply\n'+t);});
   // Record: ask what to do with commands already in the box, mark a new block if they are kept, and report what was recorded
   const askRecord=()=>new Promise(res=>{
@@ -5639,9 +5884,13 @@ function init(){
     C.poDs=pos('#cPoDs',C.poDs);C.poDsmax=pos('#cPoDsmax',C.poDsmax);if(C.poDsmax<C.poDs)C.poDsmax=C.poDs;
     C.poNmax=Math.max(10,pos('#cPoNmax',C.poNmax,false,true));C.tpNmax=Math.max(10,pos('#cTpNmax',C.tpNmax,false,true));C.tcNmax=Math.max(10,pos('#cTcNmax',C.tcNmax,false,true));
     {const v=pos('#cDs',S.bif.ds);S.bif.ds=v;const b=$('#bDs');if(b)b.value=fmtIn(v);}
+    CTOL.eqTol=pos('#cEqTol',CTOL.eqTol);CTOL.poTol=pos('#cPoTol',CTOL.poTol);CTOL.tpTol=pos('#cTpTol',CTOL.tpTol);CTOL.resTol=pos('#cResTol',CTOL.resTol);
+    {const v=pos('#cItMax',CTOL.itMax,true,true);CTOL.itMax=v==null?null:Math.min(100,Math.max(2,v));}
+    CTOL.tGrow=Math.max(1.5,pos('#cTGrow',CTOL.tGrow));
     buildNumerics();status('Continuation settings updated; they apply to the next branch or curve');
   };
-  for(const id of['#cDs','#cEqDsmin','#cEqDsmax','#cEqNmax','#cPoNtst','#cPoDs','#cPoDsmax','#cPoNmax','#cTpNmax','#cTcNmax'])$(id).addEventListener('change',contChange);
+  for(const id of['#cDs','#cEqDsmin','#cEqDsmax','#cEqNmax','#cPoNtst','#cPoDs','#cPoDsmax','#cPoNmax','#cTpNmax','#cTcNmax','#cEqTol','#cPoTol','#cTpTol','#cResTol','#cItMax','#cTGrow'])$(id).addEventListener('change',contChange);
+  $('#cTolReset').addEventListener('click',()=>{Object.assign(CTOL,CTOL_DEF);buildNumerics();rec(`num eqtol=${CTOL.eqTol} potol=${CTOL.poTol} tptol=${CTOL.tpTol} restol=${CTOL.resTol} itmax=auto tgrow=${CTOL.tGrow}`,'ctol');status('Continuation tolerances back to their defaults');});
   $('#xSel').addEventListener('change',e=>{S.pp.xi=+e.target.value;S.ver++;S.lock.pp=false;fitPP(false,true);requestRender();});
   $('#ySel').addEventListener('change',e=>{S.pp.yi=+e.target.value;S.ver++;S.lock.pp=false;fitPP(false,true);requestRender();});
   for(const[id,key]of[['#x3Sel','xi'],['#y3Sel','yi'],['#z3Sel','zi']])$(id).addEventListener('change',e=>{S.p3[key]=+e.target.value;S.p3.box=null;requestRender();});
@@ -5681,6 +5930,7 @@ function init(){
   $('#datBtn').addEventListener('click',exportDAT);
   $('#saveDat').addEventListener('click',saveTrajDAT);
   $('#eraseBtn').addEventListener('click',erase);
+  $('#histBtn').addEventListener('click',openHistory);
   $('#goBtn').addEventListener('click',()=>{runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();});
   $('#copyCsv').addEventListener('click',()=>{const tr=activeTraj();if(!tr){status('No trajectory to copy',true);return;}
     const rows=['t,'+S.M.names.join(',')];for(let k=0;k<tr.t.length;k++){rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>+v.toPrecision(9)).join(','));}copyText(rows.join('\n'),'Trajectory CSV');});
@@ -5692,11 +5942,12 @@ function init(){
   $('#tgTp3').addEventListener('click',()=>{S.tp.three=!S.tp.three;S.tp.box3=null;updateToolbar();requestRender();});
   $('#tP3').addEventListener('change',()=>{S.tp.p3i=parseInt($('#tP3').value,10);S.tp.box3=null;fillSliceRange(true);requestRender();});
   $('#tSlices').addEventListener('click',runSlices);
-  $('#cFind').addEventListener('click',connFindClick);$('#cFollow').addEventListener('click',connFollowClick);
+  $('#cFind').addEventListener('click',connFindClick);
   $('#tRun').addEventListener('click',()=>{if(S.tp.running){S.tp.stop=true;return;}const k=parseInt($('#tStart').value,10);runTwoPar(tpStarts()[k]);});
   $('#tClear').addEventListener('click',()=>{S.tp.curves=S.tp.curves.filter(c=>!(c.p1i===S.bif.pi&&c.p2i===S.tp.p2i));refreshCodim2();fitTP();requestRender();status('Two-parameter curves cleared');});
   const bifPlotChange=()=>{const v=+$('#bVar').value,m=$('#bShow').value;S.bif.vi=v;S.bif.vn=v;S.bif.mode=m;$('#bVar').disabled=m==='T'||m==='f';
-    if(m==='N')ensureL2All();S.lock.bif=false;fitBif(true);refreshSpecial();requestRender();};
+    // a different quantity on the vertical axis: refit that axis only, keeping the range of the parameter on screen
+    if(m==='N')ensureL2All();const w0=S.bif.win;fitBif(true,w0&&w0.xhi>w0.xlo?{xlo:w0.xlo,xhi:w0.xhi}:null);syncWinPop();refreshSpecial();requestRender();};
   $('#bVar').addEventListener('change',bifPlotChange);$('#bShow').addEventListener('change',bifPlotChange);
   for(const id of['#bMin','#bMax','#bDs'])$(id).addEventListener('change',()=>{readBifInputs();$('#cDs').value=fmtIn(S.bif.ds);if(!S.bif.branches.length)fitBif();requestRender();});
   $('#bStart').addEventListener('change',e=>{S.bif.start=+e.target.value;S.bif.userStart=true;});
@@ -5723,7 +5974,7 @@ function init(){
     if(e.shiftKey){S.bif.poStop=true;S.tp.stop=true;status('Stopping…');}else softSkip();
   });
   $('#bDel').addEventListener('click',()=>deleteSelected('bif'));$('#tDel').addEventListener('click',()=>deleteSelected('tp'));
-  $('#bClear').addEventListener('click',()=>{if(S.bif.busy)return;S.bif.branches=S.bif.branches.filter(b=>b.pi!==S.bif.pi);S.bif.sweeps=S.bif.sweeps.filter(s=>s.pi!==S.bif.pi);S.bif.cycles=S.bif.cycles.filter(c=>c.pi!==S.bif.pi);S.bif.bvps=S.bif.bvps.filter(b=>b.pi!==S.bif.pi);refreshSpecial();buildTpControls();fitBif();requestRender();});
+  $('#bClear').addEventListener('click',()=>{if(S.bif.busy)return;S.bif.branches=S.bif.branches.filter(b=>b.pi!==S.bif.pi);S.bif.sweeps=S.bif.sweeps.filter(s=>s.pi!==S.bif.pi);S.bif.cycles=S.bif.cycles.filter(c=>c.pi!==S.bif.pi);S.bif.bvps=S.bif.bvps.filter(b=>b.pi!==S.bif.pi);S.bif.conns=(S.bif.conns||[]).filter(c=>c.pi!==S.bif.pi);S.bif.connCand=(S.bif.connCand||[]).filter(c=>c.pi!==S.bif.pi);refreshSpecial();buildTpControls();fillConnMenus();fitBif();requestRender();});
   document.addEventListener('keydown',e=>{
     const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;if(e.ctrlKey||e.metaKey||e.altKey)return;
     const k=e.key.toLowerCase();
@@ -5753,7 +6004,7 @@ function init(){
   if(!loadModel(text)){$('#odeText').value=EXAMPLES[0].text;loadModel(EXAMPLES[0].text);}
   syncExampleSel($('#odeText').value);
   scriptInit();
-  $('#scrText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();runScript($('#scrText').value);}});
+  $('#scrText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();if(e.shiftKey)stepScript();else runScript($('#scrText').value);}});
 }
 init();
 })();
