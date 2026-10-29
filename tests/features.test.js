@@ -42,8 +42,10 @@ test('Morris–Lecar: the saddle at the end of a branch of orbits whose period g
     assert.ok(Math.abs(cand[0].p - 35.0068) < 1e-3, `branch ends at i = ${cand[0].p}`);
     assert.equal(P.app("$('#cFrom').value"), 'c0');
     assert.equal(P.app("$('#cTo').value"), 'c0');
+    assert.ok(P.$('#cFind').classList.contains('attn'), 'Find connecting orbit is highlighted');
     await P.run('connect end');
     ok(P);
+    assert.ok(!P.$('#cFind').classList.contains('attn'), 'and no longer once the orbit is found');
     const hom = P.app("connPoints().map(q=>[q.label,q.p,q.conn.same])");
     assert.equal(hom[0][0], 'HOM1');
     assert.equal(hom[0][2], true);
@@ -120,14 +122,14 @@ test('Step runs a script one command at a time; the script can be edited between
     P.$('#scrText').value = 'example fhn\n# a comment\npar a=0.5\nfrobnicate\npar b=0.3';
     await P.app('stepScript()');
     assert.equal(P.app('S.spec.title.length>0'), true);
-    assert.match(P.$('#scrLine').textContent, /next: line 3/);
+    assert.deepEqual(J(P, 'SCRIPT.hl'), { ln: 3, kind: 'next' }, 'the next command is marked in the script');
     assert.equal(P.$('#scrRestart').hidden, false);
     assert.equal(P.$('#scrRun').textContent, 'Run to end');
     await P.app('stepScript()');
     assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('a'))"), 0.5);
     await P.app('stepScript()'); // line 4 fails and stays next
     assert.match(P.status(), /line 4 failed/);
-    assert.match(P.$('#scrLine').textContent, /next: line 4/);
+    assert.deepEqual(J(P, 'SCRIPT.hl'), { ln: 4, kind: 'err' }, 'the failed command is marked');
     P.$('#scrText').value = 'example fhn\n# a comment\npar a=0.5\npar a=0.7\npar b=0.3\npar b=0.4';
     await P.app('stepScript()'); // the corrected line 4
     assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('a'))"), 0.7);
@@ -142,7 +144,8 @@ test('Step runs a script one command at a time; the script can be edited between
     await P.app('stepScript()');
     await P.app('stepScript()');
     assert.equal(P.app('SCRIPT.stepper'), null);
-    assert.match(P.$('#scrLine').textContent, /end of script/);
+    assert.equal(P.app('SCRIPT.hl'), null);
+    assert.match(P.status(), /end of the script/);
     assert.deepEqual(P.errors, []);
   } finally { P.close(); }
 });
@@ -193,7 +196,7 @@ test('a search for a connecting orbit, and its following, can be stopped', async
     for (let i = 0; i < 100 && P.app('CONN.running'); i++) await new Promise(r => setTimeout(r, 50));
     assert.equal(P.app('CONN.running'), null);
     assert.match(P.status(), /Search stopped after/);
-    assert.equal(P.$('#cFind').textContent, 'Find');
+    assert.equal(P.$('#cFind').textContent, 'Find connecting orbit');
     assert.equal(P.app('S.bif.busy'), false);
     assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('i'))"), 37, 'the parameter is back where it was');
     // follow, stopped from the Two-parameter view
