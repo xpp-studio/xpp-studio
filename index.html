@@ -305,6 +305,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       </div>
       <textarea id="odeText" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="ODE file"></textarea>
       <div class="msgs" id="msgs" role="status"></div>
+      <div class="row"><span class="spacer" style="flex:1"></span><button class="btn small" id="clearAll" title="Start again with this model: reload the equations above, putting the parameters, initial conditions, numerical settings and plot windows back to the values in the file, and remove every trajectory, branch, curve, label and connecting orbit">Clear all</button></div>
       <div class="row" id="tblRow" hidden><span class="note" id="tblList" style="flex:1"></span><button class="btn small" id="tblForget">Forget table files</button></div>
       <details class="help"><summary>Supported .ode syntax</summary>
         <ul>
@@ -430,7 +431,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button class="chip" id="tgEqual" aria-pressed="false" title="Use the same scale on both axes of the phase plane (axis equal)">Equal axes</button>
         <button class="chip" id="tgTp3" aria-pressed="false" hidden title="Draw the two-parameter curves in a 3D box, with a third parameter as the vertical axis: each curve sits at the value of that parameter it was computed with. Drag to rotate, scroll to zoom.">3D</button>
         <button class="chip" id="tgCurveCol" aria-pressed="false" hidden title="Give each curve its own colour, so the legend can tell them apart (otherwise curves are coloured by kind)">Colours</button>
-        <button class="chip" id="tgNote" aria-pressed="false" hidden title="Add a text note: press this, then click the plot where it should go. Drag a note to move it, double-click it to edit, select it and press Delete to remove it.">Note</button>
+        <button class="chip" id="tgNote" aria-pressed="false" hidden title="Add a text label: press this, then click the plot where it should go. Drag a label to move it, double-click it to edit, select it and press Delete to remove it.">Add label</button>
         <button class="chip" id="tgLegend" aria-pressed="false" hidden title="Show a legend on the diagram: one line for each curve, with where it came from and any parameter values that differ">Legend</button>
         <button class="chip" id="tgBVP" aria-pressed="false" hidden title="Solve the boundary value problem (b lines) instead of an initial value problem: Newton's method on the initial values, repeated whenever a parameter, an initial value or a numerics setting changes">Solve BVP</button>
         <button class="chip" id="tgSpin" aria-pressed="false" hidden>Spin</button>
@@ -2776,8 +2777,8 @@ function loadModel(text,{fromUser}={}){
   S.trajs=[];S.gridKeep=0;S.active=-1;S.colorK=0;S.eqs=[];S.eqSel=-1;S.ver++;S.sepSaddles=[];
   S.lock={pp:false,tc:false,bif:false,tp:false};
   // a boundary value problem is not an initial value problem: no nullclines, equilibria or first trajectory until asked for
-  if(M.nbc>0){if(S.ncSaved===undefined)S.ncSaved=S.pp.nc;S.pp.nc=false;}
-  else if(S.ncSaved!==undefined){S.pp.nc=S.ncSaved;S.ncSaved=undefined;}
+  // nullclines start on only for planar differential equations; elsewhere they are slices, slow and seldom wanted
+  S.pp.nc=M.n===2&&!M.discrete&&!(M.nbc>0);
   $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
   const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.minPer=false;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
@@ -3360,7 +3361,8 @@ function fitP3(){
   const M=S.M;
   S.p3.box=[S.p3.xi,S.p3.yi,S.p3.zi].map(a=>{let lo=Infinity,hi=-Infinity;const add=v=>{if(Number.isFinite(v)){if(v<lo)lo=v;if(v>hi)hi=v;}};
     for(const tr of S.trajs){const c=p3Col(tr,a);if(c)for(let k=0;k<c.length;k++)add(c[k]);}
-    if(a>=0&&a<M.n){for(const e of S.eqs)add(e.x[a]);add(S.ic[a]);}
+    // the equilibria count only while they are shown; otherwise the box fits the trajectories alone
+    if(a>=0&&a<M.n){if(S.pp.eq)for(const e of S.eqs)add(e.x[a]);if(S.pp.eq||!Number.isFinite(lo))add(S.ic[a]);}
     if(!Number.isFinite(lo)){lo=-1;hi=1;}if(hi-lo<1e-9){lo-=0.5;hi+=0.5;}const p=(hi-lo)*0.03;return[lo-p,hi+p];});
 }
 function p3Proj(fr){
@@ -4448,7 +4450,9 @@ function onPlotClick(px,py,shift){
     if(bv){selectCurve('bif',bv.bb,true);grabBvp(bv.bb,bv.k);}
     else if(cyc){selectCurve('bif',cyc.cb,true);grabCycle(cyc.cb,cyc.k,null,true);}
     else if(best){selectCurve('bif',bestBr,true);grab(best.p,best.x,best.stable?'stable':'unstable');}
-    else selectCurve('bif',null,true);
+    else{ // away from every curve: move the parameter there (the dashed line), keeping the initial condition
+      selectCurve('bif',null,true);const pi=S.bif.pi,v=+m.ix(px).toPrecision(6);setParamVal(pi,v,true);liveUpdate();
+      status(`Moved ${M.parNames[pi]} to ${fmt(v,6)} (the dashed line); click a curve to load a point on it`);}
   }else if(S.view==='tp'){
     let best=null,bd=100,bt='',bc=null;
     for(const cv of S.tp.curves){if(cv.p1i!==S.bif.pi||cv.p2i!==S.tp.p2i)continue;for(const p of cv.pts){const d=(m.X(p.p1)-px)**2+(m.Y(p.p2)-py)**2;if(d<bd){bd=d;best=p;bc=cv;bt=`on the ${CURVENAME[cv.type]} curve`;}}}
@@ -4803,7 +4807,7 @@ function buildAxisSel(){
 function updateToolbar(){
   const v=S.view,M=S.M,cob=!!(M&&M.discrete&&M.n===1);
   $('#ppAxes').hidden=v!=='pp'||cob;$('#p3Axes').hidden=v!=='p3';
-  $('#ppToggles').hidden=v!=='pp';$('#tgNc').hidden=$('#tgField').hidden=cob;
+  $('#ppToggles').hidden=!(v==='pp'||v==='p3');$('#tgNc').hidden=$('#tgField').hidden=cob||v==='p3';
   $('#styleToggles').hidden=!(v==='pp'||v==='p3'||v==='tc'||v==='bif'||v==='tp')||(v==='pp'&&cob);
   $('#tgPts').hidden=v==='bif'||v==='tp';$('#tgLegend').hidden=!(v==='bif'||v==='tp');$('#tgCurveCol').hidden=!(v==='bif'||v==='tp');$('#tgCurveCol').setAttribute('aria-pressed',!!S.curveCol);if(!noteKey())S.noteMode=false;$('#tgNote').hidden=!noteKey();$('#tgNote').setAttribute('aria-pressed',!!S.noteMode);$('#tgTp3').hidden=v!=='tp';$('#tgTp3').setAttribute('aria-pressed',!!S.tp.three);$('#tgLegend').setAttribute('aria-pressed',!!S.legend);
   $('#tgSpin').hidden=v!=='p3';$('#tgSpec').hidden=v!=='tc';$('#tgLog').hidden=$('#tgSmooth').hidden=!(v==='tc'&&S.tc.spec);
@@ -5346,7 +5350,7 @@ function setView(v){
   $('#secTp').hidden=$('#secTpSpecial').hidden=v!=='tp';
   $('#secVars').hidden=par;$('#secTraj').hidden=par;
   const M=S.M,cob=M&&M.discrete&&M.n===1;
-  $('#hint').textContent=v==='pp'?(cob?'Click: start an orbit at that x · Drag: pan · Scroll: zoom':M&&M.discrete?'Click: iterate from that point · Drag: pan · Scroll: zoom':'Click: trajectory · Shift-click: both directions · Drag: pan · Scroll: zoom'):v==='p3'?'Drag: rotate · Shift-drag: pan · Scroll: zoom':v==='bif'?'Click a branch to jump there · Drag: pan · Scroll: zoom':v==='tp'?'Click: set both parameters (snaps to curves) · Drag: pan · Scroll: zoom':'Drag: pan · Scroll: zoom (Shift: time only)';
+  $('#hint').textContent=v==='pp'?(cob?'Click: start an orbit at that x · Drag: pan · Scroll: zoom':M&&M.discrete?'Click: iterate from that point · Drag: pan · Scroll: zoom':'Click: trajectory · Shift-click: both directions · Drag: pan · Scroll: zoom'):v==='p3'?'Drag: rotate · Shift-drag: pan · Scroll: zoom':v==='bif'?'Click a branch to jump there, or elsewhere to set the parameter · Drag: pan · Scroll: zoom':v==='tp'?'Click: set both parameters (snaps to curves) · Drag: pan · Scroll: zoom':'Drag: pan · Scroll: zoom (Shift: time only)';
   if(v==='bif'){if(!S.bif.branches.length&&!S.bif.sweeps.length)fitBif();refreshSpecial();}
   if(v==='tp'){buildTpControls();if(!S.tp.curves.some(c=>c.p1i===S.bif.pi&&c.p2i===S.tp.p2i))fitTP();}
   if(v==='tc')fitTC();
@@ -5579,7 +5583,7 @@ function showAbout(){
   const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-labelledby':'aboutTitle'});
   const a=(href,text)=>el('a',{href,target:'_blank',rel:'noopener',text});
   const box=el('div',{class:'about'},
-    el('div',{class:'row'},el('h2',{id:'aboutTitle',text:'XPP Studio',style:'flex:1'}),el('button',{class:'btn',text:'Close',onclick:()=>sh.remove()})),
+    el('div',{class:'row'},el('h2',{id:'aboutTitle',text:'XPP Studio v1.2',style:'flex:1'}),el('button',{class:'btn',text:'Close',onclick:()=>sh.remove()})),
     el('p',{text:'A browser workbench for differential equations, maps and stochastic models. It reads XPPAUT’s .ode files and follows XPPAUT’s approach: phase planes, nullclines, equilibria, and continuation of equilibria, periodic orbits and their bifurcations.'}),
     el('h3',{text:'This version'}),
     el('p',{text:'October 2026. Created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5, an AI model made by Anthropic.'}),
@@ -6054,10 +6058,11 @@ function init(){
   $('#tgSmooth').addEventListener('click',()=>{S.tc.smooth=!S.tc.smooth;specChange();});
   const tog=(id,key)=>$(id).addEventListener('click',()=>{S.pp[key]=!S.pp[key];$(id).setAttribute('aria-pressed',S.pp[key]);requestRender();});
   tog('#tgNc','nc');tog('#tgField','field');tog('#tgEq','eq');
+  $('#tgEq').addEventListener('click',()=>{if(S.view==='p3'){S.p3.box=null;requestRender();}});   // the 3D box includes the equilibria only while they are shown
   S.legend=store.get('xpps-legend')==='1';$('#tgLegend').setAttribute('aria-pressed',S.legend);
   S.curveCol=store.get('xpps-curvecol')==='1';S.notes=S.notes||[];
   $('#tgCurveCol').addEventListener('click',()=>{S.curveCol=!S.curveCol;store.set('xpps-curvecol',S.curveCol?'1':'0');updateToolbar();requestRender();});
-  $('#tgNote').addEventListener('click',()=>{S.noteMode=!S.noteMode;updateToolbar();status(S.noteMode?'Click the plot where the note should go':'Note mode off');requestRender();});
+  $('#tgNote').addEventListener('click',()=>{S.noteMode=!S.noteMode;updateToolbar();status(S.noteMode?'Click the plot where the label should go':'Label mode off');requestRender();});
   $('#tgLegend').addEventListener('click',()=>{S.legend=!S.legend;store.set('xpps-legend',S.legend?'1':'0');$('#tgLegend').setAttribute('aria-pressed',S.legend);requestRender();});
   $('#fitBtn').addEventListener('click',fit);
   $('#eqFind').addEventListener('click',findEquilibria);
@@ -6071,6 +6076,12 @@ function init(){
   $('#saveDat').addEventListener('click',saveTrajDAT);
   $('#eraseBtn').addEventListener('click',erase);
   $('#histBtn').addEventListener('click',openHistory);
+  $('#clearAll').addEventListener('click',()=>{
+    if(!confirm('Clear all: reload the model with the values in its file, and remove all trajectories, diagrams, curves and labels?'))return;
+    if(S.bif.busy){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;}
+    SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrMark(null);S.legendPos=null;S.noteMode=false;S.pp.field=false;S.pp.eq=true;S.p3.spin=false;
+    $('#tgField').setAttribute('aria-pressed',false);$('#tgEq').setAttribute('aria-pressed',true);
+    if(loadModel($('#odeText').value,{fromUser:true})){setView('pp');status('Cleared: the model is as its file defines it');}});
   $('#goBtn').addEventListener('click',()=>{runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();});
   $('#copyCsv').addEventListener('click',()=>{const tr=activeTraj();if(!tr){status('No trajectory to copy',true);return;}
     const rows=['t,'+S.M.names.join(',')];for(let k=0;k<tr.t.length;k++){rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>+v.toPrecision(9)).join(','));}copyText(rows.join('\n'),'Trajectory CSV');});

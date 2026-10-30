@@ -307,3 +307,53 @@ test('button names and the Lorenz 84 example', async () => {
     assert.ok(J(P, "allSpecial().some(s=>s.type==='HB')"));
   } finally { P.close(); }
 });
+
+test('nullclines start on only for planar ODEs; the 3D view keeps the equilibria chip and fits trajectories alone without them', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml');
+    assert.equal(P.app('S.pp.nc'), true);
+    await P.run('example lorenz84');
+    assert.equal(P.app('S.pp.nc'), false);
+    await P.run('example logistic');
+    assert.equal(P.app('S.pp.nc'), false);
+    await P.run('example lorenz\ngo\nview 3d');
+    assert.equal(P.$('#ppToggles').hidden, false);
+    assert.equal(P.$('#tgEq').hidden, false);
+    assert.equal(P.$('#tgNc').hidden, true);
+    // with the equilibria hidden the box is the trajectory's own range
+    await P.run('equilibria off');
+    P.app('S.p3.box=null;fitP3()');
+    const box = J(P, 'S.p3.box'), tr = J(P, '[0,1,2].map(i=>{const c=S.trajs.at(-1).cols[S.p3[["xi","yi","zi"][i]]];return[Math.min(...c),Math.max(...c)];})');
+    box.forEach(([lo, hi], i) => { const [a, b] = tr[i], pad = 0.03 * (b - a); assert.ok(Math.abs(lo - (a - pad)) < 1e-9 && Math.abs(hi - (b + pad)) < 1e-9, `axis ${i}`); });
+  } finally { P.close(); }
+});
+
+test('clicking the bifurcation diagram away from the curves moves the parameter', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview bif\nwindow 0 300 -80 60');
+    P.app('render()');
+    // the middle of the plot frame
+    const fr = J(P, 'S.lastFrame');
+    P.app(`onPlotClick(${fr.L + fr.W / 2},${fr.T + 5},false)`);
+    const i = P.app("S.M.getParam(S.M.parNames.indexOf('i'))");
+    assert.ok(Math.abs(i - 150) < 1, `i = ${i}`);
+    assert.equal(+P.$('#pv-0').value, i);
+  } finally { P.close(); }
+});
+
+test('Clear all reloads the model as its file defines it; About names the version', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\npar i=123\ngo\nview bif\ncontinue\nnote 100 0 hello');
+    P.window.confirm = () => true;
+    P.$('#clearAll').click();
+    assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('i'))"), 60);
+    assert.deepEqual(J(P, '[S.bif.branches.length,S.notes.length,S.view]'), [0, 0, 'pp']);
+    assert.ok(P.app('S.trajs.length') <= 1, 'only the run from the initial condition');
+    assert.match(P.status(), /Cleared/);
+    P.$('#aboutBtn').click();
+    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
+  } finally { P.close(); }
+});
