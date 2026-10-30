@@ -343,16 +343,17 @@ test('clicking the bifurcation diagram away from the curves moves the parameter'
   } finally { P.close(); }
 });
 
-test('Clear all reloads the model as its file defines it; About names the version', async () => {
+test('Reset all forgets everything stored and starts afresh; About names the version', async () => {
   const P = await openPage();
   try {
-    await P.run('example ml\npar i=123\ngo\nview bif\ncontinue\nnote 100 0 hello');
+    await P.run('example lorenz\nview 3d\nlegend on');
+    P.$('#scrText').value = 'example fhn'; P.$('#scrText').dispatchEvent(new P.window.Event('input'));
+    assert.ok(P.app("localStorage.getItem('xpps-text')"), 'the equations are stored');
+    P.app('S.reload=()=>{window.__reloaded=true}');
     P.window.confirm = () => true;
-    P.$('#clearAll').click();
-    assert.equal(P.app("S.M.getParam(S.M.parNames.indexOf('i'))"), 60);
-    assert.deepEqual(J(P, '[S.bif.branches.length,S.notes.length,S.view]'), [0, 0, 'pp']);
-    assert.ok(P.app('S.trajs.length') <= 1, 'only the run from the initial condition');
-    assert.match(P.status(), /Cleared/);
+    P.$('#resetAll').click();
+    assert.equal(P.app('window.__reloaded'), true, 'the page starts again');
+    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')).length"), 0, 'nothing of ours is left stored');
     P.$('#aboutBtn').click();
     assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
   } finally { P.close(); }

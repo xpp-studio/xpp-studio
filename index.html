@@ -305,7 +305,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       </div>
       <textarea id="odeText" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="ODE file"></textarea>
       <div class="msgs" id="msgs" role="status"></div>
-      <div class="row"><span class="spacer" style="flex:1"></span><button class="btn small" id="clearAll" title="Start again with this model: reload the equations above, putting the parameters, initial conditions, numerical settings and plot windows back to the values in the file, and remove every trajectory, branch, curve, label and connecting orbit">Clear all</button></div>
+      <div class="row"><span class="spacer" style="flex:1"></span><button class="btn small" id="resetAll" title="Put XPP Studio back as it is the first time it is opened: the default model and view, default settings, and no trajectories, diagrams, labels, script or stored table files. Edits to the equations are lost, so copy them first if you want them.">Reset all</button></div>
       <div class="row" id="tblRow" hidden><span class="note" id="tblList" style="flex:1"></span><button class="btn small" id="tblForget">Forget table files</button></div>
       <details class="help"><summary>Supported .ode syntax</summary>
         <ul>
@@ -2720,6 +2720,13 @@ const isState=i=>S.M&&i<S.M.n;
 function showMsgs(list){const m=$('#msgs');m.replaceChildren(...list.map(([c,t])=>el('div',{class:c,text:t})));}
 // Names in .ode files are not case-sensitive (as in XPPAUT): V and v are the same variable. Names that occur with different
 // capitalisation are reported, since they were probably meant to be different.
+// Reset all: forget everything this page has stored in the browser (equations, script, table files, display choices) and
+// start again from scratch, exactly as on a first visit
+function resetAll(){
+  if(S.bif.busy){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;}
+  try{for(let k=localStorage.length-1;k>=0;k--){const key=localStorage.key(k);if(key&&key.startsWith('xpps-'))localStorage.removeItem(key);}}catch(e){}
+  S.resetting=true;(S.reload||(()=>location.reload()))();   // S.reload: a stand-in for the tests
+}
 function caseClashes(text){
   const seen=new Map();
   for(const line of String(text).split(/\r?\n/)){if(/^\s*#/.test(line))continue;
@@ -6076,12 +6083,9 @@ function init(){
   $('#saveDat').addEventListener('click',saveTrajDAT);
   $('#eraseBtn').addEventListener('click',erase);
   $('#histBtn').addEventListener('click',openHistory);
-  $('#clearAll').addEventListener('click',()=>{
-    if(!confirm('Clear all: reload the model with the values in its file, and remove all trajectories, diagrams, curves and labels?'))return;
-    if(S.bif.busy){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;}
-    SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrMark(null);S.legendPos=null;S.noteMode=false;S.pp.field=false;S.pp.eq=true;S.p3.spin=false;
-    $('#tgField').setAttribute('aria-pressed',false);$('#tgEq').setAttribute('aria-pressed',true);
-    if(loadModel($('#odeText').value,{fromUser:true})){setView('pp');status('Cleared: the model is as its file defines it');}});
+  $('#resetAll').addEventListener('click',()=>{
+    if(!confirm('Reset all: go back to the state XPP Studio starts in, with the default model, view and settings? Your edits to the equations, the script, stored table files and everything computed will be lost.'))return;
+    resetAll();});
   $('#goBtn').addEventListener('click',()=>{runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();});
   $('#copyCsv').addEventListener('click',()=>{const tr=activeTraj();if(!tr){status('No trajectory to copy',true);return;}
     const rows=['t,'+S.M.names.join(',')];for(let k=0;k<tr.t.length;k++){rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>+v.toPrecision(9)).join(','));}copyText(rows.join('\n'),'Trajectory CSV');});
