@@ -349,11 +349,24 @@ test('Reset all forgets everything stored and starts afresh; About names the ver
     await P.run('example lorenz\nview 3d\nlegend on');
     P.$('#scrText').value = 'example fhn'; P.$('#scrText').dispatchEvent(new P.window.Event('input'));
     assert.ok(P.app("localStorage.getItem('xpps-text')"), 'the equations are stored');
-    P.app('S.reload=()=>{window.__reloaded=true}');
-    P.window.confirm = () => true;
+    // the question is asked in the page (the browser's confirm() can be blocked where the page is embedded)
     P.$('#resetAll').click();
-    assert.equal(P.app('window.__reloaded'), true, 'the page starts again');
-    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')).length"), 0, 'nothing of ours is left stored');
+    await new Promise(r => setTimeout(r, 20));
+    assert.ok(P.$('#askPop'), 'a question appears');
+    [...P.document.querySelectorAll('#askPop button')].find(b => b.textContent === 'Cancel').click();
+    await new Promise(r => setTimeout(r, 20));
+    assert.equal(P.$('#exSel').value, 'lorenz', 'Cancel changes nothing');
+    P.$('#resetAll').click();
+    await new Promise(r => setTimeout(r, 20));
+    [...P.document.querySelectorAll('#askPop button')].find(b => b.textContent === 'Reset all').click();
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(P.$('#askPop'), null);
+    assert.equal(P.$('#exSel').value, 'ml');
+    assert.equal(P.app('S.view'), 'pp');
+    assert.equal(P.app('S.legend'), false);
+    assert.equal(P.$('#scrText').value, P.app('SCRIPT_EXAMPLE'));
+    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script').length"), 0, 'stored choices are forgotten');
+    assert.match(P.status(), /Reset/);
     P.$('#aboutBtn').click();
     assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
   } finally { P.close(); }

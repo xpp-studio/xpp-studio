@@ -2720,12 +2720,37 @@ const isState=i=>S.M&&i<S.M.n;
 function showMsgs(list){const m=$('#msgs');m.replaceChildren(...list.map(([c,t])=>el('div',{class:c,text:t})));}
 // Names in .ode files are not case-sensitive (as in XPPAUT): V and v are the same variable. Names that occur with different
 // capitalisation are reported, since they were probably meant to be different.
+// A question in the page itself. The browser's confirm() is not used: where XPP Studio is shown inside another page (a
+// preview, an embedded frame) the browser may block it silently, and then the button would seem to do nothing.
+function askConfirm(title,text,okLabel){
+  return new Promise(res=>{
+    const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':title,id:'askPop'});
+    const done=v=>{sh.remove();document.removeEventListener('keydown',key,true);res(v);};
+    const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();done(false);}};
+    const no=el('button',{class:'btn',text:'Cancel',onclick:()=>done(false)}),yes=el('button',{class:'btn primary',text:okLabel||'OK',onclick:()=>done(true)});
+    sh.append(el('div',{class:'about'},el('h3',{text:title}),el('p',{text}),el('div',{class:'row'},el('span',{style:'flex:1'}),no,yes)));
+    sh.addEventListener('click',e=>{if(e.target===sh)done(false);});document.addEventListener('keydown',key,true);
+    document.body.append(sh);no.focus();
+  });
+}
 // Reset all: forget everything this page has stored in the browser (equations, script, table files, display choices) and
-// start again from scratch, exactly as on a first visit
+// put everything back as it is when XPP Studio is first opened: the first example, the phase plane, default settings
 function resetAll(){
   if(S.bif.busy){S.bif.poStop=true;S.tp.stop=true;CONN.stop=true;}
+  if(SCRIPT.running)SCRIPT.stop=true;
   try{for(let k=localStorage.length-1;k>=0;k--){const key=localStorage.key(k);if(key&&key.startsWith('xpps-'))localStorage.removeItem(key);}}catch(e){}
-  S.resetting=true;(S.reload||(()=>location.reload()))();   // S.reload: a stand-in for the tests
+  S.tableFiles={};refreshTableList();
+  Object.assign(S,{legend:false,curveCol:false,tpCol:{},legendPos:null,noteMode:false,noteSel:null});
+  Object.assign(S.pp,{equal:false,field:false,eq:true,eqExpand:true});
+  Object.assign(S.tc,{spec:false,log:false,smooth:false,st:false});
+  Object.assign(S.p3,{yaw:-0.62,pitch:0.42,zoom:1,pan:{x:0,y:0},box:null,spin:false});
+  for(const[id,v]of[['#tgLegend',false],['#tgCurveCol',false],['#tgEqual',false],['#tgField',false],['#tgEq',true],['#tgSpin',false],['#tgSpec',false],['#tgLog',false],['#tgSmooth',false],['#tgST',false]]){const b=$(id);if(b)b.setAttribute('aria-pressed',v);}
+  SCRIPT.stepper=null;SCRIPT.rec=false;SCRIPT.cleared=null;$('#scrRec').setAttribute('aria-pressed',false);$('#scrRec').textContent='Record';
+  $('#scrRestart').hidden=true;$('#scrRestore').hidden=true;scrMark(null);$('#scrLog').replaceChildren();$('#scrText').value=SCRIPT_EXAMPLE;
+  S.modelSig=null;S.view='pp';
+  const text=EXAMPLES[0].text;$('#odeText').value=text;loadModel(text);syncExampleSel(text);
+  setView('pp');setTab('par');buildTpControls();updateToolbar();requestRender();
+  status('Reset: XPP Studio is as it is when first opened');
 }
 function caseClashes(text){
   const seen=new Map();
@@ -5936,7 +5961,7 @@ function scriptInit(){
   });
   $('#scrHelp').addEventListener('click',()=>{const box=$('#scrLog');box.replaceChildren(...Object.values(CMDS).map(c=>el('div',{class:'h',text:c.help})));});
   $('#scrEx').addEventListener('click',()=>{ta.value=SCRIPT_EXAMPLE;store.set('xpps-script',ta.value);});
-  $('#scrRestore').addEventListener('click',()=>{if(ta.value.trim()&&!confirm('Replace what is in the script box with the old script?'))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;status('Old script restored');});
+  $('#scrRestore').addEventListener('click',async()=>{if(ta.value.trim()&&!(await askConfirm('Restore old script','Replace what is in the script box with the old script?','Replace')))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;status('Old script restored');});
   $('#scrInsert').addEventListener('click',()=>{const t=ta.value.trim();if(!t){status('The script is empty',true);return;}
     const body=t.split('\n').filter(l=>l.trim()&&!/^\s*#/.test(l)&&!/^\s*example\b/i.test(l)).map(l=>'#@do '+l.trim());
     const ot=$('#odeText'),src=ot.value.split('\n').filter(l=>!/^\s*#@do\s/i.test(l));let di=src.length;for(let k=src.length-1;k>=0;k--)if(/^\s*(done|d)\s*$/i.test(src[k])){di=k;break;}
@@ -6083,9 +6108,8 @@ function init(){
   $('#saveDat').addEventListener('click',saveTrajDAT);
   $('#eraseBtn').addEventListener('click',erase);
   $('#histBtn').addEventListener('click',openHistory);
-  $('#resetAll').addEventListener('click',()=>{
-    if(!confirm('Reset all: go back to the state XPP Studio starts in, with the default model, view and settings? Your edits to the equations, the script, stored table files and everything computed will be lost.'))return;
-    resetAll();});
+  $('#resetAll').addEventListener('click',async()=>{
+    if(await askConfirm('Reset all','Go back to the state XPP Studio starts in: the first example (Morris–Lecar), the phase plane and the default settings. Your edits to the equations, the script, any stored table files and everything computed will be lost; copy anything you want to keep first.','Reset all'))resetAll();});
   $('#goBtn').addEventListener('click',()=>{runDir(S.ic,{noIcUpdate:true});fitTC();requestRender();});
   $('#copyCsv').addEventListener('click',()=>{const tr=activeTraj();if(!tr){status('No trajectory to copy',true);return;}
     const rows=['t,'+S.M.names.join(',')];for(let k=0;k<tr.t.length;k++){rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>+v.toPrecision(9)).join(','));}copyText(rows.join('\n'),'Trajectory CSV');});
