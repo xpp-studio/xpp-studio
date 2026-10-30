@@ -211,3 +211,163 @@ test('a search for a connecting orbit, and its following, can be stopped', async
     assert.deepEqual(P.errors, []);
   } finally { P.close(); }
 });
+
+test('Wilson–Cowan uses a small continuation step for every parameter, and Defaults puts the steps back', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example wc\nview bif\nbifpar aee\ncontinue eq 1');
+    ok(P);
+    assert.equal(P.app('S.bif.ds'), 0.01);
+    assert.deepEqual(J(P, "allSpecial().map(s=>s.type).sort()"), ['HB', 'LP', 'LP'], 'both folds are found, not a spurious branch point');
+    await P.run('bifpar ti');
+    assert.equal(P.app('S.bif.ds'), 0.01, 'the file’s ds holds for every parameter');
+    await P.run('num ds=0.5 nmax=50 pods=0.1');
+    P.$('#cContReset').click();
+    assert.deepEqual(J(P, '[S.bif.ds,S.cont.eqNmax,S.cont.poDs]'), [0.01, 3000, 0.02]);
+    assert.equal(P.$('#bDs').value, '0.01');
+  } finally { P.close(); }
+});
+
+test('a warning for names that differ only in capitals', async () => {
+  const P = await openPage();
+  try {
+    P.$('#odeText').value = "V'=-V+w\nw'=-v\npar a=1\ndone\n";
+    await P.run('apply');
+    assert.match(P.$('#msgs').textContent, /not case-sensitive.*V and v/);
+    await P.run('example fhn');
+    assert.doesNotMatch(P.$('#msgs').textContent, /case-sensitive/);
+  } finally { P.close(); }
+});
+
+test('Sweep uses one step size in both directions from the current value', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview bif\nnum sweep=60\npar i=220\nbifpar i 0 300\nsweep');
+    ok(P);
+    const ps = J(P, 'S.bif.sweeps[0].rows.map(r=>r.p)').sort((a, b) => a - b);
+    assert.equal(ps.length, 61);
+    for (let k = 1; k < ps.length; k++) assert.ok(Math.abs(ps[k] - ps[k - 1] - 5) < 1e-9, `step ${ps[k] - ps[k - 1]} at ${ps[k]}`);
+    assert.ok(Math.abs(ps[0]) < 1e-9 && Math.abs(ps[60] - 300) < 1e-9);
+  } finally { P.close(); }
+});
+
+test('a branch of orbits that closes up on itself keeps the whole loop', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example forced\npar om=2\ngo\nview bif\nbifpar om 1.2 3\nlimitcycle');
+    ok(P);
+    const c = J(P, 'S.bif.cycles.map(c=>[c.pts.length,c.pts[0].p,c.pts.at(-1).p,c.pts[0].T,c.pts.at(-1).T])');
+    assert.equal(c.length, 1);
+    assert.ok(c[0][0] > 20);
+    assert.ok(Math.abs(c[0][1] - c[0][2]) < 1e-9 && Math.abs(c[0][3] - c[0][4]) < 1e-9, `ends ${JSON.stringify(c[0])}`);
+    assert.match(P.app("HIST.list.map(h=>h.msg).join('\\n')"), /closed up on itself/);
+  } finally { P.close(); }
+});
+
+test('maps: minimal period only finds the period-2 orbit where Newton from the initial condition finds the fixed point', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example logistic\nview bif\npar r=3.2\nbifpar r 2.5 4 ds=0.005\nperiod 2\ninit x=0.6875\ncontinue');
+    assert.ok(J(P, 'S.bif.branches[0].pts.every(q=>q.mp===1)'), 'without the option: the fixed point');
+    await P.run('clear bif\nperiod 2 minimal\ncontinue');
+    ok(P);
+    const b = J(P, 'S.bif.branches.filter(b=>!b.fam).map(b=>[b.minOnly,b.pts.every(q=>q.mp===2),Math.min(...b.pts.map(q=>q.p)),b.special.map(s=>s.type+" "+s.p.toFixed(4))])');
+    assert.equal(b.length, 1);
+    assert.equal(b[0][0], true);
+    assert.equal(b[0][1], true);
+    assert.ok(Math.abs(b[0][2] - 3) < 1e-2, `starts at r = ${b[0][2]}`);
+    assert.deepEqual(b[0][3], ['PD 3.4495'], 'its period doubling, once');
+    assert.ok(P.$('#bMinPer').checked);
+  } finally { P.close(); }
+});
+
+test('Morris–Lecar class 1: the orbits end in a SNIC at the fold of the equilibria', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example mlhom\npar phi=0.067 i=35\nview bif\nbifpar i 30 60 ds=0.05\ncontinue eq 1\npar i=45\ngo\nlimitcycle');
+    ok(P);
+    const lp = J(P, "allSpecial().filter(s=>s.type==='LP').map(s=>[s.p,!!s.snic])");
+    assert.equal(lp.length, 1);
+    assert.ok(Math.abs(lp[0][0] - 39.963) < 2e-3);
+    assert.equal(lp[0][1], true, 'LP1 is marked SNIC');
+    assert.match(P.app("HIST.list.map(h=>h.msg).join('\\n')"), /probably a SNIC/);
+    assert.equal(P.app('(S.bif.connCand||[]).length'), 0, 'nothing is offered to the homoclinic search');
+    assert.match(P.$('#spList').textContent, /SNIC/);
+  } finally { P.close(); }
+});
+
+test('button names and the Lorenz 84 example', async () => {
+  const P = await openPage();
+  try {
+    assert.equal(P.$('#datBtn').textContent, 'Export DAT');
+    assert.equal(P.$('#saveDat').textContent, 'Save DAT');
+    assert.equal(P.$('#cFind').textContent, 'Find connecting orbit');
+    await P.run('example lorenz84\ngo\nview bif\ncontinue');
+    ok(P);
+    assert.ok(J(P, "allSpecial().some(s=>s.type==='HB')"));
+  } finally { P.close(); }
+});
+
+test('nullclines start on only for planar ODEs; the 3D view keeps the equilibria chip and fits trajectories alone without them', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml');
+    assert.equal(P.app('S.pp.nc'), true);
+    await P.run('example lorenz84');
+    assert.equal(P.app('S.pp.nc'), false);
+    await P.run('example logistic');
+    assert.equal(P.app('S.pp.nc'), false);
+    await P.run('example lorenz\ngo\nview 3d');
+    assert.equal(P.$('#ppToggles').hidden, false);
+    assert.equal(P.$('#tgEq').hidden, false);
+    assert.equal(P.$('#tgNc').hidden, true);
+    // with the equilibria hidden the box is the trajectory's own range
+    await P.run('equilibria off');
+    P.app('S.p3.box=null;fitP3()');
+    const box = J(P, 'S.p3.box'), tr = J(P, '[0,1,2].map(i=>{const c=S.trajs.at(-1).cols[S.p3[["xi","yi","zi"][i]]];return[Math.min(...c),Math.max(...c)];})');
+    box.forEach(([lo, hi], i) => { const [a, b] = tr[i], pad = 0.03 * (b - a); assert.ok(Math.abs(lo - (a - pad)) < 1e-9 && Math.abs(hi - (b + pad)) < 1e-9, `axis ${i}`); });
+  } finally { P.close(); }
+});
+
+test('clicking the bifurcation diagram away from the curves moves the parameter', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview bif\nwindow 0 300 -80 60');
+    P.app('render()');
+    // the middle of the plot frame
+    const fr = J(P, 'S.lastFrame');
+    P.app(`onPlotClick(${fr.L + fr.W / 2},${fr.T + 5},false)`);
+    const i = P.app("S.M.getParam(S.M.parNames.indexOf('i'))");
+    assert.ok(Math.abs(i - 150) < 1, `i = ${i}`);
+    assert.equal(+P.$('#pv-0').value, i);
+  } finally { P.close(); }
+});
+
+test('Reset all forgets everything stored and starts afresh; About names the version', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example lorenz\nview 3d\nlegend on');
+    P.$('#scrText').value = 'example fhn'; P.$('#scrText').dispatchEvent(new P.window.Event('input'));
+    assert.ok(P.app("localStorage.getItem('xpps-text')"), 'the equations are stored');
+    // the question is asked in the page (the browser's confirm() can be blocked where the page is embedded)
+    P.$('#resetAll').click();
+    await new Promise(r => setTimeout(r, 20));
+    assert.ok(P.$('#askPop'), 'a question appears');
+    [...P.document.querySelectorAll('#askPop button')].find(b => b.textContent === 'Cancel').click();
+    await new Promise(r => setTimeout(r, 20));
+    assert.equal(P.$('#exSel').value, 'lorenz', 'Cancel changes nothing');
+    P.$('#resetAll').click();
+    await new Promise(r => setTimeout(r, 20));
+    [...P.document.querySelectorAll('#askPop button')].find(b => b.textContent === 'Reset all').click();
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(P.$('#askPop'), null);
+    assert.equal(P.$('#exSel').value, 'ml');
+    assert.equal(P.app('S.view'), 'pp');
+    assert.equal(P.app('S.legend'), false);
+    assert.equal(P.$('#scrText').value, P.app('SCRIPT_EXAMPLE'));
+    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script').length"), 0, 'stored choices are forgotten');
+    assert.match(P.status(), /Reset/);
+    P.$('#aboutBtn').click();
+    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
+  } finally { P.close(); }
+});
