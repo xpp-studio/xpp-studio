@@ -211,3 +211,99 @@ test('a search for a connecting orbit, and its following, can be stopped', async
     assert.deepEqual(P.errors, []);
   } finally { P.close(); }
 });
+
+test('Wilson–Cowan uses a small continuation step for every parameter, and Defaults puts the steps back', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example wc\nview bif\nbifpar aee\ncontinue eq 1');
+    ok(P);
+    assert.equal(P.app('S.bif.ds'), 0.01);
+    assert.deepEqual(J(P, "allSpecial().map(s=>s.type).sort()"), ['HB', 'LP', 'LP'], 'both folds are found, not a spurious branch point');
+    await P.run('bifpar ti');
+    assert.equal(P.app('S.bif.ds'), 0.01, 'the file’s ds holds for every parameter');
+    await P.run('num ds=0.5 nmax=50 pods=0.1');
+    P.$('#cContReset').click();
+    assert.deepEqual(J(P, '[S.bif.ds,S.cont.eqNmax,S.cont.poDs]'), [0.01, 3000, 0.02]);
+    assert.equal(P.$('#bDs').value, '0.01');
+  } finally { P.close(); }
+});
+
+test('a warning for names that differ only in capitals', async () => {
+  const P = await openPage();
+  try {
+    P.$('#odeText').value = "V'=-V+w\nw'=-v\npar a=1\ndone\n";
+    await P.run('apply');
+    assert.match(P.$('#msgs').textContent, /not case-sensitive.*V and v/);
+    await P.run('example fhn');
+    assert.doesNotMatch(P.$('#msgs').textContent, /case-sensitive/);
+  } finally { P.close(); }
+});
+
+test('Sweep uses one step size in both directions from the current value', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview bif\nnum sweep=60\npar i=220\nbifpar i 0 300\nsweep');
+    ok(P);
+    const ps = J(P, 'S.bif.sweeps[0].rows.map(r=>r.p)').sort((a, b) => a - b);
+    assert.equal(ps.length, 61);
+    for (let k = 1; k < ps.length; k++) assert.ok(Math.abs(ps[k] - ps[k - 1] - 5) < 1e-9, `step ${ps[k] - ps[k - 1]} at ${ps[k]}`);
+    assert.ok(Math.abs(ps[0]) < 1e-9 && Math.abs(ps[60] - 300) < 1e-9);
+  } finally { P.close(); }
+});
+
+test('a branch of orbits that closes up on itself keeps the whole loop', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example forced\npar om=2\ngo\nview bif\nbifpar om 1.2 3\nlimitcycle');
+    ok(P);
+    const c = J(P, 'S.bif.cycles.map(c=>[c.pts.length,c.pts[0].p,c.pts.at(-1).p,c.pts[0].T,c.pts.at(-1).T])');
+    assert.equal(c.length, 1);
+    assert.ok(c[0][0] > 20);
+    assert.ok(Math.abs(c[0][1] - c[0][2]) < 1e-9 && Math.abs(c[0][3] - c[0][4]) < 1e-9, `ends ${JSON.stringify(c[0])}`);
+    assert.match(P.app("HIST.list.map(h=>h.msg).join('\\n')"), /closed up on itself/);
+  } finally { P.close(); }
+});
+
+test('maps: minimal period only finds the period-2 orbit where Newton from the initial condition finds the fixed point', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example logistic\nview bif\npar r=3.2\nbifpar r 2.5 4 ds=0.005\nperiod 2\ninit x=0.6875\ncontinue');
+    assert.ok(J(P, 'S.bif.branches[0].pts.every(q=>q.mp===1)'), 'without the option: the fixed point');
+    await P.run('clear bif\nperiod 2 minimal\ncontinue');
+    ok(P);
+    const b = J(P, 'S.bif.branches.filter(b=>!b.fam).map(b=>[b.minOnly,b.pts.every(q=>q.mp===2),Math.min(...b.pts.map(q=>q.p)),b.special.map(s=>s.type+" "+s.p.toFixed(4))])');
+    assert.equal(b.length, 1);
+    assert.equal(b[0][0], true);
+    assert.equal(b[0][1], true);
+    assert.ok(Math.abs(b[0][2] - 3) < 1e-2, `starts at r = ${b[0][2]}`);
+    assert.deepEqual(b[0][3], ['PD 3.4495'], 'its period doubling, once');
+    assert.ok(P.$('#bMinPer').checked);
+  } finally { P.close(); }
+});
+
+test('Morris–Lecar class 1: the orbits end in a SNIC at the fold of the equilibria', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example mlhom\npar phi=0.067 i=35\nview bif\nbifpar i 30 60 ds=0.05\ncontinue eq 1\npar i=45\ngo\nlimitcycle');
+    ok(P);
+    const lp = J(P, "allSpecial().filter(s=>s.type==='LP').map(s=>[s.p,!!s.snic])");
+    assert.equal(lp.length, 1);
+    assert.ok(Math.abs(lp[0][0] - 39.963) < 2e-3);
+    assert.equal(lp[0][1], true, 'LP1 is marked SNIC');
+    assert.match(P.app("HIST.list.map(h=>h.msg).join('\\n')"), /probably a SNIC/);
+    assert.equal(P.app('(S.bif.connCand||[]).length'), 0, 'nothing is offered to the homoclinic search');
+    assert.match(P.$('#spList').textContent, /SNIC/);
+  } finally { P.close(); }
+});
+
+test('button names and the Lorenz 84 example', async () => {
+  const P = await openPage();
+  try {
+    assert.equal(P.$('#datBtn').textContent, 'Export DAT');
+    assert.equal(P.$('#saveDat').textContent, 'Save DAT');
+    assert.equal(P.$('#cFind').textContent, 'Find connecting orbit');
+    await P.run('example lorenz84\ngo\nview bif\ncontinue');
+    ok(P);
+    assert.ok(J(P, "allSpecial().some(s=>s.type==='HB')"));
+  } finally { P.close(); }
+});

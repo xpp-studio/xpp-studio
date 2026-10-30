@@ -1,0 +1,14 @@
+# Lorenz 84: a low-order model of the general circulation of the atmosphere (E. N. Lorenz, Tellus A 36, 98-110, 1984)
+# x is the strength of the westerly wind, y and z the cosine and sine phases of a chain of travelling eddies.
+# F and G are the thermal forcings; a=0.25, b=4, F=8, G=1 give a chaotic attractor. Lower F (try F=6) for periodic flow,
+# and continue in F to see the Hopf bifurcation of the steady westerly flow.
+x'=-y^2-z^2-a*x+a*f
+y'=x*y-b*x*z-y+g
+z'=b*x*y+x*z-z
+par a=0.25,b=4,f=8,g=1
+init x=1,y=0,z=0
+#@range f 0 10
+#@range g 0 2
+@ total=200,dt=0.02,trans=20,xp=y,yp=z,zp=x
+@ xlo=-2.5,xhi=3,ylo=-2.5,yhi=2.5
+done

@@ -134,7 +134,7 @@ The window (Figure~\ref{fig:overview}) has three columns.
 \end{description}
 \paragraph{The status line} at the bottom of the window reports what the last action did: how many points a trajectory has, why a branch stopped, where a special point was found. \ui{History}, at its right-hand end, lists every message since the page was opened, each with its time, so that a report that has scrolled away can be read again. Progress reports during a long computation are kept as one line, the last one. \ui{Download} saves the list as a text file, \ui{Copy} copies it and \ui{Clear} empties it; in a script, \texttt{history save} does the same (Section~\ref{sec:script}).
 
-In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export .dat} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
+In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export DAT} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
 
 \paragraph{Labelling a plot.}\label{sec:notes} The \ui{Note} chip above the plot puts a text label on the figure. It appears in the phase plane, the time course (including the spectrum and the space-time plot), the Bifurcation view and the two-parameter plane, but not in the 3D views. Press it, click the plot where the label should go, and type the text in the small box that opens; a new line in the box starts a new line of text. The box also sets the size (small, medium or large) and the colour: the ordinary text colour, the accent, one of the colours used for curves and trajectories, or any colour from the colour picker. Close the box with \ui{Done}, \key{Ctrl}+\key{Enter}, \key{Esc} or a click elsewhere; a note with no text is discarded.
 \begin{itemize}
@@ -167,7 +167,7 @@ click / shift-click & start a trajectory (shift: in both directions of time)\\
 % ==================================================================
 \section{The model language}\label{sec:language}
 
-A model is a plain-text \texttt{.ode} file in \XPP{}'s format. Lines starting with \texttt{\#} are comments, and the first comment line becomes the model's title. Names are case-insensitive. The Morris--Lecar example \cite{morris1981,rinzel1989} illustrates most of the basic syntax:
+A model is a plain-text \texttt{.ode} file in \XPP{}'s format. Lines starting with \texttt{\#} are comments, and the first comment line becomes the model's title. Names are case-insensitive, as in \XPP{}: \texttt{V} and \texttt{v} are the same variable. A file that writes the same name with different capitals gets a warning when it is loaded, since the two were probably meant to differ. The Morris--Lecar example \cite{morris1981,rinzel1989} illustrates most of the basic syntax:
 
 \begin{lstlisting}
 # Morris-Lecar neuron, Hopf regime (Rinzel & Ermentrout)
@@ -349,7 +349,7 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
   \label{fig:mlperiod}
 \end{figure}
 
-\noindent \ui{Sweep max/min} provides a brute-force alternative. It integrates at a grid of parameter values, carrying the end state forward, and plots every local maximum and minimum after the transient. This is the right tool for chaotic or stochastic regimes, where continuation does not apply (Tutorial~4).
+\noindent \ui{Sweep max/min} provides a brute-force alternative. It integrates at a grid of parameter values, carrying the end state forward. The grid has the same step, the range divided by \ui{Sweep samples}, in both directions from the current value, so the whole range is covered evenly wherever the sweep starts. It plots every local maximum and minimum after the transient. This is the right tool for chaotic or stochastic regimes, where continuation does not apply (Tutorial~4).
 
 \begin{figure}[!htbp]
   \centering
@@ -363,7 +363,7 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
 \[
 \ell_1=\frac{1}{2\omega}\,\mathrm{Re}\Bigl[\langle p,C(q,q,\bar q)\rangle-2\langle p,B(q,A^{-1}B(q,\bar q))\rangle+\langle p,B(\bar q,(2i\omega I-A)^{-1}B(q,q))\rangle\Bigr],
 \]
-where $A$ is the Jacobian, $Aq=i\omega q$, $A^{\mathsf T}p=-i\omega p$ and $\langle p,q\rangle=1$ \cite{kuznetsov2004}. The multilinear forms $B$ and $C$ (the second and third derivatives of the vector field) are evaluated by finite differences. If $\ell_1<0$ the bifurcation is \emph{supercritical}: a small stable orbit appears on the side where the equilibrium is unstable. If $\ell_1>0$ it is \emph{subcritical}: an unstable orbit appears on the side where the equilibrium is stable, and the system usually jumps to a distant attractor.
+where $A$ is the Jacobian, $Aq=i\omega q$, $A^{\mathsf T}p=-i\omega p$ and $\langle p,q\rangle=1$. This is the projection formula of \cite[Section~5.4, p.~180]{kuznetsov2004}. The multilinear forms $B$ and $C$ (the second and third derivatives of the vector field) are evaluated by finite differences. If $\ell_1<0$ the bifurcation is \emph{supercritical}: a small stable orbit appears on the side where the equilibrium is unstable. If $\ell_1>0$ it is \emph{subcritical}: an unstable orbit appears on the side where the equilibrium is stable, and the system usually jumps to a distant attractor.
 \end{notebox}
 
 \begin{notebox}
@@ -491,7 +491,7 @@ An orbit of period $N$ of a map $f$ is a fixed point of the $N$-th iterate $f^N$
   \item Load \ui{Logistic map}, open the Bifurcation view and press \ui{Continue fixed points}. The fixed point $x=1-1/r$ loses stability at PD1, $r=3$.
   \item Press \ui{Double} on PD1 in the table of special points. The orbits of period 2 are continued, and each is drawn at both of its points, so the branch splits into two. A new period doubling PD2 is found at $r\approx3.4495$, and the \ui{Period} column of the table gives the period of the orbit it creates, here 4.
   \item Press \ui{Double} on PD2, then on PD3 and PD4. The doublings come at $r\approx3.5441$ and $3.5644$, closer and closer together, with ratios of successive gaps approaching Feigenbaum's constant $4.669\ldots$ \cite{feigenbaum1978}. Press \ui{Orbit diagram} to compare with the attractor (Figure~\ref{fig:cascade}, left). Where a continued orbit is drawn dotted, it is momentarily an orbit of lower period.
-  \item Orbits that are not born in a period doubling can be followed directly. Set \ui{Period} to 3 in the Continuation panel, set $r=3.84$ and $x=0.15$, and press \ui{Continue fixed points}. The period-3 window opens at a fold, LP1 at $r=1+\sqrt8\approx3.8284$, and its stable orbit doubles at $r\approx3.8415$.
+  \item Orbits that are not born in a period doubling can be followed directly. Set \ui{Period} to 3 in the Continuation panel, set $r=3.84$ and $x=0.15$, and press \ui{Continue fixed points}. The period-3 window opens at a fold, LP1 at $r=1+\sqrt8\approx3.8284$, and its stable orbit doubles at $r\approx3.8415$. A starting point is found by Newton's method from the initial condition, which may land on an orbit of lower period (a fixed point, say). Tick \ui{minimal period only}, under \ui{Period}, to look only for orbits whose least period is the one asked for: \XS{} then also tries the points of the orbit through the initial condition and a grid over the phase-plane window, and draws the branch only where its orbits keep that least period (the script command is \texttt{period 3 minimal}).
   \item \ui{Follow} on a period doubling traces its curve in two parameters, for any period. In the \ui{Hénon map} example, continue the fixed point in $a$, press \ui{Double} on PD1 and PD2, set the second parameter to $b$, and follow PD1, PD2 and PD3 (Figure~\ref{fig:cascade}, right). For the fixed point the curve is $a=\tfrac34(1-b)^2$.
 \end{enumerate}
 \end{tryit}
@@ -948,11 +948,13 @@ A \emph{homoclinic orbit} leaves a saddle and comes back to it; a \emph{heterocl
 \begin{enumerate}
   \item Load it and open the Bifurcation view, with the parameter $i$ over its range 0 to 40. Choose the stable focus under \ui{Start} and press \ui{Continue equilibria}: the branch has a subcritical Hopf point HB1 at $i=36.316$.
   \item Press \ui{Cycles} on HB1. The unstable orbits grow, turn at the fold LPC1 ($i=40.593$) and come back, and their period grows without bound as $i$ approaches $35.0068$: the branch stops when the period reaches 40 times its starting value (\ui{Period growth stop}, Section~\ref{sec:numerics}).
-  \item Whenever a branch of periodic orbits ends with its period still growing, \XS{} looks at its last orbit. Where the orbit moves most slowly it passes close to an equilibrium; Newton's method from that point finds it, and if it is a saddle with one real unstable direction (or one real stable direction, with time running backwards) it is loaded under \ui{From} and \ui{To}, as \emph{end of HB1 orbits: saddle at \ldots}, the \ui{Find connecting orbit} button is highlighted, and the status line says so. Here it is the saddle at $v=-22.3$.
+  \item Whenever a branch of periodic orbits ends with its period still growing, \XS{} looks at its last orbit. Where the orbit moves most slowly it passes close to an equilibrium; Newton's method from that point finds it, and if it is a saddle with one real unstable direction (or one real stable direction, with time running backwards) it is loaded under \ui{From} and \ui{To}, as \emph{end of HB1 orbits: saddle at \ldots}, the \ui{Find connecting orbit} button turns blue, and the status line says so. Here it is the saddle at $v=-22.3$.
   \item Press \ui{Find connecting orbit}. A narrow window round the end of the branch is searched first, and in a second or two the status line reports a homoclinic orbit at $i=35.0067343$. HOM1 appears at the end of the branch of orbits (Figure~\ref{fig:connui}), and the orbit in the phase plane (Figure~\ref{fig:mlhom}, left).
   \item In the Two-parameter view set Parameter~2 to $\phi$ (range 0.05 to 0.6), and press \ui{Follow} on HOM1. The curve in the $(i,\phi)$ plane (Figure~\ref{fig:mlhom}, right) takes under a minute. It falls from $\phi\approx0.35$ at small $i$ to $\phi\approx0.2$ near $i=40$, where the saddle and the node merge and the connection is lost.
 \end{enumerate}
 The saddle can also be chosen by hand: it is in the \ui{From} and \ui{To} menus as one of the equilibria of the phase plane.
+
+\paragraph{Homoclinic orbit or SNIC?} The period of a family of orbits also grows without bound at a \emph{saddle-node on an invariant circle} (SNIC), where a fold of the equilibria appears on the orbit; this is how class~1 neurons start to fire. The period then grows like $|p-p_*|^{-1/2}$, against $-\log|p-p_*|$ at a homoclinic orbit. \XS{} tells the two apart from where the last orbit moves most slowly. If that is next to a fold LP of an equilibrium branch at the end of the orbits, or there is no equilibrium there at all (the slow ``ghost'' of a saddle-node just past the fold), or the equilibrium there has an eigenvalue near zero, the status line reports a probable SNIC, and the fold is marked \textsf{SNIC} in the table and on the diagram; nothing is loaded into the homoclinic search. For example, in \ui{Morris--Lecar homoclinic orbit} set $\phi=0.067$ and $i=35$, set the range of $i$ to 30--60, and continue the equilibria from the stable node: there is a fold LP1 at $i=39.963$. Then set $i=45$, integrate, and press \ui{Limit cycle}. The orbits followed down in $i$ end at LP1, with the period beyond 4000, and LP1 is marked \textsf{SNIC}. Without the branch of equilibria the end is still recognised as a probable SNIC, from the ghost of the saddle-node.
 \end{tryit}
 
 \begin{figure}[!htbp]
@@ -999,7 +1001,7 @@ The \ui{Numerics} tab (Figure~\ref{fig:numerics}) collects the integration and c
   \item[Sweep samples] Sets the number of parameter values in \ui{Sweep max/min}.
 \end{description}
 
-\paragraph{Continuation.} These settings correspond to the entries of \XPP{}'s \textsf{AUTO} numerics window and can be set in the file with \texttt{@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax}. Leave a box empty to use the automatic choice.
+\paragraph{Continuation.} These settings correspond to the entries of \XPP{}'s \textsf{AUTO} numerics window and can be set in the file with \texttt{@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax}. Leave a box empty to use the automatic choice. \ui{Defaults}, next to the heading, puts them back to the model's defaults: the values its file sets, otherwise the built-in ones. A step set with \texttt{@ ds} applies to every parameter; otherwise Ds is a $1/150$ of the parameter's range. The \ui{Wilson--Cowan} example sets \texttt{@ ds=0.01}, since its branches have sharp folds that a larger step cuts across.
 \begin{center}\small
 \begin{tabularx}{0.95\textwidth}{@{}lX@{}}
 \toprule
@@ -1014,7 +1016,7 @@ Nmax (2-par), Nmax (2-par cycles) & point limits for two-parameter curves\\
 \bottomrule
 \end{tabularx}
 \end{center}
-\paragraph{Continuation tolerances.} Each step of a continuation predicts the next point along the tangent and corrects it with Newton's method. The correction stops when its size falls below a tolerance, and the point is then accepted only if the equations hold to within the residual tolerance; otherwise the step is halved. The section \ui{Continuation tolerances} of the Numerics tab sets these, and \ui{Defaults} puts them back. The file can set them with \texttt{@ eqtol, potol, tptol, restol, itmax, tgrow}, and \ui{Write state} writes those that differ from the defaults.
+\paragraph{Continuation tolerances.} Each step of a continuation predicts the next point along the tangent and corrects it with Newton's method. The correction stops when its size falls below a tolerance, and the point is then accepted only if the equations hold to within the residual tolerance; otherwise the step is halved. The section \ui{Continuation tolerances} of the Numerics tab sets these, and its \ui{Defaults} puts them back to the model's defaults. The file can set them with \texttt{@ eqtol, potol, tptol, restol, itmax, tgrow}, and \ui{Write state} writes those that differ from the defaults.
 \begin{center}\small
 \begin{tabularx}{0.95\textwidth}{@{}llX@{}}
 \toprule
@@ -1031,7 +1033,7 @@ Period growth stop & 40 & a branch of periodic orbits, or a curve of cycles, sto
 \end{center}
 Tighter tolerances give more accurate points and usually smaller steps; looser ones can carry a branch through a stretch where the corrector struggles, at some cost in accuracy, so check such a branch against a tighter run. Raise the period growth stop to follow orbits closer to a homoclinic orbit.
 
-If a branch stops early, the status line says why: for example, it reached the point limit, the corrector stopped converging, the orbit shrank onto a Hopf point, or the period grew without bound (a homoclinic orbit is near). If it stopped because of a step-size or point limit, adjust the corresponding setting and run it again. A branch of orbits whose period grew to its end also loads the saddle it approaches into the homoclinic search (Section~\ref{sec:conn}).
+If a branch stops early, the status line says why: for example, it reached the point limit, the corrector stopped converging, the orbit shrank onto a Hopf point, or the period grew without bound (a homoclinic orbit is near). If it stopped because of a step-size or point limit, adjust the corresponding setting and run it again. A branch of orbits whose period grew to its end is examined (Section~\ref{sec:conn}): the saddle it approaches is loaded into the homoclinic search, or, if the orbits end at a fold of the equilibria, the fold is marked as a probable SNIC.
 
 % ==================================================================
 \section{Saving and exporting results}\label{sec:export}
@@ -1045,8 +1047,8 @@ If a branch stops early, the status line says why: for example, it reached the p
     \item The two-parameter table has the two parameter values, the period where relevant, the state, and labelled rows for codimension-two points. Hopf curves also get columns for $\ell_1$ and for criticality (subcritical, supercritical or neutral saddle).
     \item In the bifurcation table, special rows for Hopf points give $\ell_1$, and the stability column says subcritical or supercritical.
   \end{itemize}
-  \item[Export .dat] In the Bifurcation and Two-parameter views, saves the same continuation data as \texttt{.dat} files: numbers only, no header and space-separated columns, the form \XPP{} and gnuplot read. The bifurcation diagram gives one file each for equilibria, periodic orbits and sweeps. The status line lists the columns, and text fields become numeric codes.
-  \item[Copy CSV, Save .dat] In the trajectory list, copy the current trajectory (time, variables and auxiliaries) to the clipboard, or save it as a \texttt{.dat} file.
+  \item[Export DAT] In the Bifurcation and Two-parameter views, saves the same continuation data as \texttt{.dat} files: numbers only, no header and space-separated columns, the form \XPP{} and gnuplot read. The bifurcation diagram gives one file each for equilibria, periodic orbits and sweeps. The status line lists the columns, and text fields become numeric codes.
+  \item[Copy CSV, Save DAT] In the trajectory list, copy the current trajectory (time, variables and auxiliaries) to the clipboard, or save it as a \texttt{.dat} file.
   \item[Copy text] Copies the \texttt{.ode} file, including any edits, so that it can be saved or used in \XPP{}.
 \end{description}
 

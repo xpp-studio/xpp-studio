@@ -109,7 +109,9 @@ select{padding-right:4px}
 .scrbar.run{animation:scrpulse 1.4s ease-in-out infinite}
 @keyframes scrpulse{50%{background:color-mix(in srgb,var(--accent-soft) 55%,transparent)}}
 .scrlog:empty{display:none}
-.btn.attn{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);animation:attn 1.1s ease-in-out 4}
+#perBox:not([hidden]){display:flex;gap:10px;align-items:center;min-width:0}
+#wrapMinPer:not([hidden]){display:flex;gap:5px;align-items:center;font-size:12px;white-space:nowrap}
+.btn.attn{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500;box-shadow:0 0 0 3px var(--accent-soft);animation:attn 1.1s ease-in-out 4}
 @keyframes attn{50%{box-shadow:0 0 0 6px var(--accent-soft)}}
 @media (prefers-reduced-motion:reduce){.scrbar.run,.btn.attn{animation:none}}
 .scrlog{font:11.5px/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:6px 8px;max-height:200px;min-height:60px;overflow:auto;white-space:pre-wrap}
@@ -312,6 +314,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <li><code>@ fold=th, tor_per=6.2832</code> makes a variable periodic (repeat <code>fold=</code> for more)</li>
           <li><code>@ meth=stiff</code> (also gear, cvode, rosenbrock, backeul) selects the Rosenbrock stiff solver</li>
           <li><code>x(0)=…</code>, <code>init x=1, y=0</code> initial values</li>
+          <li>Names are not case-sensitive: <code>V</code> and <code>v</code> are the same variable (as in XPPAUT); a file that uses both spellings gets a warning</li>
           <li><code>par a=1, b=2</code> parameters · <code>number c=3</code> constants · <code>!d=a*b</code> derived</li>
           <li><code>f(x,y)=…</code> functions · <code>q=…</code> fixed quantities · <code>aux s=…</code> outputs</li>
           <li><code>@ total, trans, dt, meth, xp, yp, zp, axes=3, xlo…yhi, bound, toler</code>; <code>trans=50</code> keeps only t ≥ 50 of each trajectory</li>
@@ -368,7 +371,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="ffield"><label for="nSweepN">Sweep samples</label><input type="number" id="nSweepN" step="1" min="10" max="600"></div>
       <div class="ffield"><label for="nSeed">Noise seed</label><input type="text" id="nSeed" inputmode="numeric" placeholder="new noise each run"></div>
       <p class="note" id="nNote" hidden></p>
-      <div class="sech" style="margin-top:6px"><span class="lbl">Continuation</span></div>
+      <div class="sech" style="margin-top:6px"><span class="lbl">Continuation</span><button class="btn small" id="cContReset" style="margin-left:auto" title="Put the continuation steps and point limits back to this model's defaults: the values its .ode file sets, otherwise the built-in ones">Defaults</button></div>
       <p class="note" style="margin:0">As in XPP's AUTO numerics menu. Leave a box empty for the automatic choice. The file can set these with <code>@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax</code>, and the tolerances below with <code>@ eqtol, potol, tptol, restol, itmax, tgrow</code>.</p>
       <div class="ffield"><label for="cDs" title="Initial (and typical) arclength step for equilibrium branches; also in the Bifurcation panel">Ds</label><input type="number" id="cDs" step="any" min="0"></div>
       <div class="ffield"><label for="cEqDsmin" title="Smallest step before an equilibrium branch gives up (default Ds × 10⁻⁴)">Dsmin</label><input type="number" id="cEqDsmin" step="any" min="0" placeholder="auto (Ds × 1e-4)"></div>
@@ -380,7 +383,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="ffield"><label for="cPoNmax" title="Most points on each direction of a periodic-orbit branch">Nmax (orbits)</label><input type="number" id="cPoNmax" step="1" min="10"></div>
       <div class="ffield"><label for="cTpNmax" title="Most points on each direction of a fold, Hopf or period-doubling curve of equilibria or fixed points">Nmax (2-par)</label><input type="number" id="cTpNmax" step="1" min="10"></div>
       <div class="ffield"><label for="cTcNmax" title="Most points on each direction of a fold or period-doubling curve of cycles">Nmax (2-par cycles)</label><input type="number" id="cTcNmax" step="1" min="10"></div>
-      <div class="sech" style="margin-top:6px"><span class="lbl">Continuation tolerances</span><button class="btn small" id="cTolReset" style="margin-left:auto" title="Put all the tolerances back to their default values">Defaults</button></div>
+      <div class="sech" style="margin-top:6px"><span class="lbl">Continuation tolerances</span><button class="btn small" id="cTolReset" style="margin-left:auto" title="Put all the tolerances back to this model's defaults: the values its .ode file sets, otherwise the built-in ones">Defaults</button></div>
       <p class="note" style="margin:0">The Newton corrector of each step stops when its correction is smaller than the tolerance, and the point is accepted only if the equations are then satisfied to within the residual tolerance. Smaller values give more accurate branches and smaller steps; larger values help a branch through a difficult stretch.</p>
       <div class="ffield"><label for="cEqTol" title="Newton tolerance for branches of equilibria and fixed points: the size of the last correction, relative to the size of the solution (AUTO's EPSU). Default 1e-10">Newton tol (eq.)</label><input type="number" id="cEqTol" step="any" min="0"></div>
       <div class="ffield"><label for="cPoTol" title="Newton tolerance for periodic orbits, in the scaled variables of the shooting method. Default 1e-9">Newton tol (orbits)</label><input type="number" id="cPoTol" step="any" min="0"></div>
@@ -445,7 +448,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <div class="spacer"></div>
       <button class="btn" id="svgBtn" title="Save the current view as an SVG figure">Export SVG</button>
       <button class="btn" id="csvBtn" hidden title="Save the data in this view as a CSV table: trajectories in the time course, branches and sweeps in the bifurcation diagram, curves in the two-parameter diagram">Export CSV</button>
-      <button class="btn" id="datBtn" hidden title="Save the same data as .dat files (one per kind of curve): numbers only, no header, space-separated columns, for gnuplot and XPPAUT">Export .dat</button>
+      <button class="btn" id="datBtn" hidden title="Save the same data as .dat files (one per kind of curve): numbers only, no header, space-separated columns, for gnuplot and XPPAUT">Export DAT</button>
       <button class="btn" id="winBtn" aria-pressed="false" aria-controls="winPop" title="Set the axis limits by hand">Window</button>
       <button class="btn" id="fitBtn" title="Fit the axes to the data (also releases limits set by hand)">Fit</button>
       <button class="btn" id="eraseBtn">Erase</button>
@@ -479,7 +482,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="bMin">Range</label><div class="pair"><input type="number" id="bMin" step="any"><span>to</span><input type="number" id="bMax" step="any"></div>
           <label for="bDs">Step ds</label><input type="number" id="bDs" step="any">
           <label for="bStart">Start</label><select id="bStart"></select>
-          <label for="bPer" id="lblPer" hidden title="Follow orbits of this period: fixed points of the p-th iterate of the map">Period</label><input type="number" id="bPer" min="1" max="24" step="1" hidden>
+          <label for="bPer" id="lblPer" hidden title="Follow orbits of this period: fixed points of the p-th iterate of the map">Period</label><div id="perBox" hidden><input type="number" id="bPer" min="1" max="24" step="1" style="width:64px"><label id="wrapMinPer" hidden title="Look only for orbits whose least period is the period set here (not orbits of a period that divides it, such as fixed points), and draw a branch only where its orbits have that least period"><input type="checkbox" id="bMinPer"> minimal period only</label></div>
         </div>
         <div class="row"><button class="btn primary" id="bBvp" hidden title="Follow the solution of the boundary value problem as the parameter changes: pseudo-arclength continuation in the initial values and the parameter, so it turns round folds">Continue BVP</button><button class="btn primary" id="bRun">Continue equilibria</button><button class="btn" id="bSweep" title="XPP-style range integration">Sweep max/min</button><button class="btn" id="bPO" title="Continue the limit cycle that the active trajectory has settled onto">Limit cycle</button><button class="btn" id="bSkip" hidden title="End this direction or branch and carry on with the rest (Esc). Shift+Esc stops everything.">Skip direction</button></div>
         <div class="row"><button class="btn small" id="bClear">Clear diagram</button><button class="btn small" id="bDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button><span class="note" id="bNote"></span></div>
@@ -529,7 +532,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <div class="chips" id="varChips"></div>
       </section>
       <section class="sec" id="secTraj">
-        <div class="sech"><span class="lbl">Trajectories</span><span class="count" id="trCount"></span><button class="btn small" id="copyCsv">Copy CSV</button><button class="btn small" id="saveDat" title="Save the selected trajectory as a .dat file: numbers only, no header, space-separated columns (for gnuplot and XPPAUT)">Save .dat</button></div>
+        <div class="sech"><span class="lbl">Trajectories</span><span class="count" id="trCount"></span><button class="btn small" id="copyCsv">Copy CSV</button><button class="btn small" id="saveDat" title="Save the selected trajectory as a .dat file: numbers only, no header, space-separated columns (for gnuplot and XPPAUT)">Save DAT</button></div>
         <div class="tl" id="trList"></div>
       </section>
     </div>
@@ -1573,6 +1576,7 @@ function continueBoth(M,pi,x0,o){
   const fw=contRun(M,pi,x0,o,1);M.setParam(pi,p0);
   const closed=!!fw.closed,bw=closed?[]:contRun(M,pi,x0,o,-1);M.setParam(pi,p0);
   const pts=[...bw.reverse(),...fw.slice(closed?0:1)];
+  if(closed&&pts.length>2)pts.push({...pts[0]});   // a closed loop of equilibria: join its ends
   const special=findSpecial(pts,M.discrete);
   // first Lyapunov coefficient at each Hopf point: negative = supercritical, positive = subcritical
   if(!M.discrete&&M.n>=2&&!M.hasDelay)for(const s of special)if(s.type==='HB'){M.setParam(pi,s.p);const x=newton(M,s.x)||s.x;s.l1=lyap1(M,x);}
@@ -1693,7 +1697,8 @@ function paRun(G,u0,tau0,m,o,hooks){
   }
   return{pts,closed};
 }
-// First Lyapunov coefficient l1 at a Hopf point x of a flow (Kuznetsov, Elements of Applied Bifurcation Theory, §3.5):
+// First Lyapunov coefficient l1 at a Hopf point x of a flow (Yu. A. Kuznetsov, Elements of Applied Bifurcation Theory, 3rd edn,
+// Springer 2004, Section 5.4, p. 180; the projection formula):
 // l1 = Re[ <p,C(q,q,q̄)> − 2<p,B(q,A⁻¹B(q,q̄))> + <p,B(q̄,(2iωI−A)⁻¹B(q,q))> ] / (2ω),
 // with A q = iωq, Aᵀp = −iωp, <p,q> = 1. l1 < 0: supercritical (stable orbits are born); l1 > 0: subcritical.
 // The multilinear forms B and C come from central differences of the vector field along each direction.
@@ -1986,7 +1991,7 @@ function poStep(st){
     const p=st.u[N-1],T=st.u[N-2],mg=(o.pmax-o.pmin)*0.02;
     if(p<o.pmin-mg||p>o.pmax+mg){st.done='left the parameter range';return false;}
     // a period far beyond where the branch started means it is heading into a homoclinic orbit
-    if(T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(T)}, so the branch is probably approaching a homoclinic orbit`;return false;}
+    if(T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(T)}, so the branch is probably approaching a homoclinic orbit or a SNIC`;return false;}
     // arriving at a Hopf point: the orbit shrinks, or steps through zero amplitude and comes back phase-flipped
     let amp=0;for(let i=0;i<n;i++)amp=Math.max(amp,(res.R.mx[i]-res.R.mn[i])/st.xsig[i]);
     st.ampMax=Math.max(st.ampMax||0,amp);
@@ -2222,7 +2227,7 @@ function cycCurveStep(st){
     st.ampMax=Math.max(st.ampMax||0,P.amp);
     if(P.amp<0.06*st.ampMax&&st.pts.length>3){if(type==='CPER'){st.done='the orbit shrank onto an equilibrium (a Hopf point with this period)';st.endHB=true;return false;}st.done='the cycles shrank onto an equilibrium at a generalised Hopf (Bautin) point';st.endGH=true;return false;}
     if(P.p1<o.p1min-mg1||P.p1>o.p1max+mg1||P.p2<o.p2min-mg2||P.p2>o.p2max+mg2){st.done='left the parameter window';return false;}
-    if(P.T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(P.T)}, so the curve is probably approaching a homoclinic orbit`;return false;}
+    if(P.T>Math.min(o.Tmax,CTOL.tGrow*st.pts[0].T)){st.done=`the period passed ${Math.round(P.T)}, so the curve is probably approaching a homoclinic orbit or a SNIC`;return false;}
     if(st.pts.length>8){let d=0;for(let k=0;k<N;k++)d+=((st.u[k]-st.start[k])/sig[k])**2;if(Math.sqrt(d)<0.6*st.ds){st.done='the curve closed on itself';st.closed=true;return false;}}
     // let the orbit scales grow with the cycles
     {const nx=st.xsig.map((s,i)=>Math.max(s,0.2*(P.mx[i]-P.mn[i]))),sT=Math.max(sig[mn],P.T);
@@ -2309,6 +2314,21 @@ init x=-7.5,y=-3.6,z=30
 @ xlo=-25,xhi=25,ylo=-2,yhi=52,bound=1000
 done
 `},
+{id:'lorenz84',name:'Lorenz 84 (atmospheric circulation)',text:`# Lorenz 84: a low-order model of the general circulation of the atmosphere (E. N. Lorenz, Tellus A 36, 98-110, 1984)
+# x is the strength of the westerly wind, y and z the cosine and sine phases of a chain of travelling eddies.
+# F and G are the thermal forcings; a=0.25, b=4, F=8, G=1 give a chaotic attractor. Lower F (try F=6) for periodic flow,
+# and continue in F to see the Hopf bifurcation of the steady westerly flow.
+x'=-y^2-z^2-a*x+a*f
+y'=x*y-b*x*z-y+g
+z'=b*x*y+x*z-z
+par a=0.25,b=4,f=8,g=1
+init x=1,y=0,z=0
+#@range f 0 10
+#@range g 0 2
+@ total=200,dt=0.02,trans=20,xp=y,yp=z,zp=x
+@ xlo=-2.5,xhi=3,ylo=-2.5,yhi=2.5
+done
+`},
 {id:'rossler',name:'Rössler system',text:`# Rossler system (period-doubling route to chaos in c)
 x'=-y-z
 y'=x+a*y
@@ -2347,6 +2367,8 @@ par aee=13,aei=10,te=2,taue=2
 par aie=16,aii=4,ti=5,taui=6
 @ xp=u,yp=v,xlo=-.1,xhi=1.1,ylo=-.1,yhi=1
 @ total=200
+# a small continuation step: the branches of equilibria have sharp folds
+@ ds=0.01
 done
 `},
 {id:'tbl',name:'Phase oscillators with a tabulated H (table)',text:`# Two phase oscillators coupled through a tabulated interaction function h (XPP % table)
@@ -2695,6 +2717,14 @@ const isState=i=>S.M&&i<S.M.n;
 
 /* ======================= model loading ======================= */
 function showMsgs(list){const m=$('#msgs');m.replaceChildren(...list.map(([c,t])=>el('div',{class:c,text:t})));}
+// Names in .ode files are not case-sensitive (as in XPPAUT): V and v are the same variable. Names that occur with different
+// capitalisation are reported, since they were probably meant to be different.
+function caseClashes(text){
+  const seen=new Map();
+  for(const line of String(text).split(/\r?\n/)){if(/^\s*#/.test(line))continue;
+    for(const m of line.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)){const w=m[0],k=w.toLowerCase();if(!seen.has(k))seen.set(k,new Set());seen.get(k).add(w);}}
+  return[...seen.values()].filter(v=>v.size>1).map(v=>[...v]);
+}
 function loadModel(text,{fromUser}={}){
   const spec=parseSpec(text);
   if(spec.errors.length){showMsgs([...spec.errors.map(e=>['e',e]),...spec.warnings.map(w=>['w',w])]);status(spec.errors[0],true);if(fromUser)setTab('eq');return false;}
@@ -2750,8 +2780,9 @@ function loadModel(text,{fromUser}={}){
   else if(S.ncSaved!==undefined){S.pp.nc=S.ncSaved;S.ncSaved=undefined;}
   $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
-  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
+  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.minPer=false;S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
+  {const v=parseFloat(o.ds);S.bif.dsFile=Number.isFinite(v)&&v>0?v:null;}
   setBifRange();
   {const C=S.cont,pv=k=>{const v=parseFloat(o[k]);return Number.isFinite(v)&&v>0?v:null;};
     Object.assign(C,{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300});
@@ -2759,6 +2790,7 @@ function loadModel(text,{fromUser}={}){
     if(pv('nmax'))C.eqNmax=C.poNmax=Math.max(10,Math.round(pv('nmax')));if(pv('ntst'))C.poNtst=Math.min(80,Math.max(4,Math.round(pv('ntst'))));
     Object.assign(CTOL,CTOL_DEF);for(const[k,f]of[['eqtol','eqTol'],['potol','poTol'],['tptol','tpTol'],['restol','resTol'],['tgrow','tGrow']])if(pv(k))CTOL[f]=pv(k);
     if(pv('itmax'))CTOL.itMax=Math.min(100,Math.max(2,Math.round(pv('itmax'))));if(CTOL.tGrow<1.5)CTOL.tGrow=1.5;
+    S.contFile={...C};S.ctolFile={...CTOL};   // this model's defaults, for the Defaults buttons in the Numerics tab
     S.num.trans=Math.max(0,num('trans',0));}
   S.tp.curves=[];S.bif.sel=null;S.tp.sel=null;S.notes=[];S.noteSel=null;S.noteMode=false;
   {const np=M.parNames.length,nx=rk.find(n=>M.parNames.indexOf(n)!==S.bif.pi);let q=nx?M.parNames.indexOf(nx):-1;if(q<0)q=np>1?(S.bif.pi===0?1:0):0;setP2(q);{const o3=rk.map(n=>M.parNames.indexOf(n)).find(i=>i!==S.bif.pi&&i!==q);S.tp.p3i=o3!==undefined?o3:Math.max(0,M.parNames.findIndex((_,i)=>i!==S.bif.pi&&i!==q));S.tp.three=false;S.tp.box3=null;}}
@@ -2770,6 +2802,7 @@ function loadModel(text,{fromUser}={}){
     S.modelSig=sig;
   }
   buildAll();
+  {const cc=caseClashes(text);if(cc.length)msgs.push(['w',`Names are not case-sensitive in .ode files (as in XPPAUT), so ${cc.slice(0,4).map(g=>g.join(' and ')).join(', ')}${cc.length>4?', …':''} ${cc.length===1&&cc[0].length===2?'are':'are each'} the same name. Rename one of them if they should differ.`]);}
   msgs.unshift(['o',`Loaded ${M.n} variable${M.n===1?'':'s'}${M.nv?`, ${M.nv} Volterra variable${M.nv===1?'':'s'}`:''}, ${M.parNames.length} parameter${M.parNames.length===1?'':'s'}${M.naux?`, ${M.naux} aux`:''}.`]);
   showMsgs([...msgs,...spec.warnings.map(w=>['w',w])]);
   if(!(M.nbc>0))runDir(S.ic,{noIcUpdate:true});
@@ -2782,7 +2815,8 @@ function loadModel(text,{fromUser}={}){
 }
 function setBifRange(){
   if(!S.M||!S.M.parNames.length)return;
-  const r=S.ranges[S.bif.pi];S.bif.pmin=r.min;S.bif.pmax=r.max;S.bif.ds=+(((r.max-r.min)/150).toPrecision(3));
+  // the file's ds (@ ds=) for every parameter, otherwise 1/150 of the parameter's range
+  const r=S.ranges[S.bif.pi];S.bif.pmin=r.min;S.bif.pmax=r.max;S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));
 }
 function setP2(q){
   S.tp.p2i=q;const r=S.ranges[q];if(!r)return;S.tp.p2min=r.min;S.tp.p2max=r.max;
@@ -3584,7 +3618,7 @@ function renderBif(ctx,w,h){
   ctx.lineCap='round';
   for(const br of S.bif.branches){if(br.pi!==pi||(mode!=='var'&&mode!=='N'))continue;const P=br.pts,ey=q=>mode==='N'?eqN(q.x):q.x[vi],low=k=>br.period>1&&P[k].mp<br.period&&P[k+1].mp<br.period;
     if(br===sel||(sel&&sel.pts&&(br.fam||br)===(sel.fam||sel)))halo(P,[ey]);
-    if(br.period>1){ctx.beginPath();ctx.strokeStyle=TK.muted;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);for(let k=0;k+1<P.length;k++)if(low(k)){ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}ctx.stroke();}
+    if(br.period>1&&!(br.fam||br).minOnly){ctx.beginPath();ctx.strokeStyle=TK.muted;ctx.lineWidth=1.2;ctx.setLineDash([2,3]);for(let k=0;k+1<P.length;k++)if(low(k)){ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}ctx.stroke();}
     for(const stab of[false,true]){ctx.beginPath();ctx.strokeStyle=stab?ccol(br,TK.ink):ccol(br,TK.muted);ctx.lineWidth=stab?2.4:1.4;ctx.setLineDash(stab?[]:[5,4]);
       for(let k=0;k+1<P.length;k++){if(low(k))continue;const s=P[k].stable&&P[k+1].stable;if(s!==stab)continue;ctx.moveTo(m.X(P[k].p),m.Y(ey(P[k])));ctx.lineTo(m.X(P[k+1].p),m.Y(ey(P[k+1])));}
       ctx.stroke();}
@@ -3605,7 +3639,7 @@ function renderBif(ctx,w,h){
   ctx.font='600 11px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='bottom';ctx.textAlign='left';
   allSpecial().forEach(sp=>{if(sp.pi!==pi)return;const yv=spVal(sp);if(!Number.isFinite(yv))return;const x=m.X(sp.p),y=m.Y(yv);const col=spColor(sp.type);ctx.fillStyle=col;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;
     ctx.beginPath();if(sp.type==='HB'||sp.type==='NS'||sp.type==='TR')ctx.rect(x-4.5,y-4.5,9,9);else{ctx.moveTo(x,y-6);ctx.lineTo(x+5.5,y+4);ctx.lineTo(x-5.5,y+4);ctx.closePath();}ctx.stroke();ctx.fill();
-    ctx.fillText(sp.label,x+7,y-4);});
+    ctx.fillText(sp.snic?sp.label+' (SNIC)':sp.label,x+7,y-4);});
   for(const o of pickedOrbits()){if(o.pi!==pi)continue;const yv=spVal(o);if(!Number.isFinite(yv))continue;const x=m.X(o.p),y=m.Y(yv);
     ctx.fillStyle=TK.surface;ctx.strokeStyle=TK.po;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4.5,0,7);ctx.fill();ctx.stroke();ctx.fillStyle=TK.po;ctx.fillText(o.label,x+7,y-4);}
   // homoclinic and heteroclinic orbits: diamonds at the maximum and minimum (or L2 norm) of the orbit; in the period view,
@@ -4137,7 +4171,17 @@ function homCandidate(cb){
     let best=-1,bs=Infinity;
     for(let k=0;k<L;k++){for(let i=0;i<n;i++)y[i]=r.cols[i][k];M.rhs(0,y,f);let sp=0;for(let i=0;i<n;i++)sp+=(f[i]/sz[i])**2;if(sp<bs){bs=sp;best=k;}}
     for(let i=0;i<n;i++)y[i]=r.cols[i][best];
-    const xe=newton(M,y);if(!xe)return null;
+    // A SNIC (a saddle-node on an invariant circle) also makes the period grow without bound: the orbits then end at a fold
+    // of the equilibria, and where they move most slowly they pass the saddle-node, or its "ghost" just beyond the fold.
+    const range=(S.bif.pmax-S.bif.pmin)||1,dist=x=>{let d=0;for(let i=0;i<n;i++)d=Math.max(d,Math.abs(x[i]-y[i])/sz[i]);return d;};
+    const lp=allSpecial().find(s=>s.type==='LP'&&!s.cyc&&!s.bvp&&s.pi===cb.pi&&!(s.br&&s.br.period>1)&&Math.abs(s.p-last.p)<0.02*range&&dist(s.x)<0.15);
+    if(lp)return{snic:true,lp,p:last.p,T:last.T,from:cb.from,cb};
+    const xe=newton(M,y);
+    if(!xe){ // no equilibrium where the orbit is slowest: just past a fold, if it is much slower there than elsewhere
+      const sp=[];for(let k=0;k<L;k+=Math.max(1,Math.floor(L/400))){for(let i=0;i<n;i++)f[i]=r.cols[i][k];const g=new Float64Array(n);M.rhs(0,f,g);let v=0;for(let i=0;i<n;i++)v+=(g[i]/sz[i])**2;sp.push(Math.sqrt(v));}
+      sp.sort((a,b)=>a-b);return Math.sqrt(bs)<1e-3*sp[sp.length-1]?{snic:true,ghost:true,lp:null,x:Float64Array.from(y),p:last.p,T:last.T,from:cb.from,cb}:null;}
+    {const A0=numJac(M,xe),ev0=eigvals(A0);let lo=Infinity,hi=0;for(const e of ev0){const a=Math.hypot(e.re,e.im);lo=Math.min(lo,a);hi=Math.max(hi,a);}
+      if(dist(xe)<0.1&&lo<0.02*hi)return{snic:true,lp:null,x:Float64Array.from(xe),p:last.p,T:last.T,from:cb.from,cb};}
     // the orbit must really come close to it
     let dmin=Infinity;for(let k=0;k<L;k++){let d=0;for(let i=0;i<n;i++)d=Math.max(d,Math.abs(r.cols[i][k]-xe[i])/sz[i]);dmin=Math.min(dmin,d);}
     if(!(dmin<0.05))return null;
@@ -4153,6 +4197,11 @@ function homCandidate(cb){
 // offer the saddle found at the end of a branch under From and To; returns a sentence for the status line, or ''
 function loadHomCandidate(cb){
   const c=homCandidate(cb);if(!c)return'';
+  if(c.snic){const M=S.M,pn=M.parNames[cb.pi];
+    if(c.lp){const o=c.lp.br.special.find(q=>q.type==='LP'&&q.p===c.lp.p);if(o)o.snic=true;refreshSpecial();
+      return ` · the period grows without bound as the orbits approach the fold ${c.lp.label} of the equilibria (${pn} = ${fmt(c.lp.p,6)}): probably a SNIC, a saddle-node on an invariant circle, marked SNIC at ${c.lp.label}`;}
+    const at=M.varNames.slice(0,3).map((nm,i)=>`${nm} ${fmt(c.x[i],3)}`).join(', ');
+    return ` · the period grows without bound as the orbits ${c.ghost?`almost stop at ${at} with no equilibrium there (the "ghost" of a saddle-node just past a fold)`:`pass an equilibrium with an eigenvalue near zero at ${at}`}: probably a SNIC, a saddle-node on an invariant circle, near ${pn} = ${fmt(c.p,6)}. Continue the equilibria to locate the fold`;}
   S.bif.connCand=(S.bif.connCand||[]).filter(q=>q.cb!==cb&&S.bif.cycles.includes(q.cb));S.bif.connCand.push(c);
   fillConnMenus();const k='c'+(S.bif.connCand.length-1);$('#cFrom').value=k;$('#cTo').value=k;$('#cRev').checked=c.rev;$('#cFind').classList.add('attn');
   return ` · the last orbits pass close to a saddle with one ${c.rev?'stable':'unstable'} direction, now loaded under Homoclinic and heteroclinic orbits${c.rev?' with time backwards':''}: press Find connecting orbit`;
@@ -4852,7 +4901,8 @@ function buildBifControls(){
   $('#bSweep').title=M.discrete?'Iterate the map across the parameter range and plot the attractor':'XPP-style range integration';
   $('#sweepLg').textContent=M.discrete?'orbit diagram':'sweep max/min';
   $('#bPO').hidden=$('#poLg').hidden=!!M.discrete;$('#bPO').disabled=!M.parNames.length;
-  $('#bPer').hidden=$('#lblPer').hidden=!M.discrete;$('#bPer').value=S.bif.period||1;
+  $('#perBox').hidden=$('#lblPer').hidden=!M.discrete;$('#bPer').value=S.bif.period||1;
+  $('#wrapMinPer').hidden=(S.bif.period||1)<2;$('#bMinPer').checked=!!S.bif.minPer;
   {const bv=M.nbc>0;$('#bBvp').hidden=$('#bvpLg').hidden=!bv;$('#bBvp').disabled=!M.parNames.length;if(bv){$('#bRun').hidden=$('#bSweep').hidden=$('#bPO').hidden=$('#poLg').hidden=true;}else{$('#bRun').hidden=$('#bSweep').hidden=false;}}
   refreshBifStart();refreshSpecial();fillConnMenus();
 }
@@ -4886,7 +4936,7 @@ function refreshSpecial(){
       acts.append(btn('Remove','Take this orbit off the diagram',()=>{S.bif.conns=S.bif.conns.filter(q=>q!==s.conn);refreshSpecial();buildTpControls();requestRender();}));}
     if(s.type==='OR'){if(M.parNames.length>1)acts.append(btn('Const. T',`Follow this orbit in two parameters keeping its period fixed at ${fmt(s.T,5)}`,()=>followConstT(s)));
       acts.append(btn('Remove','Take this orbit off the list',()=>{S.bif.picked=S.bif.picked.filter(o=>o!==s.ref);refreshSpecial();buildTpControls();requestRender();}));}
-    const crit=s.type==='HB'&&Number.isFinite(s.l1)?el('span',{class:'crit',text:s.l1>0?'sub':'super',title:`First Lyapunov coefficient l1 = ${fmt(s.l1,3)}: ${s.l1>0?'subcritical, unstable orbits are born':'supercritical, stable orbits are born'}`}):null;
+    const crit=s.snic?el('span',{class:'crit',text:'SNIC',title:'A branch of periodic orbits ends here with its period growing without bound: probably a saddle-node on an invariant circle (SNIC)'}):s.type==='HB'&&Number.isFinite(s.l1)?el('span',{class:'crit',text:s.l1>0?'sub':'super',title:`First Lyapunov coefficient l1 = ${fmt(s.l1,3)}: ${s.l1>0?'subcritical, unstable orbits are born':'supercritical, stable orbits are born'}. Computed with the projection formula of Kuznetsov, Elements of Applied Bifurcation Theory, 3rd edn (Springer, 2004), Section 5.4, p. 180.`}):null;
     const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
     if(s.conn)tr.title=`Click to move here and draw the orbit; it takes time ${fmt(s.conn.T,4)} from ε = ${fmt(s.conn.eps,2)} of the ${s.conn.rev?'last':'first'} saddle to its closest approach to the ${s.conn.rev?'first':'last'}`;
     tr.addEventListener('click',()=>{if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
@@ -4924,7 +4974,13 @@ async function runCycles(states,from){
         if(st.pts.length>20&&st.pts.length%8===0){const sp=poSpecial(st.pts),pr=st.o.pmax-st.o.pmin;let lap=0;
           for(let j=1;j<sp.length&&!lap;j++)for(let i=0;i<j;i++){const a=sp[i],b=sp[j];
             if(a.type===b.type&&b.k>a.k+3&&Math.abs(a.p-b.p)<2e-3*pr&&Math.abs((a.T||0)-(b.T||0))<2e-3*(a.T||1)){lap=b.k-a.k;break;}}
-          if(lap){st.pts.length=Math.min(st.pts.length,lap+1);st.done='the branch closed up on itself (a loop)';st.closed=true;break;}}
+          // cut the branch where it comes back to its first point (not a fixed number of points: the steps differ the second
+          // time round), and close it with that point, so that the whole loop is kept
+          if(lap){const P0=st.pts[0],pr2=Math.max(1e-12,...st.pts.map(q=>q.p))-Math.min(...st.pts.map(q=>q.p))||1,nx=P0.x.length;
+            const dist=q=>{let d=Math.abs(q.p-P0.p)/pr2+Math.abs(q.T-P0.T)/Math.max(P0.T,1e-9);for(let i=0;i<nx;i++)d+=Math.abs(q.mx[i]-P0.mx[i])/Math.max(st.xsig[i]||1e-9,1e-9)+Math.abs(q.mn[i]-P0.mn[i])/Math.max(st.xsig[i]||1e-9,1e-9);return d;};
+            let best=st.pts.length-1,bd=Infinity;for(let j=Math.floor(st.pts.length/2);j<st.pts.length;j++){const d=dist(st.pts[j]);if(d<bd){bd=d;best=j;}}
+            st.pts.length=best+1;if(bd>1e-6)st.pts.push({...P0,k:undefined});
+            st.done='the branch closed up on itself (a loop)';st.closed=true;break;}}
         if(performance.now()-last>120){last=performance.now();cb.special=poSpecial(cb.pts);
           saved.forEach((v,i)=>M.setParam(i,v));prog.style.width=`${Math.min(100,Math.round(100*cb.pts.length/st.o.maxPts))}%`;
           fitBif();render();status(`Continuing periodic orbits from ${from}: ${cb.pts.length} points, ${M.parNames[pi]} = ${fmt(cb.pts[cb.pts.length-1].p,5)}, period ${fmt(cb.pts[cb.pts.length-1].T,4)}…`);
@@ -5112,6 +5168,17 @@ function addImages(M,pi,nb,N){
   }
   M.setParam(pi,p0);S.bif.branches.push(...out);return out;
 }
+// a starting point of least period N for continuation in the N-th iterate: Newton's method from the initial condition, from
+// the points of its orbit after a transient, and from a grid over the phase-plane window, until one has least period N
+function minPeriodStart(M,Mi,pi,N){
+  const n=M.n,p=M.getParam(pi),tries=[Float64Array.from(S.ic)],y=Float64Array.from(S.ic),f=new Float64Array(n);
+  for(let k=0;k<600+N;k++){M.rhs(0,y,f);let ok=true;for(let i=0;i<n;i++){y[i]+=f[i];if(!Number.isFinite(y[i])||Math.abs(y[i])>1e8)ok=false;}if(!ok)break;if(k>=600)tries.push(Float64Array.from(y));}
+  const w=S.pp.win,xi=S.pp.xi,yi=S.pp.yi,G=n===1?120:24;
+  for(let a=0;a<G;a++)for(let b=0;b<(n===1?1:G);b++){const z=Float64Array.from(S.ic);
+    if(xi>=0&&xi<n)z[xi]=w.xlo+(w.xhi-w.xlo)*(a+0.5)/G;if(n>1&&yi>=0&&yi<n)z[yi]=w.ylo+(w.yhi-w.ylo)*(b+0.5)/G;tries.push(z);}
+  for(const z of tries){const x=newton(Mi,z);if(x&&minPerAt(M,pi,x,p,N)===N)return x;}
+  return null;
+}
 function annotateMinPeriod(M,pi,pts,N){if(N>1&&M.discrete)for(const q of pts)q.mp=minPerAt(M,pi,q.x,q.p,N);}
 // unit vector in the null space of A (inverse iteration on a slightly shifted matrix)
 function nullVec(A){
@@ -5186,9 +5253,9 @@ function runSwitch(sp,double){
 function runContinuation(){
   const M=S.M;if(!M.parNames.length)return;if(voltNo('Equilibrium continuation'))return;readBifInputs();
   const pi=S.bif.pi,k=parseInt($('#bStart').value,10);
-  const Np=M.discrete?Math.max(1,S.bif.period||1):1,Mi=iterModel(M,Np);
-  let x0=k>=0&&S.eqs[k]?S.eqs[k].x:newton(Mi,S.ic);
-  if(!x0){status(Np>1?`Could not find a period-${Np} orbit to start from. Set the initial condition close to one first.`:'Could not find an equilibrium to start from. Set the initial condition close to one first.',true);return;}
+  const Np=M.discrete?Math.max(1,S.bif.period||1):1,Mi=iterModel(M,Np),minOnly=Np>1&&!!S.bif.minPer;
+  let x0=minOnly?minPeriodStart(M,Mi,pi,Np):k>=0&&S.eqs[k]?S.eqs[k].x:newton(Mi,S.ic);
+  if(!x0){status(minOnly?`Could not find an orbit of least period ${Np} at ${M.parNames[pi]} = ${fmt(M.getParam(pi),5)}: from the initial condition, its orbit, and a grid over the phase-plane window, Newton's method found only orbits of lower period. Try another parameter value.`:Np>1?`Could not find a period-${Np} orbit to start from. Set the initial condition close to one first.`:'Could not find an equilibrium to start from. Set the initial condition close to one first.',true);return;}
   const p0=M.getParam(pi);
   if(p0<S.bif.pmin||p0>S.bif.pmax)status(`Note: ${M.parNames[pi]} = ${fmt(p0)} is outside the range; continuing anyway`);
   const t0=performance.now();
@@ -5197,7 +5264,19 @@ function runContinuation(){
   M.setParam(pi,p0);
   if(res.pts.length<2){status('Continuation failed at the first step. Try a smaller ds.',true);return;}
   annotateMinPeriod(M,pi,res.pts,Np);
-  {const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:Np};S.bif.branches.push(nb);addImages(M,pi,nb,Np);}
+  // minimal period only: keep the stretch of branch through the starting orbit on which the least period stays Np, up to
+  // the points where it meets an orbit of lower period (there the branch would carry on along the other points of the
+  // same orbit, or along the lower-period orbit)
+  if(minOnly){const P=res.pts;let i0=0,bd=Infinity;P.forEach((q,j)=>{let d=Math.abs(q.p-p0);for(let i=0;i<q.x.length;i++)d+=Math.abs(q.x[i]-x0[i]);if(d<bd){bd=d;i0=j;}});
+    // the branch also turns back where two points of the orbit merge (it was born there, at a period doubling of the lower
+    // period): beyond, it runs along the other points of the same orbits. Cut there too.
+    const n=M.n,y=new Float64Array(n),f=new Float64Array(n),sep=P.map(q=>{M.setParam(pi,q.p);y.set(q.x);let dm=Infinity,dia=0;
+      for(let d=1;d<Np;d++){M.rhs(0,y,f);for(let i=0;i<n;i++)y[i]+=f[i];let e=0;for(let i=0;i<n;i++)e=Math.max(e,Math.abs(y[i]-q.x[i]));dm=Math.min(dm,e);dia=Math.max(dia,e);}return{dm,dia};});
+    M.setParam(pi,p0);const big=Math.max(...sep.map(z=>z.dia))||1;
+    const turn=j=>j>0&&j<P.length-1&&(P[j].p-P[j-1].p)*(P[j+1].p-P[j].p)<0&&sep[j].dm<0.1*big;
+    let lo=i0,hi=i0;while(lo>0&&P[lo-1].mp===Np&&!turn(lo-1))lo--;while(hi<P.length-1&&P[hi+1].mp===Np&&!turn(hi+1))hi++;
+    res.pts=P.slice(Math.max(0,lo-1),Math.min(P.length,hi+2));res.special=findSpecial(res.pts,true);annotateMinPeriod(M,pi,res.pts,Np);}
+  {const nb={pi,pts:res.pts,special:res.special,params:Array.from(M.P.subarray(0,M.parNames.length)),period:Np,minOnly};S.bif.branches.push(nb);addImages(M,pi,nb,Np);}
   fitBif();refreshSpecial();buildTpControls();requestRender();
   const c={};for(const s of res.special)c[s.type]=(c[s.type]||0)+1;
   status(`Branch of ${res.pts.length} points in ${Math.round(performance.now()-t0)} ms · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no bifurcations detected'}${res.closed?' · the branch closed up on itself (a loop)':''}`);
@@ -5225,10 +5304,13 @@ async function runSweep(){
   setPOBusy(true);S.bif.poStop=false;S.bif.skip=false;const prog=$('#bProg');
   const sw={pi,rows:[],disc:M.discrete,params:Array.from(M.P.subarray(0,M.parNames.length))};S.bif.sweeps.push(sw);
   let y=Float64Array.from(S.ic);
+  // one step size, (range)/N, in both directions from the current value (or from the nearer end of the range, if the
+  // current value is outside it), so that the whole range is covered with N steps however far the start is from each end
+  const h=(S.bif.pmax-S.bif.pmin)/N,pc=Math.min(S.bif.pmax,Math.max(S.bif.pmin,p0)),tol=1e-9*h;
   for(const dir of[1,-1]){
     if(S.M!==M)break;y=Float64Array.from(S.ic);
-    const ps=[];const steps=Math.ceil(N/2);
-    for(let k=0;k<=steps;k++){const p=p0+dir*k*(dir>0?S.bif.pmax-p0:p0-S.bif.pmin)/steps;if(dir<0&&k===0)continue;ps.push(p);}
+    const ps=[];
+    for(let k=dir>0?0:1;;k++){const p=pc+dir*k*h;if(p>S.bif.pmax+tol||p<S.bif.pmin-tol)break;ps.push(p);}
     for(let k=0;k<ps.length;k++){
       if(S.bif.poStop)break;if(S.bif.skip){S.bif.skip=false;break;}
       const p=ps[k];M.setParam(pi,p);
@@ -5510,7 +5592,7 @@ function showAbout(){
     el('h3',{text:'Methods'}),
     el('ul',null,
       el('li',{text:'Dormand–Prince 5(4) and classical Runge–Kutta integration; Rosenbrock 2(3) (Shampine & Reichelt’s ode23s pair) for stiff systems; Euler–Maruyama for Wiener noise.'}),
-      el('li',{text:'Pseudo-arclength continuation (Keller); fold and Hopf test functions from bordered systems and the bialternate product, the first Lyapunov coefficient for sub/supercritical Hopf points and generalised Hopf (Bautin) points, in the style of MatCont (Govaerts, Kuznetsov and colleagues).'}),
+      el('li',{text:'Pseudo-arclength continuation (Keller); fold and Hopf test functions from bordered systems and the bialternate product, the first Lyapunov coefficient for sub/supercritical Hopf points and generalised Hopf (Bautin) points, in the style of MatCont (Govaerts, Kuznetsov and colleagues). The first Lyapunov coefficient is computed with the projection formula in Yu. A. Kuznetsov, Elements of Applied Bifurcation Theory, 3rd edn (Springer, New York, 2004), Section 5.4, p. 180.'}),
       el('li',{text:'Periodic orbits by multiple shooting with an integral phase condition as in AUTO, Floquet multipliers, and Liouville’s formula for the monodromy determinant.'}),
       el('li',{text:'Eigenvalues by balancing, Hessenberg reduction and the shifted QR algorithm (EISPACK hqr); Volterra integrals by product-trapezoid quadrature, after Linz’s Analytical and Numerical Methods for Volterra Equations, as used in XPPAUT.'}),
       el('li',{text:'Delay equations by Runge–Kutta 4 with cubic Hermite interpolation of the stored history; their equilibria’s stability from the characteristic equation, by Chebyshev collocation of the infinitesimal generator (Breda, Maset and Vermiglio) with Newton polishing. Global flags located on the step’s cubic interpolant.'})),
@@ -5566,7 +5648,8 @@ const CMDS={
     if(k==='dir'||k==='direction'){v=dirArg(v);if(!v)throw new Error('dir is forward, backward or both');}
     fire(id,v);}}},
   tp3d:{help:'tp3d on|off — two-parameter curves in a 3D box over the third parameter',run:a=>{if(onoff(a[0],S.tp.three)!==S.tp.three)$('#tgTp3').click();}},
-  period:{help:'period N — for maps, continue orbits of period N (fixed points of the N-th iterate)',run:a=>{const n=scrNum(a[0],'N');if(!S.M.discrete)throw new Error('period is for maps');fire('#bPer',n);}},
+  period:{help:'period N [minimal] — for maps, continue orbits of period N (fixed points of the N-th iterate); minimal: only orbits whose least period is N',run:a=>{const n=scrNum(a[0],'N');if(!S.M.discrete)throw new Error('period is for maps');fire('#bPer',n);
+    const m=String(a[1]||'').toLowerCase();if(m&&!/^min(imal)?$/.test(m))throw new Error('use period N or period N minimal');$('#bMinPer').checked=!!m;S.bif.minPer=!!m;}},
   switch:{help:'switch BP1 — follow the other branch through a branch point',run:a=>{const sp=findSpecialLabel(a[0]);if(sp.cyc||sp.type!=='BP')throw new Error(`${sp.label} is not a branch point of equilibria or fixed points`);const n=S.bif.branches.length;runSwitch(sp,false);if(S.bif.branches.length===n)throw new Error($('#status').textContent);}},
   slices:{help:'slices LABEL P3 lo hi n — follow LABEL in two parameters at n values of a third parameter',run:async a=>{if(a.length!==5)throw new Error('give a start point, a parameter and its smallest value, largest value and number of slices');
     const sp=findSpecialLabel(a[0]),st=tpStarts(),k=st.findIndex(q=>q.label.split(' ')[0]===sp.label);if(k<0)throw new Error(`${sp.label} cannot be followed in two parameters`);
@@ -5604,7 +5687,7 @@ const CMDS={
   solvebvp:{help:'solvebvp on|off — solve the boundary value problem',run:a=>{if(onoff(a[0],!!S.bvp)!==!!S.bvp)$('#tgBVP').click();}},
   rotate:{help:'rotate AZ EL [ZOOM] — the 3D view: azimuth and elevation in degrees, and zoom',run:a=>{const r=Math.PI/180;S.p3.yaw=scrNum(a[0],'azimuth')*r;S.p3.pitch=Math.max(-1.55,Math.min(1.55,scrNum(a[1],'elevation')*r));if(a[2]!==undefined)S.p3.zoom=Math.max(0.2,Math.min(30,scrNum(a[2],'zoom')));requestRender();}},
   findeq:{help:'findeq — search the window for equilibria (for large systems, where this is not automatic)',run:()=>{computeEquilibria(true);refreshSeparatrices();refreshEqList();requestRender();}},
-  bifpar:{help:'bifpar NAME [lo hi] [ds=…] — parameter and range for continuation',run:a=>{const i=parIndex(a[0]);fire('#bPar',i);const rest=a.slice(1).filter(x=>!x.includes('='));if(rest.length===2){fire('#bMin',scrNum(rest[0],'lo'));fire('#bMax',scrNum(rest[1],'hi'));}else if(rest.length)throw new Error('give both ends of the range');for(const[k,v]of kv(a.slice(1).filter(x=>x.includes('=')))){if(k==='ds')fire('#bDs',scrNum(v,'ds'));else if(k==='period')CMDS.period.run([v]);else throw new Error(`unknown option ${k}`);}}},
+  bifpar:{help:'bifpar NAME [lo hi] [ds=…] — parameter and range for continuation',run:a=>{const i=parIndex(a[0]);fire('#bPar',i);const rest=a.slice(1).filter(x=>!x.includes('='));if(rest.length===2){fire('#bMin',scrNum(rest[0],'lo'));fire('#bMax',scrNum(rest[1],'hi'));}else if(rest.length)throw new Error('give both ends of the range');for(const[k,v]of kv(a.slice(1).filter(x=>x.includes('=')))){if(k==='ds')fire('#bDs',scrNum(v,'ds'));else if(k==='period')CMDS.period.run([v,S.bif.minPer?'minimal':'']);else throw new Error(`unknown option ${k}`);}}},
   plot:{help:'plot VAR — variable on the bifurcation diagram',run:a=>fire('#bVar',varIndex(a[0]))},
   show:{help:'show hilo|L2|period|frequency — what the bifurcation diagram shows',run:a=>{const m=SHOWS[String(a[0]||'').toLowerCase()];if(!m)throw new Error('show is hilo, L2, period or frequency');if(a[1])$('#bVar').value=varIndex(a[1]);fire('#bShow',m);}},
   continue:{help:'continue [eq K] — continue equilibria from equilibrium K (default: Newton from the initial values)',run:a=>{if(a[0]&&a[0].toLowerCase()==='eq'){const k=scrNum(a[1],'K')-1;if(!S.eqs[k])throw new Error(`there are ${S.eqs.length} equilibria in view`);$('#bStart').value=String(k);}else $('#bStart').value='-1';const n=S.bif.branches.length;runContinuation();if(S.bif.branches.length===n)throw new Error($('#status').textContent);}},
@@ -5857,7 +5940,7 @@ function scriptInit(){
   for(const[id,nm,get]of[['#tgNc','nullclines',()=>S.pp.nc],['#tgField','field',()=>S.pp.field],['#tgEq','equilibria',()=>S.pp.eq],['#tgPts','points',()=>S.pp.points],['#tgEqual','equal',()=>S.pp.equal],['#tgLegend','legend',()=>S.legend],['#tgCurveCol','colours',()=>S.curveCol],['#tgTp3','tp3d',()=>S.tp.three],['#tgSpec','spectrum',()=>S.tc.spec],['#tgST','spacetime',()=>S.tc.st],['#tgLog','logscale',()=>S.tc.log],['#tgSmooth','smooth',()=>S.tc.smooth],['#tgBVP','solvebvp',()=>!!S.bvp]])$(id).addEventListener('click',()=>rec(`${nm} ${get()?'on':'off'}`));
   $('#varChips').addEventListener('click',e=>{if(!e.target.closest('button'))return;const set=S.view==='tc'&&S.tc.st?S.tc.stVars:S.tc.vars;if(set.size)rec(`tcvars ${[...set].sort((a,b)=>a-b).map(i=>S.M.names[i]).join(' ')}`,'tcvars');});
   for(const id of['#x3Sel','#y3Sel','#z3Sel'])$(id).addEventListener('change',()=>{const n=i=>i<0?'t':S.M.names[i];rec(`axes ${n(S.p3.xi)} ${n(S.p3.yi)} ${n(S.p3.zi)}`,'axes3');});
-  $('#bPer').addEventListener('change',()=>rec(`period ${S.bif.period}`,'period'));
+  $('#bPer').addEventListener('change',()=>rec(`period ${S.bif.period}${S.bif.minPer&&S.bif.period>1?' minimal':''}`,'period'));
   $('#winPop').addEventListener('submit',()=>{const w=curWin();rec(`window ${recNum(w.xlo)} ${recNum(w.xhi)} ${recNum(w.ylo)} ${recNum(w.yhi)}`,'window');});
   for(const id of['#goBtn','#icGo'])$(id).addEventListener('click',()=>rec('go'));
   const bp=recBif;
@@ -5942,7 +6025,12 @@ function init(){
     buildNumerics();status('Continuation settings updated; they apply to the next branch or curve');
   };
   for(const id of['#cDs','#cEqDsmin','#cEqDsmax','#cEqNmax','#cPoNtst','#cPoDs','#cPoDsmax','#cPoNmax','#cTpNmax','#cTcNmax','#cEqTol','#cPoTol','#cTpTol','#cResTol','#cItMax','#cTGrow'])$(id).addEventListener('change',contChange);
-  $('#cTolReset').addEventListener('click',()=>{Object.assign(CTOL,CTOL_DEF);buildNumerics();rec(`num eqtol=${CTOL.eqTol} potol=${CTOL.poTol} tptol=${CTOL.tpTol} restol=${CTOL.resTol} itmax=auto tgrow=${CTOL.tGrow}`,'ctol');status('Continuation tolerances back to their defaults');});
+  $('#cContReset').addEventListener('click',()=>{
+    Object.assign(S.cont,S.contFile||{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300});
+    const r=S.ranges[S.bif.pi];if(r)S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));$('#bDs').value=fmtIn(S.bif.ds);buildNumerics();
+    const C=S.cont,v=x=>x==null?'auto':x;rec(`num ds=${S.bif.ds} dsmin=${v(C.eqDsmin)} dsmax=${v(C.eqDsmax)} nmax=${C.eqNmax} ntst=${v(C.poNtst)} pods=${C.poDs} podsmax=${C.poDsmax} ponmax=${C.poNmax} tpnmax=${C.tpNmax} tcnmax=${C.tcNmax}`,'contdef');
+    status('Continuation steps and point limits back to the defaults for this model');});
+  $('#cTolReset').addEventListener('click',()=>{Object.assign(CTOL,S.ctolFile||CTOL_DEF);buildNumerics();rec(`num eqtol=${CTOL.eqTol} potol=${CTOL.poTol} tptol=${CTOL.tpTol} restol=${CTOL.resTol} itmax=${CTOL.itMax??"auto"} tgrow=${CTOL.tGrow}`,'ctol');status('Continuation tolerances back to their defaults');});
   $('#xSel').addEventListener('change',e=>{S.pp.xi=+e.target.value;S.ver++;S.lock.pp=false;fitPP(false,true);requestRender();});
   $('#ySel').addEventListener('change',e=>{S.pp.yi=+e.target.value;S.ver++;S.lock.pp=false;fitPP(false,true);requestRender();});
   for(const[id,key]of[['#x3Sel','xi'],['#y3Sel','yi'],['#z3Sel','zi']])$(id).addEventListener('change',e=>{S.p3[key]=+e.target.value;S.p3.box=null;requestRender();});
@@ -6005,7 +6093,9 @@ function init(){
   for(const id of['#bMin','#bMax','#bDs'])$(id).addEventListener('change',()=>{readBifInputs();$('#cDs').value=fmtIn(S.bif.ds);if(!S.bif.branches.length)fitBif();requestRender();});
   $('#bStart').addEventListener('change',e=>{S.bif.start=+e.target.value;S.bif.userStart=true;});
   $('#bRun').addEventListener('click',runContinuation);
-  $('#bPer').addEventListener('change',()=>{const v=Math.max(1,Math.min(24,Math.round(parseFloat($('#bPer').value)||1)));S.bif.period=v;$('#bPer').value=v;
+  $('#bMinPer').addEventListener('change',e=>{S.bif.minPer=e.target.checked;rec(`period ${S.bif.period||1}${S.bif.minPer?' minimal':''}`,'period');
+    status(S.bif.minPer?`Continuation looks for orbits of least period ${S.bif.period}, and draws only the parts of a branch where the orbits have that period`:`Continuation follows all fixed points of the ${S.bif.period}-th iterate; parts of lower period are drawn dotted`);});
+  $('#bPer').addEventListener('change',()=>{const v=Math.max(1,Math.min(24,Math.round(parseFloat($('#bPer').value)||1)));S.bif.period=v;$('#bPer').value=v;$('#wrapMinPer').hidden=v<2;
     status(v>1?`Continuation now follows period-${v} orbits: fixed points of the ${v}-th iterate of the map (a dotted curve is an orbit of lower period)`:'Continuation follows fixed points of the map');});
   $('#bBvp').addEventListener('click',()=>{if(S.bif.busy){S.bif.poStop=true;status('Stopping…');}else runBvpCont();});
   $('#bSweep').addEventListener('click',runSweep);
