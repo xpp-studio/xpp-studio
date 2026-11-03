@@ -2559,6 +2559,29 @@ init x=2,y=0.6667
 @ xlo=-2.5,xhi=2.5,ylo=-1,yhi=1
 done
 `},
+{id:'snics',name:'Interacting SNICs (hilltop unfolding)',text:`# Ashwin, Postlethwaite and Sieber SIADS 2026
+# hilltop unfolding
+# 
+init x=0.07 y=0.05
+
+# Params
+par alpha=1 beta=1
+par lambda=0.2 gamma=0
+
+# from G&S vol I
+x'=x^2-lambda+2*alpha*y-gamma
+y'=y^2-lambda+2*beta*x+gamma
+
+# plot to vector field
+@ dt=0.01, total=10, xplot=x, yplot=y
+@ xlo=-2.0,ylo=-2.0,xhi=2.0,yhi=2.0, bound=10, maxstor=10000
+# auto defaults
+@ ds=0.01,dsmin=0.0001,dsmax=0.1
+@ epsu=0.000001,epss=0.000001
+@ parmin=-6.4,parmax=6.4
+@ method=rk4
+done
+`},
 {id:'logistic',name:'Logistic map',map:true,text:`# Logistic map (period doubling at r=3, chaos near r=3.57)
 x(t+1)=r*x*(1-x)
 par r=3.7
@@ -2587,6 +2610,29 @@ init x=0.6,y=0.6
 #@range a 1.5 2.27
 @ total=4000,meth=discrete,xp=x,yp=y
 @ xlo=0.1,xhi=0.95,ylo=0.1,yhi=0.95
+done
+`},
+{id:'pwaffine',name:'Piecewise affine map on the unit square',map:true,text:`#  Piecewise affine map on unit square
+#  (cf Ashwin & Goetz SIADS 2006 DOI:10.1137/040605394)
+#  
+#
+init x=0.4319130445, y=0.2635796134
+
+# one real parameter
+par a=0.5
+
+# 
+yy = -x+a*y
+ny = yy-floor(yy)
+
+# 
+x'=y
+y'=ny
+
+@ maxstor=40000
+@ meth=discrete, total=30000, bound=10000
+@ xp=x, yp=y, xlo=-0.0790495, xhi=1.06717, ylo=-0.0790495, yhi=1.06717
+@ ds=0.00667, nmax=3000, parmin=0, parmax=1
 done
 `},
 {id:'duff',name:'Forced Duffing oscillator',text:`# Periodically forced Duffing oscillator
@@ -3521,7 +3567,7 @@ function adjAfterChange(immediate){
 }
 function phNoteUpdate(){
   const e=document.getElementById('phNote'),M=S.M;if(!e||!M)return;
-  if(M.discrete||M.hasDelay||M.hasVolt||M.nbc>0){e.textContent='The adjoint and the isostable functions are computed for ordinary differential equations.';return;}
+  if(M.discrete||M.hasDelay||M.hasVolt||M.nbc>0){e.textContent='The adjoint and the isostable functions can be computed for (families of) periodic orbits of ordinary differential equations.';return;}
   if(!S.adj){e.textContent='Adjoint computes the phase response Z of a limit cycle and, for its slowest nontrivial multiplier ν₁, the isostable response I, the Floquet eigenfunction ρ and the correction B. The orbits come from a continued family, or from the cycle the active trajectory has settled onto.';return;}
   e.textContent=S.adj.isoNote||'';
 }

@@ -1,0 +1,24 @@
+#  Piecewise affine map on unit square
+#  (cf Ashwin & Goetz SIADS 2006 DOI:10.1137/040605394)
+#  
+#
+init x=0.4319130445, y=0.2635796134
+
+# one real parameter
+par a=0.5
+
+# 
+yy = -x+a*y
+ny = yy-floor(yy)
+
+# 
+x'=y
+y'=ny
+
+@ maxstor=40000
+@ meth=discrete, total=30000, bound=10000
+@ xp=x, yp=y, xlo=-0.0790495, xhi=1.06717, ylo=-0.0790495, yhi=1.06717
+@ ds=0.00667, nmax=3000, parmin=0, parmax=1
+done
+
+
