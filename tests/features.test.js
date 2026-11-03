@@ -435,3 +435,25 @@ test('the Adjoint menu greys out what is not there', async () => {
     assert.equal(P.$('#bAdjSrc').value, 'traj');
   } finally { P.close(); }
 });
+
+test('Current periodic orbit is offered for slow and many-peaked cycles too, and Adjoint then works', async () => {
+  const P = await openPage();
+  try {
+    // FitzHugh–Nagumo at i = 0.5: a period of 39 in a run of 200, only a few peaks; Lorenz 84 at F = 6
+    for (const [id, cmd] of [['fhn', 'par i=0.5\ngo'], ['lorenz84', 'par f=6\ngo']]) {
+      await P.run(`example ${id}\nview ph\n${cmd}`);
+      P.app('render()');
+      assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>o.disabled)"), [true, false], id);
+      assert.equal(P.$('#bAdjSrc').value, 'traj');
+      P.$('#bAdj').click();
+      await new Promise(r => setTimeout(r, 50));
+      assert.match(P.status(), /^Adjoint of the limit cycle of the active trajectory/, `${id}: ${P.status()}`);
+    }
+    // not offered at an equilibrium, or for chaos
+    for (const [id, cmd] of [['ml', 'par i=60\ngo'], ['lorenz', 'go']]) {
+      await P.run(`example ${id}\nview ph\n${cmd}`);
+      P.app('render()');
+      assert.equal(J(P, "document.querySelector('#bAdjSrc option[value=traj]').disabled"), true, id);
+    }
+  } finally { P.close(); }
+});

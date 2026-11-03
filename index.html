@@ -3579,20 +3579,26 @@ function phNoteUpdate(){
 const ADJ_IDS=new WeakMap();let adjIdNext=1;
 const adjId=o=>{if(!o)return 0;if(!ADJ_IDS.has(o))ADJ_IDS.set(o,adjIdNext++);return ADJ_IDS.get(o);};
 const ADJ_CYC=new WeakMap();
-// has the active trajectory settled onto a limit cycle? regular maxima over its second half, with an amplitude that is
-// not dying away (a damped oscillation onto a focus also has regular maxima)
+// has the active trajectory settled onto a limit cycle? Over its last three quarters, the full state at the peaks of the
+// variable that moves most comes back to itself after some number m of peaks (m > 1 for orbits with several peaks a
+// period), to within 3% of the range of each variable: twice in a row when the run is long enough, once when it holds only
+// two such peaks (a slow orbit in a short run). A damped oscillation onto a focus, or a trajectory still on its way, does
+// not. The test errs on the side of yes: Adjoint then finds the orbit itself, and says so if there is none.
 function adjTrajCycle(){
   const M=S.M,tr=activeTraj();if(!M||!tr||tr.kind||!tr.t||!tr.cols)return null;
   const key=tr.cols[0];if(ADJ_CYC.has(key))return ADJ_CYC.get(key);
   let ok=null;
-  try{const t=tr.t,L=t.length,n=M.n;
-    if(L>40){const T=estPeriod(t,tr.cols,n,Math.floor(L/2));
-      if(T&&t[L-1]-t[Math.floor(L/2)]>2.5*T){
-        const q1=Math.floor(L/2),q2=Math.floor(3*L/4);let grow=Infinity;
-        for(let i=0;i<n;i++){const c=tr.cols[i];let a1=-Infinity,b1=Infinity,a2=-Infinity,b2=Infinity;
-          for(let j=q1;j<q2;j++){a1=Math.max(a1,c[j]);b1=Math.min(b1,c[j]);}for(let j=q2;j<L;j++){a2=Math.max(a2,c[j]);b2=Math.min(b2,c[j]);}
-          const r1=a1-b1,r2=a2-b2;if(r1>1e-6*(1+Math.abs(a1)))grow=Math.min(grow,r2/r1);}
-        if(grow>0.97&&grow<1.03)ok={tr,T};}}}catch(e){ok=null;}
+  try{const t=tr.t,L=t.length,n=M.n,s0=Math.floor(L/4);
+    if(L>40&&!M.nw&&!M.nm){
+      const rg=new Float64Array(n);let bi=-1,ba=0;
+      for(let i=0;i<n;i++){const c=tr.cols[i];let lo=Infinity,hi=-Infinity;for(let j=s0;j<L;j++){const v=c[j];if(v<lo)lo=v;if(v>hi)hi=v;}
+        rg[i]=hi-lo;if(rg[i]>1e-6*(1+Math.abs(hi))&&rg[i]>ba*(1+1e-9)){if(ba===0||rg[i]/(1+Math.abs(hi))>ba/(1+Math.abs(hi))){ba=rg[i];bi=i;}}}
+      if(bi>=0){
+        const c=tr.cols[bi],pk=[];for(let j=s0+1;j<L-1;j++)if(c[j-1]<c[j]&&c[j]>=c[j+1])pk.push(j);
+        const d=(a,b)=>{let e=0;for(let i=0;i<n;i++){if(!(rg[i]>0))continue;e=Math.max(e,Math.abs(tr.cols[i][a]-tr.cols[i][b])/rg[i]);}return e;};
+        const K=pk.length-1;
+        for(let m=1;m<=8&&K-m>=0&&!ok;m++)if(d(pk[K],pk[K-m])<0.03&&(K-2*m<0||d(pk[K-m],pk[K-2*m])<0.03))ok={tr,T:t[pk[K]]-t[pk[K-m]]};}}}
+  catch(e){ok=null;}
   ADJ_CYC.set(key,ok);return ok;
 }
 function adjAvailable(){
