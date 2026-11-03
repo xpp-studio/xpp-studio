@@ -12,6 +12,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{tikz}
@@ -39,7 +40,7 @@
 \definecolor{tryc}{HTML}{1D4ED8}
 
 \lstdefinelanguage{ode}{
-  morekeywords={par,param,parameter,number,init,aux,wiener,markov,table,volterra,done,global,delay},
+  morekeywords={par,param,parameter,number,init,aux,wiener,markov,table,volterra,done,global,delay,set},
   sensitive=false,
   morecomment=[l]{\#},
   morestring=[b]",
@@ -71,13 +72,13 @@
 \title{\XS\\[4pt]\large An introduction and tutorial}
 \author{Peter Ashwin and Bard Ermentrout\\[2pt]
   \small with Claude Opus 5.5 (Anthropic)}
-\date{Version 1.2, October 2026}
+\date{Version 1.3, November 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent \XS{} is a browser-based environment for exploring dynamical systems, modelled on Bard Ermentrout's \XPP{}. It reads \XPP{}'s \texttt{.ode} files and provides phase planes, three-dimensional views, time courses, numerical continuation of equilibria and periodic orbits, one- and two-parameter bifurcation diagrams, maps, stochastic and Markov models, stiff solvers, delay equations, events (global flags), boundary value problems, arrays and Volterra integral equations. Everything runs locally in a web page: there is nothing to install and no data leaves the browser. This document introduces the interface, describes the model language, and works through a sequence of short tutorials using the examples that come with the program.
+\noindent \XS{} is a browser-based environment for exploring dynamical systems, modelled on Bard Ermentrout's \XPP{}. It reads \XPP{}'s \texttt{.ode} files and provides phase planes, three-dimensional views, time courses, numerical continuation of equilibria and periodic orbits, one- and two-parameter bifurcation diagrams, maps, stochastic and Markov models, stiff solvers, delay equations, events (global flags), boundary value problems, arrays and Volterra integral equations, and computes the phase and isostable reduction of limit cycles for weakly coupled oscillators. Everything runs locally in a web page: there is nothing to install and no data leaves the browser. This document introduces the interface, describes the model language, and works through a sequence of short tutorials using the examples that come with the program.
 \end{abstract}
 
 \tableofcontents
@@ -86,11 +87,15 @@
 % ==================================================================
 \section{Introduction}
 
+\begin{notebox}
+\textbf{About this version.} Features have been added since many of the screenshots and figures in this document were made, and the earlier pictures have not been remade. The text is current and the pictures may differ from the program in small ways. The new features are described in the later tutorials rather than in the tour of the interface, in particular Tutorials~13 to~15. The most visible change is a sixth view, \ui{Phase reduction} (key \key{6}), which now holds the adjoint and the interaction function of coupled oscillators; the screenshots of the interface show five views, and the Bifurcation panel in them still has the \ui{Adjoint} row, which has since moved to the new view. Tutorial~15 (Section~\ref{sec:adjoint}) replaces the earlier tutorial on the adjoint, and adds the isostable functions, the second-order theory of weakly coupled oscillators, and an example with exact answers.
+\end{notebox}
+
 For more than thirty years \XPP{} \cite{ermentrout2002} has been one of the standard tools for simulating and analysing differential equations in mathematical biology, neuroscience and applied dynamical systems. Its strengths are a compact, readable model language, fast interactive phase-plane analysis, and a tight connection to the continuation package \textsf{AUTO} \cite{doedel2007}. \XS{} keeps that model language and that way of working, and puts them in a modern interface:
 
 \begin{itemize}
   \item \textbf{Same files.} Most \XPP{} \texttt{.ode} files load unchanged. Supported features include parameters, functions, fixed quantities, auxiliary variables, maps, Wiener noise, Markov variables, tables, periodic (folded) variables, arrays, Volterra integrals, delays, global flags and boundary conditions (Section~\ref{sec:language}).
-  \item \textbf{Live analysis.} Dragging a parameter slider immediately recomputes trajectories, nullclines and equilibria.
+  \item \textbf{Live analysis.} Dragging a parameter slider immediately recomputes trajectories, nullclines and equilibria. For large systems, or when you want to change several things before anything is recomputed, \ui{Auto-run} can be switched off (Section~\ref{sec:autorun}).
   \item \textbf{Built-in continuation.} Equilibria, periodic orbits and their bifurcations can be continued in one or two parameters without leaving the program. Detected points include folds, Hopf, period-doubling, torus, fold-of-cycles and codimension-two points.
   \item \textbf{Publication output.} Every view can be exported as a vector SVG figure. Continuation data can be exported as CSV, and trajectories copied as CSV.
 \end{itemize}
@@ -101,7 +106,7 @@ For more than thirty years \XPP{} \cite{ermentrout2002} has been one of the stan
 \end{center}
 in any recent browser. The source code, the example models and this tutorial are in the repository \url{\xppgit}. Its file \texttt{index.html} is the whole program, and it also runs when opened directly from disk.
 
-\paragraph{How this document is organised.} Section~\ref{sec:tour} is a tour of the interface and Section~\ref{sec:language} summarises the model language. Sections~\ref{sec:pp}--\ref{sec:volterra} are hands-on tutorials, each built on an example from the \ui{Model} menu. Section~\ref{sec:script} shows how to record and replay the steps behind a set of figures with a script. Sections~\ref{sec:torus} and~\ref{sec:conn} are two further tutorials, on a forced oscillator and on homoclinic and heteroclinic orbits. Section~\ref{sec:numerics} covers numerical settings and Section~\ref{sec:export} exporting results. The document ends with the differences from \XPP{} and with credits.
+\paragraph{How this document is organised.} Section~\ref{sec:tour} is a tour of the interface and Section~\ref{sec:language} summarises the model language. Sections~\ref{sec:pp}--\ref{sec:volterra} are hands-on tutorials, each built on an example from the \ui{Model} menu. Section~\ref{sec:script} shows how to record and replay the steps behind a set of figures with a script. Sections~\ref{sec:torus}, \ref{sec:conn} and~\ref{sec:adjoint} are three further tutorials, on a forced oscillator, on homoclinic and heteroclinic orbits, and on phase reduction and weakly coupled oscillators. Section~\ref{sec:numerics} covers numerical settings and Section~\ref{sec:export} exporting results. The document ends with the differences from \XPP{} and with credits.
 
 % ==================================================================
 \section{A tour of the interface}\label{sec:tour}
@@ -118,20 +123,23 @@ The window (Figure~\ref{fig:overview}) has three columns.
 \paragraph{Left: the model.} Five tabs:
 \begin{description}[font=\sffamily\bfseries]
   \item[Equations] The \texttt{.ode} text, which you can edit freely. \ui{Apply} (or \key{Ctrl}+\key{Enter}) reloads the model, and messages underneath report what was loaded and any errors, with line numbers. \ui{Open .ode} loads a file from disk, \ui{Copy text} copies the current text, \ui{Write state} writes the current parameters, initial conditions and settings into it (Section~\ref{sec:writestate}), and \ui{Table files} supplies data files used by \texttt{table} declarations. \ui{Reset all}, under the messages, puts \XS{} back as it is the first time it is opened: the default model (Morris--Lecar), view and settings, with no trajectories, diagrams or labels. It also forgets what the browser has kept between visits (your edited equations, the script, table files and display choices such as \ui{Legend}), so copy anything you want to keep first; it asks before it does anything. To go back to the values in the current file without losing the file, press \ui{Apply} instead.
-  \item[Parameters] One row per parameter, with a value box and a slider whose limits you can edit. Drag a slider to see everything update live, and use \ui{Reset} to restore the values in the file. The up and down arrows on a value box, and the arrow keys on a slider, change the value by 1\% of the slider's range (10\% with \key{Shift}).
+  \item[Parameters] One row per parameter, with a value box and a slider whose limits you can edit. Drag a slider to see everything update live (unless \ui{Auto-run} is off, see below), and use \ui{Reset} to restore the values in the file. The up and down arrows on a value box, and the arrow keys on a slider, change the value by 1\% of the slider's range (10\% with \key{Shift}).
   \item[Initial] Initial values of the state variables (and Markov states). \ui{Integrate} runs from here, and \ui{Last point $\to$ IC} copies the end of the current trajectory into the initial conditions.
   \item[Numerics] Integration method, total time, transient, step size, tolerance and bound, plus the continuation settings (Section~\ref{sec:numerics}).
   \item[Script] A list of commands that drives the interface, to make a set of figures again exactly, with one click (Section~\ref{sec:script}).
 \end{description}
 
-\paragraph{Centre: the plot.} Five views, chosen with the buttons above the plot or with the keys \key{1}--\key{5}:
+\paragraph{Centre: the plot.} Six views, chosen with the buttons above the plot or with the keys \key{1}--\key{6}:
 \begin{description}[font=\sffamily\bfseries]
   \item[Phase plane] Any two variables (state, Markov, Volterra or auxiliary) against each other, with optional nullclines, direction field and equilibria. Nullclines are on when a planar system of differential equations is loaded, and off otherwise: in higher dimensions they are slices through the current values of the other variables, slower to draw and seldom what is wanted. Press \key{N} to show them. For a one-dimensional map this view shows a cobweb diagram. \ui{Equal axes} gives both axes the same scale. \ui{Run grid} in the Initial tab starts trajectories from a grid of points, by default covering the window (Section~\ref{sec:many}). Below the plane a strip shows the time series of the current trajectory.
   \item[3D] Three variables (or time) in a rotatable box: drag to rotate, scroll to zoom, \ui{Spin} to animate. \ui{Equilibria} shows or hides the equilibria; while they are hidden, the box fits the trajectories alone.
   \item[Time course] Chosen variables against $t$ (or the iteration number $n$ for maps). \ui{Spectrum} shows their power spectra instead, and \ui{Space-time} shows a row of indexed variables as an image (Section~\ref{sec:spacetime}).
   \item[Bifurcation] Branches of equilibria and periodic orbits, parameter sweeps, and homoclinic and heteroclinic orbits, against one parameter. The vertical axis is a variable, or the period or frequency of the periodic orbits.
   \item[Two-parameter] Curves of folds, Hopf points, period doublings and bifurcations of cycles in a parameter plane.
+  \item[Phase reduction] The phase response (adjoint) of periodic orbits, the isostable response and Floquet eigenfunction of their slowest multiplier, and the interaction functions of two weakly coupled copies, to first and second order (Section~\ref{sec:adjoint}). Its controls are in the right-hand panel.
 \end{description}
+\paragraph{Across the top,} next to the model's title, are three controls that decide when things are computed and which values are used. \ui{Auto-run} is a switch: while it is on, changing a parameter, an initial value or a numerical setting runs the trajectories again at once. When it is off, \ui{Run} brings the display up to date on demand. \ui{Sets} appears only when the file defines any, and applies a named collection of parameters, initial values and settings in one step (Section~\ref{sec:sets}). Section~\ref{sec:autorun} describes Auto-run and the handling of long computations.
+
 \paragraph{The status line} at the bottom of the window reports what the last action did: how many points a trajectory has, why a branch stopped, where a special point was found. \ui{History}, at its right-hand end, lists every message since the page was opened, each with its time, so that a report that has scrolled away can be read again. Progress reports during a long computation are kept as one line, the last one. \ui{Download} saves the list as a text file, \ui{Copy} copies it and \ui{Clear} empties it; in a script, \texttt{history save} does the same (Section~\ref{sec:script}).
 
 In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export DAT} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
@@ -155,7 +163,7 @@ Key & Action\\
 \key{E} & erase all trajectories\\
 \key{N} / \key{D} & toggle nullclines / direction field\\
 \key{F} & fit the axes to the data\\
-\key{1}--\key{5} & phase plane, 3D, time course, bifurcation, two-parameter\\
+\key{1}--\key{6} & phase plane, 3D, time course, bifurcation, two-parameter, phase reduction\\
 \key{Esc} & during continuation: skip to the other direction (``soft interrupt'')\\
 \key{Shift}+\key{Esc} & stop the continuation altogether\\
 click / shift-click & start a trajectory (shift: in both directions of time)\\
@@ -201,6 +209,8 @@ x'=\ldots\ \ or\ \ dx/dt=\ldots & differential equation\\
 x(t+1)=\ldots & map (or use \texttt{x'=\ldots} with \texttt{@ meth=discrete})\\
 x(0)=1\ \ or\ \ init x=1,y=0 & initial values\\
 par a=1, b=2 & parameters (also \texttt{param}, \texttt{p})\\
+set fast \{a=4, x=0.5, total=50\} & a named set of parameter values, initial values and settings (Section~\ref{sec:sets})\\
+\#@coupling v: v'-v & the coupling $G(X,X')$ of two copies of an oscillator, for the interaction function $H$ (Section~\ref{sec:hfun}); $v'$ is $v$ of the partner, and the overall strength $\epsilon$ is not written in the file\\
 number c=3 & named constant\\
 !d=a*b & derived parameter, recomputed when parameters change\\
 f(x,y)=\ldots & user function\\
@@ -240,6 +250,27 @@ global 1 x-1 \{x=0;y=y+1\} & global flag: when \texttt{x-1} crosses zero upwards
 \begin{notebox}
 \textbf{Methods.} \texttt{meth=} accepts \texttt{rk4} (fixed-step Runge--Kutta), \texttt{euler}, \texttt{dp45} (adaptive Dormand--Prince 4(5)), and the stiff names \texttt{stiff}, \texttt{gear}, \texttt{cvode}, \texttt{rosenbrock} and \texttt{backeul}. All of the stiff names select an adaptive Rosenbrock 2(3) solver \cite{shampine1997}. \texttt{discrete} iterates a map. Models with Wiener variables always use Euler--Maruyama, and models with Volterra integrals use a product-trapezoid scheme.
 \end{notebox}
+
+\paragraph{Sets.}\label{sec:sets} A \emph{set} is a named collection of parameter values, initial values and numerical settings. It is written as in \XPP{}, one line for each set, with the items separated by commas or semicolons:
+\begin{lstlisting}
+set fast {a=4, b=2, x=0.5, total=50, dt=0.01}
+set slow {a=1, b=0.5, y=0.2, total=120}
+\end{lstlisting}
+\noindent When a file has sets, a \ui{Sets} menu appears at the top of the window. Choosing a set changes everything it lists at once and then runs \emph{once}, rather than once for each value. With \ui{Auto-run} on, the current curve is started again from the new initial values and the other curves are recomputed; with it off, the display is marked out of date and \ui{Run} computes it. The menu returns to \ui{Sets} after each choice, so the same set can be applied again after you have edited values by hand, and the status line lists what was changed.
+\begin{itemize}
+  \item A set may name parameters, state variables (Markov states too) and the integration settings of the Numerics tab: \texttt{total}, \texttt{dt}, \texttt{meth}, \texttt{trans}, \texttt{bound}, \texttt{tol} and so on. Only what a set mentions changes; everything else keeps its present value, and \ui{Reset} in the Parameters tab still restores the values in the file.
+  \item \XPP{} files often put the plot itself into a set (\texttt{xlo}, \texttt{xhi}, \texttt{ylo}, \texttt{yhi}, \texttt{xp}, \texttt{yp}, \texttt{zp}). These are accepted but ignored: the plot stays as you have set it. The status line names them, and any other name it does not recognise.
+  \item Set names are not case-sensitive. In a script, \texttt{use fast} applies a set (Section~\ref{sec:script}).
+\end{itemize}
+
+\begin{tryit}
+Add two lines before \texttt{done} in the Morris--Lecar example and press \ui{Apply}:
+\begin{lstlisting}
+set rest {i=60, total=400}
+set firing {i=150, total=200}
+\end{lstlisting}
+Choose \texttt{firing} from the \ui{Sets} menu: the current curve is recomputed at $i=150$ and settles onto the limit cycle of Section~\ref{sec:pp}. Choose \texttt{rest}, and it returns to the stable focus. The slider for $i$ moves with each choice.
+\end{tryit}
 
 % ==================================================================
 \section{Tutorial 1: phase-plane analysis}\label{sec:pp}
@@ -782,19 +813,28 @@ export svg ml-twopar.svg
 \end{figure}
 
 \paragraph{The commands.} \ui{Commands} lists them all in the log. Names of variables, parameters and special points are those shown in the interface, and \texttt{\#} starts a comment.
-\begin{center}\small
-\begin{tabular}{@{}p{0.38\textwidth}p{0.56\textwidth}@{}}
+{\small
+\begin{longtable}{@{}p{0.38\textwidth}p{0.56\textwidth}@{}}
 \toprule
 Command & Effect\\
 \midrule
+\endfirsthead
+\toprule
+Command & Effect\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
 \texttt{example ml} & load a built-in example (by its id, or part of its name)\\
 \texttt{apply} & load the model in the Equations tab\\
 \texttt{par i=60 phi=0.04} & set parameters\\
 \texttt{init v=-20 w=0.1} & set initial values\\
 \texttt{set name=value} & either of the two, whichever the name is\\
+\texttt{use fast} & apply a set defined in the equations: its parameters, initial values and settings (Section~\ref{sec:sets}). The plot is left as it is\\
+\texttt{sets} & list the sets, with their contents, in the log\\
 \texttt{num total=400 dt=0.05 trans=100} & numerical settings; also \texttt{meth}, \texttt{dir} (forward, backward or both), \texttt{tol}, \texttt{bound}, \texttt{seed}, continuation settings \texttt{ds}, \texttt{nmax}, \texttt{ntst}, \ldots, and the continuation tolerances \texttt{eqtol}, \texttt{potol}, \texttt{tptol}, \texttt{restol}, \texttt{itmax}, \texttt{tgrow} (Section~\ref{sec:numerics}); \texttt{auto} empties a box\\
 \midrule
-\texttt{view pp|3d|tc|bif|tp} & choose the plot\\
+\texttt{view pp|3d|tc|bif|tp|ph} & choose the plot (\texttt{ph}: phase reduction)\\
 \texttt{axes v w} & phase-plane axes (three names for 3D)\\
 \texttt{window -80 50 -0.1 0.6} & axis limits $x_{lo}$, $x_{hi}$, $y_{lo}$, $y_{hi}$\\
 \texttt{fit} & fit the axes to the data\\
@@ -817,6 +857,11 @@ Command & Effect\\
 \texttt{switch BP1} & the other branch through a branch point\\
 \texttt{period 3} & maps: continue period-3 orbits (also \texttt{bifpar \ldots{} period=3})\\
 \texttt{limitcycle}, \texttt{sweep} & continue the orbit reached by the trajectory; sweep the range\\
+\texttt{adjoint here [align=VAR]} & the adjoint, the isostable functions and $H$ of the limit cycle of the active trajectory at the present parameters, found again after each \ui{Run} that changes the cycle while the Phase reduction view is open; switches to the Phase reduction view; \texttt{adjoint follow=off} stops the following (Section~\ref{sec:adjoint})\\
+\texttt{hfunction show=odd} & the interaction function $H$ of the \texttt{\#@coupling} lines, recomputed from the stored orbits; \texttt{show=all|H|even|odd}, or \texttt{off} (Section~\ref{sec:hfun})\\
+\texttt{hsecond eps=0.1 [show=odd]} & the second-order interaction function $H_2$: $H+\epsilon H_2$ and its parts (\texttt{show=all|H|even|odd}, or \texttt{rate} for $\phi'/\epsilon$), and $\gamma$; with \texttt{eps=0}, $H_2$ alone (Section~\ref{sec:hsecond})\\
+\texttt{phasefn orbit|Z|I|rho|B|H|H2} & which function the Phase reduction view draws\\
+\texttt{adjoint [K] n=8 range=100,200} & the adjoint (phase response) $Z(t)$ at $n$ orbits spread evenly in the parameter along orbit family $K$ (default: the latest continuation, both directions), within the range; also \texttt{at=v1,v2,\ldots}, \texttt{align=VAR|none}, \texttt{res=}; also computes the isostable functions when they exist (Section~\ref{sec:adjoint})\\
 \texttt{plot v}, \texttt{show L2} & variable, and hi-lo, L2, period or frequency\\
 \texttt{pick 1 i=150} & pick an orbit of family 1 (it becomes OR1, OR2, \ldots)\\
 \texttt{tppar phi 0 0.4}, \texttt{follow HB1} & second parameter; follow a special point (OR1: constant period)\\
@@ -827,10 +872,19 @@ Command & Effect\\
 \texttt{export svg|csv|dat [file]} & save the current view or its data\\
 \texttt{writestate}, \texttt{echo}, \texttt{wait ms} & write the state into the file; note; pause\\
 \texttt{history save [file]}, \texttt{history clear} & save the status-line history as a text file (with the other exports), or empty it\\
-\bottomrule
-\end{tabular}
-\end{center}
+\end{longtable}}
 If a command fails (an unknown name, a Hopf point that is not there, a continuation that does not start), the script stops, the line is marked in red, and the log under the script gives the reason. Files exported before then are still saved.
+
+\paragraph{Sets in scripts.} Several sets make a short script. This one runs the two sets of the previous section one after the other, with a pause so that each can be seen:
+\begin{lstlisting}
+erase
+use firing
+go
+wait 2000
+use rest
+go
+\end{lstlisting}
+\noindent Each \texttt{use} changes all the values of its set together, and \texttt{go} starts from them. \ui{Step} runs the script one line at a time, which makes \texttt{wait} unnecessary when you are watching. (\texttt{use} is not the same as the script command \texttt{set name=value}, which sets a single parameter or initial value.) A script always carries out its commands at once, whether or not \ui{Auto-run} is on.
 
 \paragraph{Recording.} You need not type a script. Press \ui{Record}, then work as usual: choosing a model, moving sliders, changing settings, integrating, continuing, following curves and exporting are written into the script as you go. A slider dragged across many values gives a single \texttt{par} line with its final value. Actions are recorded however you start them, from a button, a row of the special-points table, the equilibrium list or a key, and from any view, so \ui{Follow} or \ui{Cycles} in the table gives the same lines as the buttons in the inspector. What you do with the mouse is recorded too:
 \begin{itemize}
@@ -839,7 +893,8 @@ If a command fails (an unknown name, a Hopf point that is not there, a continuat
   \item clicking a diagram to load a point (an equilibrium, a point on a boundary value branch or a two-parameter curve) gives a \texttt{set} line with the parameter values and all the initial values it loads, and clicking an orbit branch gives \texttt{pick};
   \item \ui{Find connecting orbit} for a homoclinic or heteroclinic orbit gives a \texttt{connect} line, and \ui{Follow} on HOM1 or HET1 a \texttt{follow} line;
   \item placing a label with \ui{Add label} gives a \texttt{note} line with its position, colour and text. Moving or editing the label afterwards is not recorded, and neither is its size;
-  \item switching views, by button or key, gives a \texttt{view} line, and the chips above the plot (spectrum, space-time, legend, 3D) and the variables chosen for the time course are recorded as well.
+  \item switching views, by button or key, gives a \texttt{view} line, and the chips above the plot (spectrum, space-time, legend, 3D, and the functions of the Phase reduction view) and the variables chosen for the time course are recorded as well.
+  \item choosing a set from the \ui{Sets} menu gives one \texttt{use} line, not a line for each value in it;
 \end{itemize}
 Repeated changes of the same thing (dragging a slider, panning in several strokes) give a single line with the final value. Press \ui{Record} again to stop, then edit the result as you like.
 
@@ -976,6 +1031,406 @@ The saddle can also be chosen by hand: it is in the \ui{From} and \ui{To} menus 
 \end{itemize}
 
 % ==================================================================
+\section{Tutorial 15: phase reduction of a periodic orbit}\label{sec:adjoint}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ui-phase.png}
+  \caption{The Phase reduction view, here with the coupled Ginzburg--Landau oscillators of Section~\ref{sec:cgl}. The chips above the plot choose what is drawn: the orbit itself, the adjoint $Z$, the isostable response $I$, the Floquet eigenfunction $\rho$, the correction $B$, the interaction function $H$ and its second-order version $H_2$, with the coupling strength $\epsilon$ beside the last. On the right are the \ui{Adjoint} button, the choice of where the orbits come from, and a note on the slowest Floquet multiplier $\nu_1$.}
+  \label{fig:phaseview}
+\end{figure}
+
+A limit cycle can be described by a single \emph{phase} $\theta$ that advances at a constant rate. Weakly coupled oscillators are then studied through how a small push changes the phase: the \emph{adjoint} $Z(t)$, or phase response curve, and from it the \emph{interaction function} $H$ that decides whether two coupled oscillators synchronise \cite{ermentrout2010,kuramoto1984}. This is the first-order theory. It misses everything that depends on how strongly the oscillators are coupled, because the shape of $H$ cannot change with the coupling strength. The second-order theory of Wilson and Ermentrout \cite{wilson2019} adds the decaying \emph{amplitude} of the orbit as a second coordinate (an \emph{isostable} coordinate \cite{wilson2018}), and finds how locked states appear, disappear and change stability as the coupling grows.
+
+\XS{} computes all of this in one place, the \ui{Phase reduction} view (the sixth button above the plot, or the key \key{6}). Everything starts from the \ui{Adjoint} button in its panel, which takes a periodic orbit, or several, and computes the adjoint $Z$; the slowest Floquet multiplier $\nu_1$ and, when it allows, the isostable response $I$, the Floquet eigenfunction $\rho$ and a correction $B$ to the phase response; and, if the model has coupling lines, $H$ and the second-order functions $g_2$, $g_3$ and the coefficient $\gamma$. The chips above the plot choose which of these is drawn.
+
+\ui{Adjoint} turns blue when there is something new for it: a continued family of periodic orbits for the current parameter, or a trajectory that has settled onto a limit cycle. Its menu chooses between the two, \emph{along the family} and \emph{current trajectory}; until you choose by hand it follows what there is, the family if there is one and otherwise the trajectory. Once \ui{Adjoint} has been pressed it goes back to normal until there is a new family or a new cycle.
+
+\begin{notebox}
+\textbf{Where things were.} In earlier versions of the program and of this document the \ui{Adjoint} button was in the Bifurcation panel and the curves were drawn in the Time course view. They are now in the Phase reduction view, and the Time course view no longer shows them. The figures in this section that were made before the change (Figures~\ref{fig:adjoint}, \ref{fig:hfun} and~\ref{fig:hh}) are unaffected, since only the place of the controls has moved. A script written for the old version that ends \texttt{adjoint \ldots} followed by \texttt{view tc} will now show the plain time course; delete the \texttt{view tc} line, since \texttt{adjoint} switches to the Phase reduction view itself.
+\end{notebox}
+
+% ------------------------------------------------------------------
+\subsection*{The adjoint $Z$}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.78\textwidth]{ml-adjoint.pdf}
+  \caption{The adjoint $Z_v(t)$ of the Morris--Lecar limit cycle at eight values of the applied current $i$, from 150 (dark) to 198 (light), against the phase $t/T$ with phase 0 at the maximum of $v$. As $i$ increases the negative lobe deepens and moves later in the cycle. Made by the script on page~\pageref{lst:adjscript}.}
+  \label{fig:adjoint}
+\end{figure}
+
+Let $X'=F(X)$ have a periodic orbit $U(t)$ of period $T$ and write $A(t)=D_XF(U(t))$. The adjoint is the $T$-periodic solution of
+\begin{equation}
+  Z'=-A(t)^{\mathsf T}Z,\qquad Z(t)^{\mathsf T}U'(t)=1.
+\end{equation}
+A small kick $\delta$ given to the oscillator at time $t$ advances it, once it has settled back onto the orbit, by $Z(t)^{\mathsf T}\delta$ units of time. The normalisation $Z^{\mathsf T}U'=1$ holds for all $t$ once it holds at $t=0$, and \XS{} reports how well it holds as a check.
+
+\paragraph{How it is computed.} For each orbit the variational equation is integrated once around the cycle, which gives the monodromy matrix $\Phi(T,0)$. Since $Z(t)^{\mathsf T}\Phi(t,0)$ does not change with $t$, $Z(0)$ is the left eigenvector of $\Phi(T,0)$ for the multiplier~1, scaled so that $Z(0)^{\mathsf T}U'(0)=1$. $Z$ is then carried back around the orbit with the transposes of the same steps, which makes it exactly periodic. The orbit comes from the shooting points of the continuation, and is polished with a few Newton steps so that it closes on the fine grid (800 points per period, more if the check below asks for it). Because the eigenvector is found directly, nothing has to converge over many periods, so the method works for unstable orbits as well as stable ones, and in the middle of a family as well as at its ends.
+
+\paragraph{Accuracy.} The status line gives the largest error found, the largest deviation of $Z^{\mathsf T}U'$ from~1 over the orbit and of $Z$ from periodicity. For the Stuart--Landau oscillator, where $Z=(-\sin\omega t,\allowbreak\cos\omega t)/(\omega\sqrt\mu)$ is known exactly, the error is below $10^{-8}$; for Morris--Lecar it is about $10^{-7}$ or less. It is larger for orbits very close to a fold of cycles, where a second multiplier is almost~1 and $Z$ is sensitive to any error, and the status line then says so. As a check against the definition, kicks of 0.5\,mV and smaller applied to the Morris--Lecar orbit shift the phase by $Z^{\mathsf T}\delta$ to within a relative error that goes to zero as the kick is made smaller.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Load \ui{Morris--Lecar}, set $i=150$ and press \key{G} so that the trajectory settles onto the limit cycle.
+  \item Open the Bifurcation view. Choose $i$ as the parameter, a range of $90$ to $220$ and a step of $2$, and press \ui{Limit cycle}. The family of orbits is continued in both directions.
+  \item Open the Phase reduction view. Its panel has the \ui{Adjoint} button, a menu that says \emph{along the family}, a number of orbits and a from--to range. Enter $8$ orbits, from $150$ to $200$, and press \ui{Adjoint}. The \ui{Adjoint~Z} chip is on, showing $Z$ of $v$, the variable that phase~0 is placed on; the variable chips on the right add others.
+  \item Each curve is one orbit, coloured by the value of $i$ (the key at the top lists the values and periods; unstable orbits are marked). Orbits are chosen evenly in $i$ along the family, and phase~0 is placed at the maximum of $v$ so that the curves line up (Figure~\ref{fig:adjoint}).
+  \item Select $w$ as well: it is drawn with dashed lines. $Z$ of a variable that varies little is large (here $Z_w$ is about 200 times $Z_v$, because $w$ varies by 0.37 and $v$ by 80), so you will want \ui{Window}. \ui{Export CSV} writes the phase and $Z$ for every variable of every orbit, with the periods in a last comment line, and \ui{Export SVG} writes the figure.
+\end{enumerate}
+\end{tryit}
+
+\noindent The same figure is made by a script:\label{lst:adjscript}
+\begin{lstlisting}
+example ml
+par i=150
+go
+bifpar i 90 220 ds=2
+limitcycle
+adjoint n=8 range=150,200 align=v
+export svg ml-adjoint.svg
+export csv ml-adjoint.csv
+\end{lstlisting}
+
+\paragraph{Choosing the orbits.} \ui{Adjoint} works on the family selected in the diagram (click it first), and otherwise on the latest continuation, with its two directions taken together. The \ui{from}--\ui{to} range keeps only orbits with the parameter in that range, and leaving it empty uses the whole family apart from the orbits next to a Hopf point (see the notes at the end). In a script, \texttt{adjoint 2} takes the second family listed for the parameter, and \texttt{at=100,150,200} takes the orbits nearest those parameter values instead of evenly spaced ones. A family that folds back is followed along its length, so the orbits on both sides of a fold are included.
+
+\paragraph{Where phase 0 is.} By default phase~0 is placed at the maximum of the variable on the horizontal axis of the phase plane, at the moment \ui{Adjoint} is pressed, so that curves from different orbits, and the orbit itself, line up. The maximum is that of the smooth curve through the computed points, not of the nearest grid point, because at the flat top of a smooth peak a grid point can be several steps from the true maximum; phase~0 is therefore exact to the accuracy of the orbit, which matters when you compare with a formula. Changing the axis afterwards does not realign curves already computed; press \ui{Adjoint} again. In a script, \texttt{align=w} uses the maximum of $w$ instead, and \texttt{align=none} keeps the phase reference of the continuation, which is set by its phase condition and varies smoothly along the family.
+
+\paragraph{The orbit itself.} The \ui{Orbit} chip draws $U(t)$ of the chosen variables against the same phase axis as everything else, one curve for each orbit. It is there so that a feature of $Z$ can be read against the waveform: the voltage of the spike and the point at which the response changes sign, for example. With the \ui{Orbit} chip on, \ui{Export CSV} writes one file with the orbit together with $Z$ and, when they exist, $I$, $\rho$ and $B$, for every variable and every orbit, against the same phase; the period, $\nu_1$ and $\kappa$ of each orbit, the parameter values and the coupling lines are in comment lines at the end. (The other chips write only their own function.)
+
+% ------------------------------------------------------------------
+\subsection*{Beyond the phase: $\nu_1$, $I$, $\rho$ and $B$}\label{sec:isostable}
+
+The monodromy matrix has the multiplier~1, which belongs to the phase, and the other multipliers $\nu_j$, which say how fast a displacement from the orbit dies away (or grows, if it is unstable). Let $\nu_1$ be the \emph{slowest nontrivial} one, meaning the one with the smallest $|\ln|\nu||$; for a stable orbit this is the multiplier of largest modulus below~1. Write $\kappa=\ln\nu_1/T$. Near the orbit a state can be written
+\begin{equation}
+  X=U(\theta)+\psi\,\rho(\theta),\qquad \theta'=1,\quad \psi'=\kappa\psi,
+\end{equation}
+where $\psi$ is the \emph{isostable} amplitude: the distance from the orbit along the slow direction, which decays like $e^{\kappa t}$. Three more periodic functions go with it:
+\begin{align}
+  \rho'&=\bigl(A(t)-\kappa\bigr)\rho, \\
+  I'&=\kappa I-A(t)^{\mathsf T}I,\qquad I^{\mathsf T}\rho=1, \\
+  B'&=-\bigl(A(t)^{\mathsf T}+\kappa\bigr)B-\bigl(D^2F(U)[\rho]\bigr)^{\mathsf T}Z .
+\end{align}
+$\rho$ is the Floquet eigenfunction for $\nu_1$. $I$ is the \emph{isostable response}: a kick $\delta$ at time $t$ changes $\psi$ by $I(t)^{\mathsf T}\delta$, just as it changes the phase by $Z(t)^{\mathsf T}\delta$. $B$ is the first correction to the phase response off the orbit: the gradient of the phase at the point $U(\theta)+\psi\rho(\theta)$ is $Z(\theta)+\psi B(\theta)+O(\psi^2)$. In its equation $D^2F(U)[\rho]$ is the derivative of $A(t)=DF(U(t))$ in the direction $\rho$. Besides these, $I^{\mathsf T}U'=0$ and $Z^{\mathsf T}\rho=0$ hold all along the orbit. Wilson and Ermentrout \cite{wilson2019} call the corresponding functions $Z$, $I$, $B$ and $C$; the last, the correction to $I$, is not needed for the second-order coupling functions and is not computed.
+
+\paragraph{How they are computed.} $\rho(0)$ and $I(0)$ are the right and left eigenvectors of the same monodromy matrix for $\nu_1$. $I$ is carried back around the orbit with the transposes of the integration steps, as $Z$ is, and $\rho$ forward with the steps themselves; at every step the components along $U'$ (in $\rho$) and along $Z$ (in $I$), which are exactly zero, are removed. $B$ is the periodic solution of an affine recursion over the same steps, which exists and is unique unless some multiplier equals $1/\nu_1$. $D^2F[\rho]$ is taken by central differences of the Jacobian along $\rho$. As with $Z$, \XS{} reports the errors found: $I^{\mathsf T}\rho$ against~1, $Z^{\mathsf T}\rho$ and $I^{\mathsf T}U'$ against~0, and the closure of $\rho$, $I$ and $B$ after one period. For the coupled Ginzburg--Landau oscillators of Section~\ref{sec:cgl}, where all four functions are known in closed form, the computed ones agree to about $10^{-9}$ ($10^{-8}$ for $B$).
+
+\paragraph{Conventions.} $\rho$ is scaled so that its Euclidean norm has maximum~1 over the orbit, and signed so that it points outward from the centre of the orbit on average; $I$ is then fixed by $I^{\mathsf T}\rho=1$. The amplitude $\psi$ is measured in these units, so rescaling $\rho$ by a factor $c$ divides $\psi$ and $I$ by $c$ and multiplies $B$ by $c$; the products $\psi\rho$, $I^{\mathsf T}\delta$ and $\psi B$ do not change. A function quoted in a paper with another scaling therefore differs from the one drawn here by such a factor (Section~\ref{sec:cgl} gives an example). \ui{Export CSV} says which convention was used.
+
+\begin{notebox}
+\textbf{When are $I$, $\rho$ and $B$ not drawn?} They belong to one \emph{real, positive} slowest multiplier. When that is not so, \XS{} skips them, says why in the note on the right and in the key, and still computes $Z$, the orbit and $H$.
+\begin{itemize}
+  \item \textbf{A complex pair.} If the slowest multipliers are a complex-conjugate pair, two isostable coordinates are needed, which \XS{} does not compute (see \cite{wilson2019pre} for the theory).
+  \item \textbf{A negative multiplier.} Then $\rho$ and $I$ change sign over one period and have period $2T$; this happens next to a period doubling. They are not computed.
+  \item \textbf{A multiplier near~1.} Within about $10^{-6}$ of~1 the orbit is at a bifurcation, and the functions are meaningless. The same holds if two real multipliers are equal.
+  \item \textbf{A multiplier of zero.} If $|\nu_1|<10^{-10}$ the amplitude dies away so fast that there is nothing to resolve. This is common for strongly attracting relaxation oscillations (we found about $10^{-17}$ for a FitzHugh--Nagumo oscillator with a small time-scale ratio), and the examples here, with $\nu_1$ between $3\times10^{-6}$ and $0.07$, are all well inside the range that works.
+  \item \textbf{An unstable orbit} ($\nu_1>1$). The functions are computed, but an isostable expansion about an unstable orbit is only formal; $H_2$ says so.
+\end{itemize}
+Along a family the choice is made orbit by orbit: the functions are drawn for the orbits that have them, and the key says how many do not and why.
+\end{notebox}
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{minipage}{0.48\textwidth}\centering
+    \includegraphics[width=\textwidth]{ml-iso-Z.pdf}
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\textwidth}\centering
+    \includegraphics[width=\textwidth]{ml-iso-I.pdf}
+  \end{minipage}\\[6pt]
+  \begin{minipage}{0.48\textwidth}\centering
+    \includegraphics[width=\textwidth]{ml-iso-rho.pdf}
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\textwidth}\centering
+    \includegraphics[width=\textwidth]{ml-iso-B.pdf}
+  \end{minipage}
+  \caption{The $v$ components of $Z$ (top left), $I$ (top right), $\rho$ (bottom left) and $B$ (bottom right) for the Morris--Lecar limit cycle at $i=150$, against the phase $t/T$ with phase~0 at the maximum of $v$. The period is $T=66.16$ and the slowest multiplier is $\nu_1=7.6\times10^{-5}$. Made by the script on page~\pageref{lst:isoscript}.}
+  \label{fig:isostable}
+\end{figure}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Load \ui{Morris--Lecar}, set $i=150$ and press \key{G}.
+  \item Open the Phase reduction view, set the menu to \emph{current trajectory} (the number of orbits and the range disappear) and press \ui{Adjoint}. The note on the right gives $\nu_1=7.6\times10^{-5}$ and $\kappa=\ln\nu_1/T$, and the chips \ui{Isostable~I}, \ui{Eigenfunction~$\rho$} and \ui{B} appear next to \ui{Adjoint~Z}.
+  \item Press the chips in turn; they are a choice of one. Choose $v$ only among the variables on the right to get Figure~\ref{fig:isostable}. The key under the title of each curve gives the value of $\nu_1$.
+  \item Choose $v$ and $w$ together: they are drawn solid and dashed. $\rho$ is scaled by the Euclidean norm of both components, so the two curves are directly comparable, unlike those of $Z$.
+\end{enumerate}
+\end{tryit}
+
+\noindent The same figures are made by the script:\label{lst:isoscript}
+\begin{lstlisting}
+example ml
+par i=150
+go
+adjoint here align=v
+tcvars v
+phasefn Z
+export svg ml-iso-Z.svg
+phasefn I
+export svg ml-iso-I.svg
+phasefn rho
+export svg ml-iso-rho.svg
+phasefn B
+export svg ml-iso-B.svg
+\end{lstlisting}
+
+% ------------------------------------------------------------------
+\subsection*{Coupled oscillators: the interaction function $H$}\label{sec:hfun}
+
+Two identical oscillators with weak coupling, $X_1'=F(X_1)+\epsilon G(X_1,X_2)$ and $X_2'=F(X_2)+\epsilon G(X_2,X_1)$, reduce to phase equations $\theta_1'=1+\epsilon H(\theta_2-\theta_1)$, $\theta_2'=1+\epsilon H(\theta_1-\theta_2)$ with the interaction function
+\begin{equation}
+  H(\phi)=\frac1T\int_0^T Z(t)^{\mathsf T}\,G\bigl(U(t),U(t+\phi)\bigr)\,dt .
+\end{equation}
+The phase difference $\phi=\theta_2-\theta_1$ then obeys $\phi'=\epsilon\,[H(-\phi)-H(\phi)]=-2\epsilon H_{\mathrm{odd}}(\phi)$, where $H_{\mathrm{odd}}(\phi)=\tfrac12[H(\phi)-H(-\phi)]$ is the odd part. A zero of $H_{\mathrm{odd}}$ is a phase-locked state; it is stable (for $\epsilon>0$) where $H_{\mathrm{odd}}$ crosses zero upwards. The synchronous state $\phi=0$ and the anti-phase state $\phi=T/2$ are always zeros, by symmetry.
+
+\paragraph{The form of the coupling.} The coupling is written in the equations, one line for each variable that receives input:
+\begin{lstlisting}
+#@coupling v: v'-v
+#@coupling ca: dcs*(ca'-ca)
+\end{lstlisting}
+\noindent The expression is that component of $G(X,X')$, where $X$ is the cell itself and a primed name (\texttt{v'}) is the same variable of the partner; a variable with no line gets no coupling. \XPP{} reads these lines as comments. Three points matter.
+\begin{itemize}
+  \item \textbf{$\epsilon$ is not in the line.} The lines give $G$ and nothing else. The overall strength $\epsilon$ in $\epsilon G(X,X')$ is not part of the model: in $H$ it is understood to multiply the result, and in the second-order functions below it is the number in the field next to the $H_2$ chip. A factor inside the expression, such as \texttt{dcs} above, or a synaptic conductance, is a part of $G$ and not of $\epsilon$. Parameters like these may appear in the line, and $H$ follows them as they are changed.
+  \item \textbf{Pairs only.} The theory used is that of two identical cells with symmetric coupling. Networks, and unequal or one-way weights, are not treated.
+  \item \textbf{$G$ must be smooth.} The second-order functions need the derivatives of $G$ with respect to both of its arguments, which are taken numerically. A coupling that is not differentiable (an absolute value, say) will give poor second-order results, though $H$ itself is unaffected.
+\end{itemize}
+
+\noindent To check a result by direct simulation, write two copies of the model with the coupling terms added explicitly, $X_1'=F(X_1)+\epsilon G(X_1,X_2)$ and $X_2'=F(X_2)+\epsilon G(X_2,X_1)$.
+
+When the model has coupling lines, an \ui{H} chip appears next to the others. It shows $H$ against the phase shift $\phi/T$; a menu beside it chooses $H$, its even part $\tfrac12[H(\phi)+H(-\phi)]$, its odd part, or all three (solid, dashed and dotted). For a single orbit the zeros of the odd part are marked, filled where stable and open where unstable, and listed under the curves. The curves are coloured by the parameter, as for $Z$. \ui{Export CSV} writes all three parts for every orbit, together with a second file of Fourier coefficients (Section~\ref{sec:fourier}), and \texttt{hfunction} in a script does the same job as the chip.
+
+\noindent Because $H$ only needs the stored $U$ and $Z$, it is recomputed whenever a parameter changes, which takes a few milliseconds for a family of orbits. You can therefore drag the slider for a coupling strength or a synaptic reversal potential and watch $H$ change, with the axes only growing while you drag (press \ui{Fit} to rescale). For each orbit $H$ is computed with the continuation parameter at the value of that orbit and every other parameter at its present value. \XS{} does not check whether a change has altered the cycle itself: if it has (the applied current, say), press \ui{Adjoint} again. Moving the slider of the continuation parameter leaves $H$ as it is.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.48\textwidth]{ml-h-single.pdf}\hfill
+  \includegraphics[width=0.48\textwidth]{ml-h-family.pdf}
+  \caption{The interaction function of two Morris--Lecar cells coupled by \texttt{\#@coupling v: v'-v}. Left: $H$ (solid), its even part (dashed) and its odd part (dotted) at $i=150$. The odd part has zeros at $\phi/T=0$ (filled: stable) and $\tfrac12$ (open: unstable). Right: the odd part for eight orbits from $i=197.6$ (light) to $96.4$ (dark).}
+  \label{fig:hfun}
+\end{figure}
+
+\begin{tryit}
+\begin{enumerate}
+  \item In the Morris--Lecar example add the line \texttt{\#@coupling v: v'-v} before \texttt{done} and press \ui{Apply}. This is diffusive (electrical) coupling through the voltage.
+  \item Continue the family as before (set $i=150$, press \key{G}, choose $i$ with range $90$ to $220$ and step $2$, press \ui{Limit cycle}).
+  \item In the Phase reduction view enter $1$ orbit, from $149$ to $151$, and press \ui{Adjoint}; then press the \ui{H} chip and choose \emph{H, even, odd}. This is the left panel of Figure~\ref{fig:hfun}. The status line and the text under the curves give the phase-locked states.
+  \item Enter $8$ orbits, from $95$ to $200$ and press \ui{Adjoint} again, then the \ui{H} chip. For several orbits the menu starts at the odd part (right panel).
+\end{enumerate}
+\end{tryit}
+\noindent For every orbit examined, from $i=89$ to $198$, the odd part has only the two zeros $\phi/T=0$ and $\tfrac12$: diffusive coupling through $v$ makes synchrony stable and anti-phase unstable. Its size increases as $i$ falls and the period lengthens, from about $6$ at $i=150$ to about $14$ at $i=96$. The same figure from a script, with the coupling line in the equations:
+\begin{lstlisting}
+go
+bifpar i 90 220 ds=2
+limitcycle
+adjoint n=8 range=95,200 align=v
+hfunction show=odd
+export svg ml-h-family.svg
+\end{lstlisting}
+
+% ------------------------------------------------------------------
+\subsection*{Second order: $H_2$ and $\gamma$}\label{sec:hsecond}
+
+To first order the locking equation $\phi'=\epsilon\,g_1(\phi)$, with $g_1(\phi)=H(-\phi)-H(\phi)$, has a right-hand side whose \emph{shape} does not depend on $\epsilon$. So it can never show a locked state losing stability, or a new one appearing, as the coupling is made stronger, although both happen in real oscillators. The next order does \cite{wilson2019}. With the amplitude of each cell $\psi_i=\epsilon r_i$ eliminated, the phase difference obeys
+\begin{equation}
+  \phi'=\epsilon\,\bigl[g_1(\phi)+\epsilon\,\bigl(g_2(\phi)+g_3(\phi)\bigr)\bigr],
+\end{equation}
+with $g_2(\phi)=A(-\phi)-A(\phi)$ and $g_3(\phi)=B_f(-\phi)-B_f(\phi)$, where
+\begin{equation}
+  A(\phi)=\bigl\langle f_\phi(t)\,h_2(t,t+\phi)\bigr\rangle,\qquad
+  B_f(\phi)=\bigl\langle f_{-\phi}(t+\phi)\,h_3(t,t+\phi)\bigr\rangle,
+\end{equation}
+\begin{align}
+  h_2(t,s)&=Z(t)^{\mathsf T}\bigl[G_1(U(t),U(s))\,\rho(t)\bigr]+B(t)^{\mathsf T}G(U(t),U(s)),\\
+  h_3(t,s)&=Z(t)^{\mathsf T}\bigl[G_2(U(t),U(s))\,\rho(s)\bigr],
+\end{align}
+$G_1$ and $G_2$ are the derivatives of $G$ with respect to its first and second arguments, $\langle\cdot\rangle$ is the average over one period, and $f_\phi$ is the periodic solution of $f'=\kappa f+I(t)^{\mathsf T}G(U(t),U(t+\phi))$. \XS{} finds $f_\phi$ exactly, term by term in a Fourier series, so there is no integral to truncate. The functions $g_2$ and $g_3$ are odd and periodic, so synchrony and anti-phase remain locked states at every $\epsilon$, but their stability can change, and new states can appear in pairs.
+
+\paragraph{The $H_2$ chip.} The functions $A$ and $B_f$ are the second-order counterparts of $H$. With $H_2(\phi)=A(\phi)+B_f(\phi)$, each cell obeys $\theta_i'=1+\epsilon\,[H+\epsilon H_2](\theta_j-\theta_i)$, and the phase difference obeys
+\begin{equation}
+  \phi'=-2\epsilon\,\mathrm{odd}\bigl[H+\epsilon H_2\bigr](\phi),
+\end{equation}
+so that $g_1=-2H_{\mathrm{odd}}$ and $g_2+g_3=-2\,\mathrm{odd}[H_2]$. The \ui{H$_2$} chip, which appears next to \ui{H} when $I$, $\rho$ and $B$ are available, therefore works like the $H$ chip, with a field for $\epsilon$ and the same menu for the part that is drawn: the whole function, its even part, its odd part, or all three. Both cells use the same $G$ as the $H$ chip.
+\begin{itemize}
+  \item With $\epsilon=0$ it shows $H_2$ itself (or its even or odd part): the shape of the second-order correction.
+  \item With $\epsilon\neq0$ it shows $H+\epsilon H_2$. When one part is drawn, the same part of the first-order $H$ is drawn dashed in grey for comparison. The zeros of the odd part are the locked states, marked filled where stable and open where unstable, and listed under the curves. As for $H$, a zero is stable where the odd part crosses zero upwards if $\epsilon>0$ (downwards if $\epsilon<0$; negative $\epsilon$ is allowed). The even part does not enter the equation for the phase difference, but it gives the common rate of advance of a locked pair.
+  \item The menu has one more entry, $\phi'/\epsilon$, which draws $g_1+\epsilon(g_2+g_3)=-2\,\mathrm{odd}[H+\epsilon H_2]$, the rate of change of the phase difference as plotted in Figure~2 of \cite{wilson2019}, with $g_1$ dashed (at $\epsilon=0$ it draws $g_2+g_3$). A stable state is then a zero where the curve crosses downwards.
+  \item Changing $\epsilon$ recombines functions that are already computed, so it is instant.
+\end{itemize}
+The \ui{Export CSV} file has $g_1$, $g_2$, $g_3$, $g_2+g_3$, the composite for the present $\epsilon$, the two parts $H_{24}(\phi,\phi)$ and $H_{34}(\phi,0)$ of $H_2$, and $H_2$ and $H+\epsilon H_2$; these are the functions themselves, without $\epsilon$, except for the two composite columns, which use the value in the field. A second file holds their Fourier coefficients. In a script, \texttt{hsecond eps=0.1 show=odd} and \texttt{phasefn H2} do the same; \texttt{show} takes \texttt{all}, \texttt{H}, \texttt{even}, \texttt{odd} or \texttt{rate}.
+
+\paragraph{The coefficient $\gamma$.} The legend gives
+\begin{equation}
+  \gamma=\tfrac14\bigl[g_2'(0)+g_3'(0)\bigr]
+\end{equation}
+for each orbit, and for a single orbit also the two numbers $-A'(0)$ and $-B_f'(0)$ from which it is made. For diffusive coupling $G(X,X')=D(X'-X)$ these are equal, and $\gamma$ is the coefficient of the fourth-derivative term in the Kuramoto--Sivashinsky equation $\phi_t=\epsilon(\beta\phi_x^2+\alpha\phi_{xx}+\gamma\phi_{xxxx})$ that describes a continuum of such oscillators \cite{wilson2019,kuramoto1984}. It is the term that matters when the diffusion coefficient $\alpha=H'(0)$ is small. The program reports both numbers, so that for other couplings you can see how far they differ: the equality is a property of diffusive coupling, and is a useful check on a model's coupling lines.
+
+\paragraph{Fourier coefficients, for networks.}\label{sec:fourier} To put these functions into a model of many oscillators it is easier to have them as formulas than as tables. \ui{Export CSV} in the $H$ or $H_2$ mode therefore writes a second file, with the same name and \texttt{-fourier} added, that holds the first 20 Fourier coefficients of the functions, for each orbit:
+\begin{equation}
+  F(\phi)=a_0+\sum_{k=1}^{20}\Bigl[a_k\cos\frac{2\pi k\phi}{T}+b_k\sin\frac{2\pi k\phi}{T}\Bigr],
+\end{equation}
+with $\phi$ the time shift and $T$ the period (the periods are in the comment lines; in the file the rows are $k=0,\dots,20$ and the columns are \texttt{F\_a} and \texttt{F\_b} for each function $F$). In the $H$ mode the file has $H$; in the $H_2$ mode it has $H$, $H_{24}(\phi,\phi)$, $H_{34}(\phi,0)$, $H_2$ and $g_2+g_3$. Since $g_2+g_3=-2\,\mathrm{odd}[H_2]$ is odd, its cosine coefficients are zero and $b_k(g_2+g_3)=-2\,b_k(H_2)$. Like the functions, the coefficients do not contain $\epsilon$.
+
+Twenty harmonics are plenty for a smooth cycle. For the Hodgkin--Huxley example the amplitude $\sqrt{a_k^2+b_k^2}$ of $H$ falls from about 2 at $k=1$ to $4\times10^{-5}$ at $k=10$ and $3\times10^{-6}$ at $k=20$; for the Ginzburg--Landau oscillators only $k\le2$ are present, and the computed coefficients agree with the exact ones to $10^{-9}$. The coefficients are found from 100 samples of each function over a period, so they should not be used much beyond $k=20$. A short script for a network of $N$ cells then needs only the coefficients: at first order, $\theta_i'=1+\epsilon\sum_j a_{ij}H(\theta_j-\theta_i)$ with $H$ the series above.
+
+\emph{The second order is not complete for a network.} The functions $H_{24}(\phi,\phi)$ and $H_{34}(\phi,0)$ are the terms of the network equation of \cite{wilson2019} that involve one neighbour: for weights $a_{ij}$ they enter as $\epsilon^2\sum_j\bigl[a_{ij}^2H_{24}(\phi_{ij},\phi_{ij})+a_{ij}a_{ji}H_{34}(\phi_{ij},0)\bigr]$, with $\phi_{ij}=\theta_j-\theta_i$, which is why they are written out separately. For symmetric weights equal to~1 the sum is $H_2$. The terms that involve two different neighbours of the same cell need the full two-argument functions $H_{24}(\eta,\xi)$ and $H_{34}(\eta,\xi)$, which \XS{} does not compute. They can be computed from the file written with the \ui{Orbit} chip, together with the coupling function $G$ and its derivatives, which you supply: $H_{24}(\eta,\xi)=\langle f_\xi(t)\,h_2(t,t+\eta)\rangle$ and $H_{34}(\eta,\xi)=\langle f_{\xi-\eta}(t+\eta)\,h_3(t,t+\eta)\rangle$, with $h_2$, $h_3$ and $f_\phi$ as defined above. The two functions in the exported table are the cases $\xi=\eta$ and $\xi=0$, and serve to check such a calculation. So $H+\epsilon H_2$ is exact for a pair, and a useful but incomplete second-order correction for a network.
+
+\paragraph{How far to trust it.} The expansion is accurate to $O(\epsilon^2)$ in the coupling strength, and it assumes that the other multipliers are small compared with $\nu_1$, so that one isostable coordinate is enough. For a model with two variables this is automatic. Otherwise the legend gives the ratio of the next multiplier to $\nu_1$ whenever it exceeds $\tfrac14$, and also warns when $|\kappa|T<0.3$, when the slowest multiplier is close to~1 and the expansion breaks down as the orbit nears a bifurcation, and when the orbit is unstable. The computation costs about five times as much as $H$ (it evaluates $G$ and its derivatives at every point of the orbit for each of 100 phase shifts), so \XS{} computes it only while the $H_2$ chip is on, and again when a parameter is changed while it is on.
+
+% ------------------------------------------------------------------
+\subsection*{An example with exact answers: coupled Ginzburg--Landau oscillators}\label{sec:cgl}
+
+The complex Ginzburg--Landau oscillator, in real coordinates and with a pair of cells $j=1,2$, $k=3-j$, is \cite{wilson2019}
+\begin{align}
+  x_j'&=x_j(1-x_j^2-y_j^2)-q(x_j^2+y_j^2)\,y_j+\epsilon\bigl[x_k-x_j-d\,(y_k-y_j)\bigr],\\
+  y_j'&=y_j(1-x_j^2-y_j^2)+q(x_j^2+y_j^2)\,x_j+\epsilon\bigl[y_k-y_j+d\,(x_k-x_j)\bigr].
+\end{align}
+It is the model \ui{Coupled Ginzburg--Landau oscillators} in the Model menu. Its equations are
+\begin{lstlisting}
+x'=x*(1-x^2-y^2)-q*(x^2+y^2)*y
+y'=y*(1-x^2-y^2)+q*(x^2+y^2)*x
+par q=1,d=0.9
+init x=1,y=0
+#@coupling x: (x'-x)-d*(y'-y)
+#@coupling y: (y'-y)+d*(x'-x)
+@ total=40,dt=0.01,meth=rk4,xp=x,yp=y
+done
+\end{lstlisting}
+The first two lines are one cell. The two coupling lines are $G(X,X')$, the part of the equations multiplied by $\epsilon$, and the strength $\epsilon$ itself is not in the file (as explained above). The other parameters, $q$ and $d$, are part of $G$ or of the cell, and can be moved with their sliders.
+
+\paragraph{The exact answers.} Uncoupled, a cell has the limit cycle $U=(\cos qt,\sin qt)$ of period $T=2\pi/q$ and a single nontrivial multiplier, so that $\kappa=-2$ and $\nu_1=e^{-4\pi/q}$. Write $C=\cos qt$ and $S=\sin qt$. In the scaling of \cite{wilson2019},
+\begin{equation}
+  Z=\bigl(C-S/q,\ S+C/q\bigr),\quad
+  \rho=\bigl(qS+C,\ S-qC\bigr),\quad
+  I=\bigl(C,\ S\bigr),\quad
+  B=\frac{1+q^2}{q}\bigl(S,\ -C\bigr).
+\end{equation}
+\XS{} scales $\rho$ so that its norm has maximum~1, which divides $\rho$ by $\sqrt{1+q^2}$; $I$ is then multiplied by $\sqrt{1+q^2}$ and $B$ divided by it (the rule in the conventions above), while $Z$ is unchanged. With phase~0 at the maximum of $x$, which is where the trajectory starts, these are exactly the curves drawn, with $C$ and $S$ evaluated at $t/T$ in place of $qt/2\pi$. The locking equation is
+\begin{equation}
+  \phi'=-\epsilon\,\frac2q\,\sin q\phi\,\bigl[\,1-dq+\epsilon d^2(1+q^2)\cos q\phi\,\bigr].
+\end{equation}
+So $g_1(\phi)=-\frac2q(1-dq)\sin q\phi$ and $g_2(\phi)+g_3(\phi)=-\frac{d^2(1+q^2)}{q}\sin 2q\phi$, and $\gamma=-\tfrac12d^2(1+q^2)$. To first order synchrony is stable if and only if $1-dq>0$, and anti-phase if and only if $1-dq<0$ (for $\epsilon>0$). The exact critical couplings, at which synchrony and anti-phase change stability \cite{aronson1990}, are
+\begin{equation}
+  \epsilon_s=\frac{dq-1}{d^2+1},\qquad \epsilon_a=\frac{1-dq}{d^2-2dq+3},
+\end{equation}
+and the second-order theory replaces them by
+\begin{equation}
+  \epsilon_{s,\mathrm{approx}}=\frac{dq-1}{d^2(1+q^2)},\qquad \epsilon_{a,\mathrm{approx}}=\frac{1-dq}{d^2(1+q^2)}.
+\end{equation}
+The two agree near $d=1/q$, where both are zero, and the approximate curves are tangent to the exact ones there.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.48\textwidth]{cgl-g23.pdf}\hfill
+  \includegraphics[width=0.48\textwidth]{cgl-comp.pdf}
+  \caption{The second-order functions of two coupled Ginzburg--Landau oscillators with $q=1$, $d=0.9$. Both panels use the $\phi'/\epsilon$ entry of the menu. Left: the correction $g_2+g_3$ ($\epsilon=0$), which is $-1.62\sin2\phi$ exactly. Right: the composite $g_1+\epsilon(g_2+g_3)$ at $\epsilon=0.1$ (solid) and the first-order $g_1$ (dashed). At first order only synchrony is stable. At second order anti-phase is stable as well, with unstable states at $\phi/T=0.356$ and $0.644$ between them (filled circles: stable, open: unstable). Made by the script on page~\pageref{lst:cglscript}.}
+  \label{fig:cgl}
+\end{figure}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Choose \ui{Coupled Ginzburg--Landau oscillators} in the Model menu and press \key{G}. The trajectory starts on the cycle, so it is a circle.
+  \item Open the Phase reduction view, set the menu to \emph{current trajectory} and press \ui{Adjoint}. The note on the right gives $\nu_1=3.487\times10^{-6}$, which is $e^{-4\pi}$, and $\kappa=-2$.
+  \item Press the \ui{Adjoint~Z}, \ui{Isostable~I}, \ui{Eigenfunction~$\rho$} and \ui{B} chips and compare with the formulas above for $q=1$. At phase~0 the values are $Z=(1,1)$, $I=(\sqrt2,0)$, $\rho=(1,-1)/\sqrt2$ and $B=(0,-\sqrt2)$, to about $10^{-8}$. Moving the pointer over the plot reads off the values.
+  \item Press the \ui{H} chip. Its odd part is $0.1\sin q\phi$ (so $g_1=-0.2\sin q\phi$): the zero at $\phi=0$ is stable and the one at $T/2$ is unstable, as the first-order test $1-dq=0.1>0$ says.
+  \item Press the \ui{H$_2$} chip, with $\epsilon=0$, and choose \emph{odd part} in the menu: the curve is $0.81\sin 2q\phi=-\tfrac12(g_2+g_3)$. Choose \emph{$\phi'/\epsilon$} instead and it is $g_2+g_3=-1.62\sin 2q\phi$ (left panel of Figure~\ref{fig:cgl}). The legend gives $\gamma=-0.81$, equal to $-\tfrac12d^2(1+q^2)$, from both $H_{24}$ and $H_{34}$. The even part of $H_2$ is not zero (it contains a constant shift of the frequency), which shows the difference from the odd parts above.
+  \item Enter $\epsilon=0.05$ with the odd part chosen: it crosses zero upwards at $0$ and downwards at $\tfrac12$, so synchrony is stable and anti-phase unstable, as at first order, and there are no other zeros. Enter $0.07$: anti-phase has become stable, and two unstable states have appeared at $\phi/T\approx0.42$ and $0.58$. At $\epsilon=0.1$ they are at $0.356$ and $0.644$ (right panel of Figure~\ref{fig:cgl}, drawn with the $\phi'/\epsilon$ entry, in which stable states are where the curve crosses downwards). The threshold at which anti-phase becomes stable is $\epsilon_{a,\mathrm{approx}}=0.1/1.62=0.062$; the exact value is $\epsilon_a=0.050$, and the difference is the part of the answer that this order of the theory cannot give.
+  \item Move the slider for $d$ above $1/q=1$, say to $1.1$. Now $1-dq<0$: at weak coupling synchrony is unstable and anti-phase stable. Raise $\epsilon$ in the $H_2$ field: for $\epsilon=0.03$ there are no other zeros, and at $\epsilon=0.05$ synchrony has become stable, with two unstable states close to it at $\phi/T=0.095$ and $0.905$. This is the exchange of stability at $\epsilon_{s,\mathrm{approx}}=0.041$ (exact $\epsilon_s=0.045$). Figure~1 of \cite{wilson2019} shows these curves in the $(d,\epsilon)$ plane.
+\end{enumerate}
+\end{tryit}
+
+\noindent The figures are made by the script:\label{lst:cglscript}
+\begin{lstlisting}
+example cgl
+go
+adjoint here
+hsecond eps=0 show=rate
+export svg cgl-g23.svg
+hsecond eps=0.1 show=rate
+export svg cgl-comp.svg
+\end{lstlisting}
+
+% ------------------------------------------------------------------
+\subsection*{A single orbit, in one press of \ui{Run}}\label{sec:adjhere}
+
+To study one set of parameter values you do not need a family. In the Phase reduction view set the menu to \emph{current trajectory} (the number of orbits and the range then disappear), integrate a trajectory until it has settled onto its limit cycle, and press \ui{Adjoint}; in a script, \texttt{adjoint here}. \XS{} finds the periodic orbit at the end of the active trajectory, as the first step of \ui{Limit cycle} does, but at the present parameters and without continuing it, and computes everything above for it.
+
+The choice then stays on, and \XS{} follows the trajectory \emph{while the Phase reduction view is open}. After a \ui{Run} (or an automatic run) that has changed the cycle, it finds the orbit again and recomputes $Z$, $I$, $\rho$, $B$, $H$ and $H_2$, so that setting parameters and pressing \ui{Run} gives everything at once, and the chip that you have chosen stays chosen. In the other views nothing is recomputed: the results are only marked as out of date, and are brought up to date once when you return to the Phase reduction view, so you can go on working in the phase plane without paying for them. To stop following altogether, untick \ui{Follow the trajectory} in the panel (in a script, \texttt{adjoint follow=off}, or \texttt{adjoint off}, which also hides the curves); the results then stay as they are until you press \ui{Adjoint} again. It decides whether the cycle has changed by sampling the right-hand side along the stored orbit: a change of a coupling parameter alone leaves the orbit as it is and only updates $H$ and $H_2$. When a slider is dragged the update waits until you pause, and with Auto-run off it is done by \ui{Run}. Pressing \ui{Adjoint} along a family replaces it. The trajectory must have settled onto a \emph{stable} limit cycle by the end of its total time, as for \ui{Limit cycle}, and if it has not the status line says so and the previous result is kept. An unstable orbit needs continuation from a Hopf point.
+
+\noindent The Hodgkin--Huxley model of the squid axon, with coupling through the voltage, is in the Model menu; its equations are
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+dv/dt=(i-gna*m^3*h*(v-ena)-gk*n^4*(v-ek)-gl*(v-el))/cm
+dm/dt=am(v)*(1-m)-bm(v)*m
+dh/dt=ah(v)*(1-h)-bh(v)*h
+dn/dt=an(v)*(1-n)-bn(v)*n
+am(v)=if(abs(v+40)<1e-7)then(1)else(0.1*(v+40)/(1-exp(-(v+40)/10)))
+bm(v)=4*exp(-(v+65)/18)
+ah(v)=0.07*exp(-(v+65)/20)
+bh(v)=1/(1+exp(-(v+35)/10))
+an(v)=if(abs(v+55)<1e-7)then(0.1)else(0.01*(v+55)/(1-exp(-(v+55)/10)))
+bn(v)=0.125*exp(-(v+65)/80)
+par i=10,gna=120,gk=36,gl=0.3,ena=50,ek=-77,el=-54.4,cm=1,g=1
+init v=-65,m=0.05,h=0.6,n=0.32
+#@coupling v: g*(v'-v)
+@ total=300,dt=0.02,meth=rk4,xp=v,yp=n
+done
+\end{lstlisting}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.62\textwidth]{hh-h.pdf}
+  \caption{The interaction function of two Hodgkin--Huxley neurons coupled through the voltage, $H$ (solid), its even part (dashed) and odd part (dotted), at $i=10$ (period $14.64$\,ms). The odd part has stable zeros (filled) at $\phi/T=0$ and $\tfrac12$ and unstable ones (open) at $0.38$ and $0.62$.}
+  \label{fig:hh}
+\end{figure}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Choose \ui{Hodgkin--Huxley (squid axon)} in the Model menu, which is the model above, and press \key{G}. The trajectory settles onto the spiking cycle.
+  \item In the Phase reduction view choose \emph{current trajectory} in the menu and press \ui{Adjoint}. It takes about half a second. Press the \ui{H} chip and choose \emph{H, even, odd} (Figure~\ref{fig:hh}).
+  \item The period is $14.64$\,ms. The odd part has four zeros, so diffusive coupling through $v$ leaves both synchrony ($\phi=0$) and anti-phase ($\phi=T/2$) stable, with unstable states at $0.38T$ and $0.62T$ between them.
+  \item The note on the right gives $\nu_1=0.074$ ($\kappa=-0.178$ per ms). The other multipliers are smaller than $\nu_1$ by a factor of order $10^{-11}$, so one isostable coordinate is exactly what is needed. Press \ui{H$_2$}: with $\epsilon=0$ the correction $g_2+g_3$ is small, and $\gamma=0.024$. With $\epsilon=0.05$ the unstable states have moved only from $0.380T$ and $0.620T$ to $0.384T$ and $0.616T$, and nothing has changed qualitatively. For this model, at these couplings, first order is a good guide.
+  \item Open the Parameters tab and move the slider for $g$: $H$ follows at once and changes only in size, and the orbit is not computed again. Move the slider for $i$ to $15$ and pause: after a moment the period becomes $12.72$\,ms and the curves are recomputed for the new cycle.
+  \item Turn Auto-run off, change $i$ and press \ui{Run} once: the trajectory, the orbit and all the functions are brought up to date by that one press.
+\end{enumerate}
+\end{tryit}
+
+% ------------------------------------------------------------------
+\subsection*{Checks}
+
+\paragraph{First order.} For the Stuart--Landau oscillator with \texttt{\#@coupling x: x'-x} and \texttt{\#@coupling y: y'-y}, $H(\phi)=\sin(2\pi\phi/T)/\omega$ exactly; the computed $H$ agrees to about $10^{-9}$, has no even part, and shows synchrony stable. For two Morris--Lecar cells simulated directly with $\epsilon=0.002$, started at five different phase differences, the measured rate of change of the phase difference agrees with $\epsilon\,[H(-\phi)-H(\phi)]$ to within about $5\%$, the difference being the next order in $\epsilon$. The same test on the Hodgkin--Huxley result above gives the right direction of drift at all five starting phases (towards $0$ or $\tfrac12$, away from $0.38$ and $0.62$), with the size within $1\%$ at three of them and within $13\%$ at the other two, where the drift is smallest.
+
+\paragraph{Isostable functions.} For the Ginzburg--Landau oscillator the computed $Z$, $\rho$, $I$ and $B$ agree with the closed forms to about $10^{-9}$ (for $B$, $10^{-8}$) at $q=1$ and at $q=1.7$, and $\kappa=-2$ to $3\times10^{-9}$. For a model without a closed form, van der Pol with $\mu=0.7$, the phase response was measured directly: points displaced from the orbit by $\pm0.02\rho$ were integrated until they had settled onto the cycle, and the gradient of the resulting phase compared with $Z+\psi B$. The derivative of the measured gradient with respect to $\psi$ agrees with $B$ to $10^{-5}$ at three places on the orbit, the size of the $O(\psi^2)$ error of the measurement itself.
+
+\paragraph{Second order.} For the Ginzburg--Landau model with $q=1.7$ and $d=0.9$, $g_1$ agrees with the exact $-\frac2q(1-dq)\sin q\phi$ to $1.5\times10^{-9}$ and $g_2+g_3$ with $-\frac{d^2(1+q^2)}{q}\sin2q\phi$ to $3\times10^{-8}$, and $\gamma=-1.57545$ equals $-\frac12d^2(1+q^2)$; the values from $H_{24}$ and $H_{34}$ agree to $10^{-13}$. For two cells simulated directly, started with a small phase difference near synchrony, the difference decays as $e^{\lambda t}$, and Table~\ref{tab:h2check} compares the measured $\lambda$ with the first-order prediction $\epsilon g_1'(0)$ and the second-order one $\epsilon[g_1'(0)+\epsilon(g_2'(0)+g_3'(0))]$. In every case the second-order value is closer to the measured one, by a factor of between two and ten; what is left is of the size of the next term in~$\epsilon$.
+
+\begin{table}[!htbp]
+  \centering\small
+  \begin{tabular}{@{}llcccc@{}}
+    \toprule
+    model & $\epsilon$ & measured & first order & second order \\
+    \midrule
+    van der Pol, $\mu=0.7$ & 0.025 & $-0.02649$ & $-0.02641$ & $-0.02646$ \\
+     & 0.05 & $-0.05303$ & $-0.05281$ & $-0.05301$ \\
+     & 0.1 & $-0.10614$ & $-0.10563$ & $-0.10640$ \\
+    Hodgkin--Huxley, $i=10$ & 0.1 & $-0.02464$ & $-0.02669$ & $-0.02572$ \\
+     & 0.2 & $-0.04599$ & $-0.05338$ & $-0.04949$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{The rate of decay $\lambda$ of a small phase difference between two coupled cells near synchrony: measured in a direct simulation, and predicted at first and at second order. The van der Pol cells are coupled through \texttt{\#@coupling v: v'-v}, the Hodgkin--Huxley ones through \texttt{g*(v'-v)} with $g=1$; the unit is per unit time (per ms for Hodgkin--Huxley). The antiphase state could not be tested this way for Hodgkin--Huxley, because at these values of $\epsilon$ the coupling current of two cells in anti-phase, up to $\epsilon\times100$\,mV, is not weak.}
+  \label{tab:h2check}
+\end{table}
+
+\begin{notebox}
+\textbf{Things to know.}
+\begin{itemize}
+  \item \textbf{Units.} $Z$ is per unit of $t$, normalised by $Z^{\mathsf T}U'=1$. To express it per unit of phase on $[0,1)$ divide by $T$; on $[0,2\pi)$ multiply by $2\pi/T$. Only the horizontal axis is scaled to $t/T$, so that orbits of different periods share one axis. The functions $g_1$, $g_2$, $g_3$ are in units of time per unit time, with the horizontal axis $\phi/T$.
+  \item \textbf{The coupling is $\epsilon\,G(X,X')$,} for a pair of identical cells, with $G$ in the \texttt{\#@coupling} lines and $\epsilon$ outside the equations. $\epsilon$ is entered only in the $H_2$ field. A strength written inside a line is part of $G$.
+  \item \textbf{Floquet multipliers.} $I$, $\rho$, $B$ and $H_2$ need a real, positive slowest multiplier $\nu_1$ that is not too close to~1 or to zero; see the box above for the cases that are skipped. The second-order theory also assumes that the other multipliers are much smaller than $\nu_1$.
+  \item \textbf{Near a Hopf point} the orbit shrinks and $Z$ grows like $1/\text{amplitude}$ (for the Stuart--Landau oscillator, as $1/\sqrt\mu$), and very close to the point it is meaningless; $\nu_1$ is then near~1 and the isostable functions are skipped as well. Unless you give a range or values with \texttt{at=}, orbits with an amplitude below 3\% of the largest in the family are left out, and the status line says so. An orbit whose $Z$ is more than 8 times the typical size is left off the plot while the window is the automatic fit, and the key names it. Set the window with \ui{Window}, or zoom, and every curve is drawn; \ui{Fit} returns to the automatic fit. A range such as $100$ to $200$ for Morris--Lecar keeps the family away from both Hopf points.
+  \item \textbf{Limits.} The phase reduction is for differential equations without delays or Volterra integrals, with at most 60 variables ($B$, and so $H_2$, at most 24), and for models that do not depend on $t$ explicitly (the same restriction as for continuing orbits). The \emph{current trajectory} choice finds stable orbits only. $Z$, the isostable functions and the orbits are not updated when the parameters or the family change, so press \ui{Adjoint} again after a change that alters the cycle ($H$ and $H_2$, which only use them, are recomputed).
+  \item \textbf{Recording.} With \ui{Record} on, the chips of this view are recorded as \texttt{phasefn} lines, and the field for $\epsilon$ as \texttt{hsecond eps=}.
+\end{itemize}
+\end{notebox}
+
+% ==================================================================
 \section{Numerical settings}\label{sec:numerics}
 
 \begin{figure}[!htbp]
@@ -985,7 +1440,7 @@ The saddle can also be chosen by hand: it is in the \ui{From} and \ui{To} menus 
   \label{fig:numerics}
 \end{figure}
 
-The \ui{Numerics} tab (Figure~\ref{fig:numerics}) collects the integration and continuation parameters. Changes to the integration settings rerun every trajectory on screen.
+The \ui{Numerics} tab (Figure~\ref{fig:numerics}) collects the integration and continuation parameters. Changes to the integration settings rerun every trajectory on screen (when \ui{Auto-run} is on; see below).
 
 \paragraph{Integration.}
 \begin{description}[font=\sffamily\bfseries]
@@ -1000,6 +1455,19 @@ The \ui{Numerics} tab (Figure~\ref{fig:numerics}) collects the integration and c
   \item[Nullcline grid] Sets the resolution of the nullclines.
   \item[Sweep samples] Sets the number of parameter values in \ui{Sweep max/min}.
 \end{description}
+
+\paragraph{Auto-run, Run and long computations.}\label{sec:autorun} By default, changing a parameter, an initial value or an integration setting runs the trajectories again at once, so that the figure always matches the values shown. That is what makes sliders so useful, but it is a nuisance in two situations: when you want to change three parameters and not wait for a run after the first, and when the system is large enough for a run to take seconds. The \ui{Auto-run} switch at the top of the window turns it off.
+\begin{itemize}
+  \item \textbf{With Auto-run off,} a change only marks the display as out of date. A label on the plot says \emph{Out of date: press Run} (or \emph{Not run yet} if nothing has been computed) and \ui{Run} is highlighted. Nullclines and the direction field still follow the parameters, because they are cheap; trajectories and equilibria wait for \ui{Run}.
+  \item \ui{Run} brings everything up to date: the active curve follows the new initial values, the other curves are recomputed with the new parameters and settings, and the equilibria are found again. If nothing is out of date it does what \ui{Integrate} does. Switching Auto-run back on while the display is out of date runs at once.
+  \item \ui{Integrate} (or \key{G}) still adds a new trajectory from the initial values; if the other curves are out of date, they are recomputed first, so a new curve never sits next to curves made with other parameters.
+  \item \textbf{The default depends on the size of the system.} Auto-run is on for up to 40 variables, the same limit above which equilibria are no longer searched for automatically, and off above it. Loading a chain of 200 cells (400 variables) therefore computes nothing until you press \ui{Run}, and the status line says so. You can switch it on for such a model if you wish. Your choice to turn it off is remembered between sessions, and \ui{Reset all} puts it back on.
+\end{itemize}
+\noindent A run that takes more than a fraction of a second shows its progress in the status line, for example \emph{Running\ldots{} 34\%, t = 340}, with a \ui{Stop} button at its right-hand end, and the percentage is also shown in the title of the browser tab, so you can watch it from another tab. \ui{Stop} ends the run where it is and keeps the part already computed. If you change something while a run is going, the old run is abandoned and a new one starts with the new values, so dragging a slider on a large system always ends with curves that match its final position. Short runs finish before any of this appears, so small systems behave exactly as before.
+
+\begin{notebox}
+Only ordinary differential equations are run in this way. Maps, delay equations, Volterra equations, models with Markov or Wiener variables, and models with global flags are always computed in one piece, as before; they have no progress line or \ui{Stop}, although Auto-run and \ui{Run} work for them. The time is dominated by the right-hand side: a chain of 200 FitzHugh--Nagumo cells with \texttt{meth=euler} and many thousands of steps can take several seconds, mostly in evaluating the equations. Raising \texttt{dt}, lowering the total time or plotting fewer steps helps more than any setting.
+\end{notebox}
 
 \paragraph{Continuation.} These settings correspond to the entries of \XPP{}'s \textsf{AUTO} numerics window and can be set in the file with \texttt{@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax}. Leave a box empty to use the automatic choice. \ui{Defaults}, next to the heading, puts them back to the model's defaults: the values its file sets, otherwise the built-in ones. A step set with \texttt{@ ds} applies to every parameter; otherwise Ds is a $1/150$ of the parameter's range. The \ui{Wilson--Cowan} example sets \texttt{@ ds=0.01}, since its branches have sharp folds that a larger step cuts across.
 \begin{center}\small
@@ -1078,7 +1546,9 @@ Pressing \ui{Write state} again replaces this block rather than adding another, 
   \item \textbf{Continuation.} It is built in and written from scratch: pseudo-arclength continuation of equilibria, and multiple shooting (rather than \textsf{AUTO}'s orthogonal collocation) for periodic orbits. Results agree with \textsf{AUTO} to plotting accuracy on the examples, but very long or very unstable orbits may need more shooting intervals (Ntst).
   \item \textbf{Delay equations} are integrated with a fixed step only, and periodic orbits of delay equations cannot be continued. \XPP{}'s other delay options, such as \texttt{delshft} and \texttt{ndelay}, are not supported. The \texttt{@ delay} option is accepted but not needed, since all of the history is kept.
   \item \textbf{Global flags} can set state and Markov variables and \texttt{arret}. The XPP output flag \texttt{out\_put} is accepted and ignored.
-  \item \textbf{Not supported:} \texttt{special} and \texttt{export} declarations, and \texttt{set} blocks.
+  \item \textbf{Sets.} \XPP{}'s \texttt{set name \{\ldots\}} lines are read and offered in the \ui{Sets} menu (Section~\ref{sec:sets}), except that the plot settings in them (axis limits and plotted variables) are ignored.
+  \item \textbf{The adjoint} (Section~\ref{sec:adjoint}) is found from the monodromy matrix of the orbit rather than by integrating the adjoint equation backwards over many periods as in \XPP{}. It works for unstable orbits as well, it is computed along a whole family at once, and it is limited to differential equations with at most 60 variables. The isostable response, Floquet eigenfunction and the second-order interaction functions have no counterpart in \XPP{}; they are computed for a real, positive slowest multiplier only. The interaction function $H$ (Section~\ref{sec:hfun}) is computed from \texttt{\#@coupling} lines in the file, which \XPP{} reads as comments, rather than from \XPP{}'s averaging window.
+  \item \textbf{Not supported:} \texttt{special} and \texttt{export} declarations.
   \item \textbf{Two-parameter Hopf curves} are limited to 12 variables, because the bialternate product grows quadratically with dimension.
   \item \textbf{Homoclinic and heteroclinic orbits} (Section~\ref{sec:conn}) are found by shooting along the one-dimensional unstable manifold of a saddle, not by \textsf{AUTO}'s \textsf{HomCont} projection boundary conditions, so they are limited to saddles with one real unstable direction (or one real stable direction, with time running backwards).
   \item \textbf{Volterra models} cannot be continued, since their state is infinite-dimensional.
@@ -1109,6 +1579,12 @@ Pressing \ui{Write state} again replaces this block rather than adding another, 
 \bibitem{hutchinson1948} G.~E. Hutchinson, Circular causal systems in ecology, \emph{Ann.\ N.\ Y.\ Acad.\ Sci.} \textbf{50} (1948) 221--246.
 \bibitem{mackey1977} M.~C. Mackey and L.~Glass, Oscillation and chaos in physiological control systems, \emph{Science} \textbf{197} (1977) 287--289.
 \bibitem{rossler1976} O.~E. Rössler, An equation for continuous chaos, \emph{Phys.\ Lett.\ A} \textbf{57} (1976) 397--398.
+\bibitem{ermentrout2010} G.~B. Ermentrout and D.~H. Terman, \emph{Mathematical Foundations of Neuroscience}, Springer, New York, 2010.
+\bibitem{kuramoto1984} Y.~Kuramoto, \emph{Chemical Oscillations, Waves, and Turbulence}, Springer, Berlin, 1984.
+\bibitem{aronson1990} D.~G. Aronson, G.~B. Ermentrout and N.~Kopell, Amplitude response of coupled oscillators, \emph{Physica D} \textbf{41} (1990) 403.
+\bibitem{wilson2018} D.~Wilson and B.~Ermentrout, Greater accuracy and broadened applicability of phase reduction using isostable coordinates, \emph{J.\ Math.\ Biol.} \textbf{76} (2018) 37.
+\bibitem{wilson2019pre} D.~Wilson, Isostable reduction of oscillators with piecewise smooth dynamics and complex Floquet multipliers, \emph{Phys.\ Rev.\ E} \textbf{99} (2019) 022210.
+\bibitem{wilson2019} D.~Wilson and B.~Ermentrout, Phase models beyond weak coupling, \emph{Phys.\ Rev.\ Lett.} \textbf{123} (2019) 164101.
 \end{thebibliography}
 
 \end{document}

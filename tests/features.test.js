@@ -368,6 +368,28 @@ test('Reset all forgets everything stored and starts afresh; About names the ver
     assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script').length"), 0, 'stored choices are forgotten');
     assert.match(P.status(), /Reset/);
     P.$('#aboutBtn').click();
-    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
+    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.3');
+  } finally { P.close(); }
+});
+
+test('the Adjoint button is blue when there is a limit cycle or a family of them to look at', async () => {
+  const P = await openPage();
+  try {
+    const lit = () => { P.app('render()'); return P.$('#bAdj').classList.contains('attn'); };
+    await P.run('example ml\nview ph');
+    assert.equal(lit(), false, 'at the stable focus there is nothing to look at');
+    await P.run('par i=150\ngo');
+    assert.equal(P.$('#bAdjSrc').value, 'traj', 'with no family the menu offers the current trajectory');
+    assert.equal(lit(), true);
+    P.$('#bAdj').click();
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(lit(), false, 'done');
+    await P.run('view bif\nbifpar i 90 220 ds=2\nlimitcycle\nview ph');
+    assert.equal(P.$('#bAdjSrc').value, 'fam');
+    assert.equal(lit(), true, 'a new family');
+    await P.run('adjoint n=4 range=150,200');
+    assert.equal(lit(), false, 'done by a script too');
+    await P.run('example lorenz\nview ph\ngo');
+    assert.equal(lit(), false, 'chaos is not a limit cycle');
   } finally { P.close(); }
 });
