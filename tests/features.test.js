@@ -411,8 +411,11 @@ test('hi-slo-lo: the slow points of orbits approaching a homoclinic orbit run in
     assert.equal(J(P, 'S.bif.cycles[0].pts.slice(0,5).filter(q=>slowPts(q).length).length'), 0, 'none near the Hopf point, where the speed hardly varies');
     // a looser threshold shows more of the branch, and the settings can be changed by script
     const n1 = J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length');
-    await P.run('slowpoints max=1 threshold=0.1');
-    assert.deepEqual(J(P, '[S.bif.slowN,S.bif.slowR]'), [1, 0.1]);
+    assert.ok(n1 > 0);
+    assert.equal(P.$('#bSlowR').value, '5', 'the threshold is shown in percent, 5% by default');
+    await P.run('slowpoints max=1 threshold=20%');
+    assert.deepEqual(J(P, '[S.bif.slowN,S.bif.slowR]'), [1, 0.2]);
+    assert.equal(P.$('#bSlowR').value, '20');
     assert.ok(J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length') > n1);
     await P.run('show hilo');
     assert.equal(P.app('S.bif.slow'), false);
