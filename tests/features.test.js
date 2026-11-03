@@ -393,3 +393,42 @@ test('the Adjoint button is blue when there is a limit cycle or a family of them
     assert.equal(lit(), false, 'chaos is not a limit cycle');
   } finally { P.close(); }
 });
+
+test('hi-slo-lo: the slow points of orbits approaching a homoclinic orbit run into the saddle', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example mlhom\nview bif\ncontinue eq 3\ncycles HB1\nshow hi-slo-lo');
+    ok(P);
+    assert.equal(P.$('#bShow').value, 'S');
+    assert.equal(J(P, '[S.bif.mode,S.bif.slow]').join(), 'var,true');
+    assert.equal(P.$('#slowRow').hidden, false);
+    const end = J(P, 'S.bif.cycles[0].pts.slice(-3).map(q=>slowPts(q).map(z=>[z.x[0],z.r]))');
+    for (const pts of end) {
+      assert.equal(pts.length, 1, 'one slow point: the saddle, counted once');
+      assert.ok(Math.abs(pts[0][0] + 22.32) < 0.05, `v = ${pts[0][0]}`);
+      assert.ok(pts[0][1] < 1e-4);
+    }
+    assert.equal(J(P, 'S.bif.cycles[0].pts.slice(0,5).filter(q=>slowPts(q).length).length'), 0, 'none near the Hopf point, where the speed hardly varies');
+    // a looser threshold shows more of the branch, and the settings can be changed by script
+    const n1 = J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length');
+    await P.run('slowpoints max=1 threshold=0.1');
+    assert.deepEqual(J(P, '[S.bif.slowN,S.bif.slowR]'), [1, 0.1]);
+    assert.ok(J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length') > n1);
+    await P.run('show hilo');
+    assert.equal(P.app('S.bif.slow'), false);
+    assert.equal(P.$('#slowRow').hidden, true);
+  } finally { P.close(); }
+});
+
+test('the Adjoint menu greys out what is not there', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview ph');
+    P.app('render()');
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>[o.textContent,o.disabled])"), [['Current periodic branch', true], ['Current periodic orbit', true]]);
+    await P.run('par i=150\ngo');
+    P.app('render()');
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>o.disabled)"), [true, false]);
+    assert.equal(P.$('#bAdjSrc').value, 'traj');
+  } finally { P.close(); }
+});
