@@ -537,3 +537,25 @@ test('Two-parameter view: the ranges of the two parameters follow the window', a
     assert.deepEqual(['#tMin1', '#tMax1', '#tMin2', '#tMax2'].map(id => +P.$(id).value), [10, 80, 0.02, 0.5]);
   } finally { P.close(); }
 });
+
+test('Stacks: Cycles on a Hopf point of another diagram brings it to the top first; L2 norm of the whole solution; SVG export has no current-value lines', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example fhn\nview bif\nbifpar i 0 1.6\ntppar eps\npar eps=0.08\ncontinue\npar eps=0.1\ncontinue\ncycles HB1');
+    ok(P);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('eps'))`), 0.08);
+    assert.equal(J(P, `S.bif.cycles[0].params[S.M.parNames.indexOf('eps')]`), 0.08);
+    // L2: over v and w together
+    await P.run('show L2');
+    P.app('render()');
+    assert.equal(P.app('bifYName()'), 'L2 norm');
+    const [nr, all] = J(P, '(()=>{const q=S.bif.cycles[0].pts[3];return[Array.from(q.nr),l2All(q.nr)];})()');
+    assert.ok(Math.abs(all - Math.hypot(nr[0], nr[1])) < 1e-12);
+    const x = J(P, 'Array.from(S.bif.branches[0].pts[0].x)');
+    assert.ok(Math.abs(J(P, 'eqN(S.bif.branches[0].pts[0].x)') - Math.hypot(x[0], x[1])) < 1e-12);
+    // the dashed line at the current parameter value is drawn on screen but not exported
+    await P.run('show hilo\nexport svg b.svg');
+    const svg = P.files.at(-1).data;
+    assert.doesNotMatch(svg, /stroke-dasharray="3,4"|stroke-dasharray="3 4"/);
+  } finally { P.close(); }
+});

@@ -4857,7 +4857,7 @@ function tcFitWin(tr,vars){
 }
 function renderBif(ctx,w,h,frIn){
   const M=S.M,fr=frIn||frameOf(w,h),win=S.bif.win,m=mapper(fr,win),vi=S.bif.vi,pi=S.bif.pi;S.lastFrame=fr;
-  const mode=S.bif.mode||'var',tv=T=>mode==='f'?1/T:T,yOf=(q,key)=>key==='T'?tv(q.T):key==='N'?(q.nr?q.nr[S.bif.vn||0]:NaN):q[key][vi];
+  const mode=S.bif.mode||'var',tv=T=>mode==='f'?1/T:T,yOf=(q,key)=>key==='T'?tv(q.T):key==='N'?(q.nr?l2All(q.nr):NaN):q[key][vi];
   if(mode==='N')ensureL2All();
   const gh=!!S.bif.ghost,sel=gh?null:S.bif.sel,halo=(P,ys)=>{ctx.save();ctx.strokeStyle=TK.accent;ctx.globalAlpha=0.28;ctx.lineWidth=9;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);ctx.beginPath();
     for(const yf of ys){let pen=false;for(const q of P){const Y=yf(q);if(!Number.isFinite(Y)){pen=false;continue;}const X=m.X(q.p);if(pen)ctx.lineTo(X,m.Y(Y));else{ctx.moveTo(X,m.Y(Y));pen=true;}}}ctx.stroke();ctx.restore();};
@@ -4865,7 +4865,7 @@ function renderBif(ctx,w,h,frIn){
   clip(ctx,fr);
   // in a stack of diagrams, the others are drawn first, faintly, in grey
   if(!gh&&S.bif.ghostKeys)drawBifGhosts(ctx,w,h,fr);
-  if(!gh){const pc=M.getParam(pi),X=m.X(pc);ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X,fr.T);ctx.lineTo(X,fr.T+fr.H);ctx.stroke();ctx.setLineDash([]);}
+  if(!gh&&!S.exporting){const pc=M.getParam(pi),X=m.X(pc);ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X,fr.T);ctx.lineTo(X,fr.T+fr.H);ctx.stroke();ctx.setLineDash([]);}
   for(const sw of S.bif.sweeps){if(sw.pi!==pi||!inGrp(sw)||mode==='N')continue;
     if(sw===sel){ctx.save();ctx.fillStyle=TK.accent;ctx.globalAlpha=0.25;for(const r of sw.rows){const X=m.X(r.p);const ys=mode==='var'?[r.max[vi],r.min[vi]]:r.per>0?[tv(r.per)]:[];for(const v of ys){ctx.beginPath();ctx.arc(X,m.Y(v),6,0,7);ctx.fill();}}ctx.restore();}
     ctx.fillStyle=ccol(sw,TK.sweep);
@@ -4923,7 +4923,7 @@ function renderBif(ctx,w,h,frIn){
   // where the period is infinite, a dashed line; in the frequency view a diamond at zero
   for(const o of connPoints()){if(o.pi!==pi||!inGrp(o))continue;const c=o.conn,col=tpColor(o.type),x=m.X(o.p);
     if(mode==='T'){ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.4;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(x,fr.T);ctx.lineTo(x,fr.T+fr.H);ctx.stroke();ctx.restore();ctx.fillStyle=col;ctx.textBaseline='top';ctx.fillText(o.label+' (T → ∞)',x+6,fr.T+4);ctx.textBaseline='bottom';continue;}
-    const ys=mode==='var'?[c.mx[vi],c.mn[vi]]:mode==='N'?[c.nr[S.bif.vn||0]]:[0];
+    const ys=mode==='var'?[c.mx[vi],c.mn[vi]]:mode==='N'?[l2All(c.nr)]:[0];
     ys.forEach((v,j)=>{const y=m.Y(v);ctx.fillStyle=col;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-6);ctx.lineTo(x+6,y);ctx.lineTo(x,y+6);ctx.lineTo(x-6,y);ctx.closePath();ctx.stroke();ctx.fill();if(j===0)ctx.fillText(o.label,x+8,y-4);});}
   ctx.restore();
   if(!S.bif.branches.some(b=>b.pi===pi)&&!S.bif.sweeps.some(s=>s.pi===pi)&&!S.bif.cycles.some(c=>c.pi===pi)&&!S.bif.bvps.some(b=>b.pi===pi)){
@@ -4934,7 +4934,7 @@ function renderBif(ctx,w,h,frIn){
     ctx.fillText('No periodic orbits yet: press “Cycles” on a Hopf point, “Limit cycle”, or “Sweep max/min”.',fr.L+fr.W/2,fr.T+fr.H/2);
   }
 }
-const bvY=(q,key)=>key==='N'?q.nr[S.bif.vn||0]:q[key][S.bif.vi];
+const bvY=(q,key)=>key==='N'?l2All(q.nr):q[key][S.bif.vi];
 function allSpecial(){const out=[],cnt={};
   for(const br of S.bif.branches)for(const sp of br.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:br.pi,params:br.params,br,label:sp.type+cnt[sp.type]});}
   for(const cb of S.bif.cycles)for(const sp of cb.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,pi:cb.pi,cyc:cb,label:sp.type+cnt[sp.type]});}
@@ -4987,11 +4987,13 @@ function ensureSlowAll(){for(const cb of S.bif.cycles)if(cb.pi===S.bif.pi)ensure
 // it is shown and set as a percentage)
 const slowPts=q=>(q.slowAll||[]).filter(z=>z.r<(S.bif.slowR||0.05)).slice(0,Math.max(1,S.bif.slowN||2));
 // the value plotted for a point of a branch, orbit family or special point in L2-norm mode
-const eqN=x=>Math.abs(x[S.bif.vn||0]);
-const bifYName=()=>{const m=S.bif.mode||'var';return m==='T'?'period':m==='f'?'frequency (1/period)':m==='N'?`L2 norm of ${S.M.varNames[S.bif.vn||0]}`:S.M.varNames[S.bif.vi];};
+// L2 norm of the whole solution: over all the state variables, sqrt(Σ_i (1/T)∫x_i² dt) for an orbit, |x| for an equilibrium
+const eqN=x=>{let a=0;for(let i=0;i<S.M.n;i++)a+=x[i]*x[i];return Math.sqrt(a);};
+const l2All=nr=>{if(!nr)return NaN;let a=0;for(let i=0;i<S.M.n;i++)a+=nr[i]*nr[i];return Math.sqrt(a);};
+const bifYName=()=>{const m=S.bif.mode||'var';return m==='T'?'period':m==='f'?'frequency (1/period)':m==='N'?'L2 norm':S.M.varNames[S.bif.vi];};
 // period of a special point: the orbit's period for bifurcations of cycles, 2π/ω at a Hopf point, otherwise none
 function spPeriod(sp){if(sp.cyc)return Number.isFinite(sp.T)?sp.T:null;return(sp.type==='HB'||sp.type==='NS')&&sp.omega>0&&!S.M.discrete?2*Math.PI/sp.omega:null;}
-function spVal(sp){const m=S.bif.mode||'var';if(sp.conn){const c=sp.conn;return m==='var'?c.mx[S.bif.vi]:m==='N'?c.nr[S.bif.vn||0]:m==='f'?0:null;}if(m==='var')return spY(sp,S.bif.vi);if(m==='N'){if(sp.bvp)return sp.nr[S.bif.vn||0];if(!sp.cyc)return sp.x?eqN(sp.x):null;const P=sp.cyc.pts,a=P[sp.k],b=P[Math.min(sp.k+1,P.length-1)];if(!a.nr||!b.nr)return null;const j=S.bif.vn||0;return a.nr[j]+(sp.t||0)*(b.nr[j]-a.nr[j]);}const T=spPeriod(sp);return T>0?(m==='f'?1/T:T):null;}
+function spVal(sp){const m=S.bif.mode||'var';if(sp.conn){const c=sp.conn;return m==='var'?c.mx[S.bif.vi]:m==='N'?l2All(c.nr):m==='f'?0:null;}if(m==='var')return spY(sp,S.bif.vi);if(m==='N'){if(sp.bvp)return sl2All(p.nr);if(!sp.cyc)return sp.x?eqN(sp.x):null;const P=sp.cyc.pts,a=P[sp.k],b=P[Math.min(sp.k+1,P.length-1)];if(!a.nr||!b.nr)return null;const A=l2All(a.nr),B=l2All(b.nr);return A+(sp.t||0)*(B-A);}const T=spPeriod(sp);return T>0?(m==='f'?1/T:T):null;}
 function allCodim2(){const out=[],cnt={},p1=S.bif.pi,p2=S.tp.p2i;for(const cv of S.tp.curves){if(cv.p1i!==p1||cv.p2i!==p2)continue;for(const sp of cv.special){cnt[sp.type]=(cnt[sp.type]||0)+1;out.push({...sp,curve:cv.type,label:sp.type+cnt[sp.type]});}}return out;}
 function renderTP(ctx,w,h){
   const M=S.M,fr=frameOf(w,h),win=S.tp.win,m=mapper(fr,win),p1=S.bif.pi,p2=S.tp.p2i;S.lastFrame=fr;
@@ -5009,8 +5011,9 @@ function renderTP(ctx,w,h){
     ctx.setLineDash([]);
     if(P.length===1){ctx.fillStyle=ccol(cv,tpColor(base));ctx.strokeStyle=TK.surface;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(m.X(P[0].p1),m.Y(P[0].p2),4.5,0,7);ctx.stroke();ctx.fill();}}
   const cx=m.X(M.getParam(p1)),cy=m.Y(M.getParam(p2));
-  ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,fr.T);ctx.lineTo(cx,fr.T+fr.H);ctx.moveTo(fr.L,cy);ctx.lineTo(fr.L+fr.W,cy);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle=TK.accent;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,4.5,0,7);ctx.stroke();ctx.fill();
+  // the current values of the two parameters: dashed lines and a dot, left out of an exported figure
+  if(!S.exporting){ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,fr.T);ctx.lineTo(cx,fr.T+fr.H);ctx.moveTo(fr.L,cy);ctx.lineTo(fr.L+fr.W,cy);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=TK.accent;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,4.5,0,7);ctx.stroke();ctx.fill();}
   ctx.font='600 11px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='bottom';ctx.textAlign='left';
   for(const sp of allCodim2()){const x=m.X(sp.p1),y=m.Y(sp.p2);ctx.fillStyle=spColor(sp.type);ctx.strokeStyle=TK.surface;ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(x,y-6.5);ctx.lineTo(x+6.5,y);ctx.lineTo(x,y+6.5);ctx.lineTo(x-6.5,y);ctx.closePath();ctx.stroke();ctx.fill();ctx.fillText(sp.label,x+8,y-4);}
@@ -5660,9 +5663,9 @@ function fitBif(force,keepX){
   const bounds=(pr,pad)=>fitBounds(inX(pr),pad);
   const setW=w=>{S.bif.win=keepX?{xlo:keepX.xlo,xhi:keepX.xhi,ylo:w.ylo,yhi:w.yhi}:w;};
   const vi=S.bif.vi,pi=S.bif.pi,pairs=[],sp=[];
-  if(S.bif.mode==='N'){const pr=[],j=S.bif.vn||0;ensureL2All();for(const bb of S.bif.bvps)if(bb.pi===pi)pr.push([bb.pts.map(q=>q.p),bb.pts.map(q=>q.nr[j])]);
+  if(S.bif.mode==='N'){const pr=[];ensureL2All();for(const bb of S.bif.bvps)if(bb.pi===pi)pr.push([bb.pts.map(q=>q.p),bb.pts.map(q=>l2All(q.nr))]);
     for(const br of S.bif.branches)if(br.pi===pi)pr.push([br.pts.map(q=>q.p),br.pts.map(q=>eqN(q.x))]);
-    for(const cb of S.bif.cycles)if(cb.pi===pi)pr.push([cb.pts.map(q=>q.p),cb.pts.map(q=>q.nr?q.nr[j]:NaN)]);
+    for(const cb of S.bif.cycles)if(cb.pi===pi)pr.push([cb.pts.map(q=>q.p),cb.pts.map(q=>q.nr?l2All(q.nr):NaN)]);
     const b2=bounds(pr);if(b2){b2.xlo=Math.min(b2.xlo,S.bif.pmin);b2.xhi=Math.max(b2.xhi,S.bif.pmax);setW(b2);}else setW({xlo:S.bif.pmin,xhi:S.bif.pmax,ylo:0,yhi:1});return;}
   if(S.bif.mode==='T'||S.bif.mode==='f'){const f=S.bif.mode==='f',tv=T=>f?1/T:T,pr=[];
     for(const cb of S.bif.cycles)if(cb.pi===pi)pr.push([cb.pts.map(q=>q.p),cb.pts.map(q=>tv(q.T))]);
@@ -5768,7 +5771,7 @@ function onPlotClick(px,py,shift){
     let bestBr=null;const eyc=p=>S.bif.mode==='N'?eqN(p.x):p.x[S.bif.vi];
     for(const br of S.bif.branches){if(br.pi!==S.bif.pi||!inGrp(br)||((S.bif.mode||'var')!=='var'&&S.bif.mode!=='N'))continue;for(const p of br.pts){const d=(m.X(p.p)-px)**2+(m.Y(eyc(p))-py)**2;if(d<bd){bd=d;best=p;bestBr=br;}}}
     let cyc=null;
-    for(const cb of S.bif.cycles){if(cb.pi!==S.bif.pi||!inGrp(cb))continue;cb.pts.forEach((p,k)=>{for(const key of(S.bif.mode||'var')==='var'?['mx','mn']:S.bif.mode==='N'?['N']:['T']){const d=(m.X(p.p)-px)**2+(m.Y(key==='T'?(S.bif.mode==='f'?1/p.T:p.T):key==='N'?(p.nr?p.nr[S.bif.vn||0]:NaN):p[key][S.bif.vi])-py)**2;if(d<bd){bd=d;best=null;cyc={cb,k};}}});}
+    for(const cb of S.bif.cycles){if(cb.pi!==S.bif.pi||!inGrp(cb))continue;cb.pts.forEach((p,k)=>{for(const key of(S.bif.mode||'var')==='var'?['mx','mn']:S.bif.mode==='N'?['N']:['T']){const d=(m.X(p.p)-px)**2+(m.Y(key==='T'?(S.bif.mode==='f'?1/p.T:p.T):key==='N'?(p.nr?l2All(p.nr):NaN):p[key][S.bif.vi])-py)**2;if(d<bd){bd=d;best=null;cyc={cb,k};}}});}
     let bv=null;
     for(const bb of S.bif.bvps){if(bb.pi!==S.bif.pi||!inGrp(bb)||S.bif.mode==='T'||S.bif.mode==='f')continue;bb.pts.forEach((p,k)=>{for(const key of S.bif.mode==='N'?['N']:['mx','mn']){const d=(m.X(p.p)-px)**2+(m.Y(bvY(p,key))-py)**2;if(d<bd){bd=d;best=null;cyc=null;bv={bb,k};}}});}
     // sweeps: select by clicking near one of their dots
@@ -6248,7 +6251,7 @@ function buildBifControls(){
   $('#bPar').replaceChildren(...M.parNames.map((n,i)=>el('option',{value:i,text:n})));$('#bPar').value=S.bif.pi;
   $('#bVar').replaceChildren(...M.varNames.map((n,i)=>el('option',{value:i,text:n})));
   $('#bShow').replaceChildren(el('option',{value:'var',text:'hi-lo (max and min)'}),...(M.discrete||M.nbc?[]:[el('option',{value:'S',text:'hi-slo-lo (max, slow points, min)'})]),el('option',{value:'N',text:'L2 norm'}),...(M.discrete||M.nbc?[]:[el('option',{value:'T',text:'period'}),el('option',{value:'f',text:'frequency (1/period)'})]));
-  if(M.discrete&&(S.bif.mode==='T'||S.bif.mode==='f'))S.bif.mode='var';const md=S.bif.mode||'var';$('#bVar').value=md==='N'?(S.bif.vn||0):S.bif.vi;$('#bShow').value=md==='var'&&S.bif.slow&&!M.discrete&&!M.nbc?'S':md;$('#bVar').disabled=md==='T'||md==='f';$('#slowRow').hidden=$('#lblSlow').hidden=$('#slowLg').hidden=!(md==='var'&&S.bif.slow);
+  if(M.discrete&&(S.bif.mode==='T'||S.bif.mode==='f'))S.bif.mode='var';const md=S.bif.mode||'var';$('#bVar').value=md==='N'?(S.bif.vn||0):S.bif.vi;$('#bShow').value=md==='var'&&S.bif.slow&&!M.discrete&&!M.nbc?'S':md;$('#bVar').disabled=md==='T'||md==='f'||md==='N';$('#slowRow').hidden=$('#lblSlow').hidden=$('#slowLg').hidden=!(md==='var'&&S.bif.slow);
   $('#bMin').value=fmtIn(S.bif.pmin);$('#bMax').value=fmtIn(S.bif.pmax);$('#bDs').value=fmtIn(S.bif.ds);
   $('#bRun').disabled=$('#bSweep').disabled=!M.parNames.length;
   $('#bRun').textContent=M.discrete?'Continue fixed points':'Continue equilibria';
@@ -6366,6 +6369,7 @@ function poGuard(){
   return true;
 }
 function runPOFromHopf(sp){
+  bifToGroupOf(sp);
   if(!poGuard())return;const M=S.M,pi=S.bif.pi,saved=Float64Array.from(M.P.subarray(0,M.parNames.length));
   let st;try{if(sp.params)sp.params.forEach((v,i)=>M.setParam(i,v));st=poFromHopf(M,pi,sp,poOptions());}
   catch(e){saved.forEach((v,i)=>M.setParam(i,v));status(`Couldn't start from ${sp.label}: ${e.message}`,true);return;}
@@ -6381,6 +6385,7 @@ function runPOFromOrbit(){
   runCycles(sts,`the orbit at ${M.parNames[pi]} = ${fmt(sts[0].pts[0].p,5)}`);
 }
 function runPODouble(sp){
+  bifToGroupOf(sp);
   if(!poGuard())return;const M=S.M,pi=S.bif.pi,cb=sp.cyc;
   const k=sp.t<0.5?sp.k:Math.min(sp.k+1,cb.pts.length-1);
   let st;try{st=poDouble(M,pi,cb.pts,k,cb.xsig,poOptions());}catch(e){status(`Couldn't switch branches at ${sp.label}: ${e.message}`,true);return;}
@@ -6573,6 +6578,7 @@ function branchStart(M,pi,xs,ps,v,delta){
 // Follow the other branch at a branch point sp of branch sp.br. For a period doubling of a map (double=true) the iterate
 // is doubled first: the period-2p orbits leave the period-p orbit at a branch point of the 2p-th iterate.
 function runSwitch(sp,double){
+  bifToGroupOf(sp);
   const M=S.M,pi=sp.pi,br=sp.br;if(!br){status('This point has no branch to switch from',true);return;}
   const N=(br.period||1)*(double?2:1),Mi=iterModel(M,N),xs=Float64Array.from(sp.x),ps=sp.p,pOrig=M.getParam(pi);
   M.setParam(pi,ps);
@@ -6901,8 +6907,8 @@ function exportSVG(){
   const ctx=svgCtx(w,h);
   root.setAttribute('data-theme','light');readTokens();
   try{
-    renderView(ctx,w,h);
-  }finally{
+    S.exporting=true;renderView(ctx,w,h);
+  }finally{S.exporting=false;
     if(prevTheme===null)root.removeAttribute('data-theme');else root.setAttribute('data-theme',prevTheme);
     S.lastFrame=prevFrame;readTokens();requestRender();
   }
