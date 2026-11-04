@@ -2979,7 +2979,7 @@ function loadModel(text,{fromUser}={}){
   S.pp.nc=M.n===2&&!M.discrete&&!(M.nbc>0);
   $('#tgNc').setAttribute('aria-pressed',S.pp.nc);
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
-  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.minPer=false;S.bif.slow=!M.discrete&&!(M.nbc>0);S.bif.slowN=2;S.bif.slowR=0.05;S.bif.stack=true;S.bif.panelK=0;{const a=document.getElementById('bSlowN'),b=document.getElementById('bSlowR');if(a)a.value=2;if(b)b.value=5;}S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
+  const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.minPer=false;S.bif.slow=!M.discrete&&!(M.nbc>0);S.bif.slowN=2;S.bif.slowR=0.05;S.bif.stack=true;S.bif.tabK=null;{const a=document.getElementById('bSlowN'),b=document.getElementById('bSlowR');if(a)a.value=2;if(b)b.value=5;}S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
   {const v=parseFloat(o.ds);S.bif.dsFile=Number.isFinite(v)&&v>0?v:null;}
   setBifRange();
@@ -4231,7 +4231,7 @@ function ticks(lo,hi,target){
 const tickLabel=(v,dec)=>{const a=Math.abs(v);let s=(a>=1e5||(a<1e-3&&a>0))?v.toExponential(1):v.toFixed(Math.min(dec,6));return s.replace('-','−');};
 function drawAxes(ctx,fr,win,m,xl,yl,compact,opts){
   const noY=!!(opts&&opts.noY);
-  {const t0=fr.top||0,b0=fr.bot!=null?fr.bot:fr.T+fr.H+60;ctx.fillStyle=TK.surface;ctx.fillRect(0,t0,fr.L+fr.W+40,b0-t0);}
+  if(!fr.noBg){ctx.fillStyle=TK.surface;ctx.fillRect(0,0,fr.L+fr.W+40,fr.T+fr.H+60);}
   const tx=ticks(win.xlo,win.xhi,Math.max(3,fr.W/(compact?90:100))),ty=ticks(win.ylo,win.yhi,Math.max(2,fr.H/(compact?40:70)));
   ctx.lineWidth=1;ctx.strokeStyle=TK.grid;ctx.beginPath();
   for(const v of tx.vals){const x=Math.round(m.X(v))+.5;ctx.moveTo(x,fr.T);ctx.lineTo(x,fr.T+fr.H);}
@@ -4656,34 +4656,47 @@ function legendNotes(curves,skip){
   return c=>{if(!c.params||!use.length)return'';const t=use.slice(0,4).map(i=>`${M.parNames[i]} = ${fmt(c.params[i],4)}`);return` · ${t.join(', ')}${use.length>4?', …':''}`;};
 }
 // ---- stacked one-parameter diagrams. Curves computed at different values of the other parameter of the two-parameter
-// pair (S.tp.p2i) are drawn in separate panels, one above another, each labelled with that value (largest at the top).
-// All panels share the axes' window. A pair of parameters chosen afresh goes back to one diagram (S.bif.stack=false);
-// a new one-parameter computation turns stacking back on.
+// pair (S.tp.p2i) are not drawn on one diagram: there is one diagram for each value, stacked like cards with the one at
+// the current value of that parameter on top, and a row of tabs above them, one for each value, in increasing order.
+// Clicking a tab sets the parameter to its value and brings its diagram to the top. A pair of parameters chosen afresh
+// goes back to one diagram (S.bif.stack=false); a new one-parameter computation turns stacking back on.
 const bifSec=()=>{const M=S.M;return M&&M.parNames.length>1&&S.tp.p2i!==S.bif.pi&&S.tp.p2i<M.parNames.length?S.tp.p2i:-1;};
 const grpKey=v=>Number.isFinite(v)?+(+v).toPrecision(9):NaN;
 function bifParamsOf(o){return o.params||(o.br&&o.br.params)||(o.cyc&&o.cyc.params)||(o.bvp&&o.bvp.params)||(o.conn&&o.conn.params)||null;}
 function bifGroupOf(o){const j=bifSec();if(j<0)return null;const p=bifParamsOf(o);return grpKey(p&&Number.isFinite(p[j])?p[j]:S.M.getParam(j));}
 function bifGroups(){const j=bifSec();if(j<0)return[];const pi=S.bif.pi,g=new Map();
   for(const L of[S.bif.branches,S.bif.cycles,S.bif.sweeps,S.bif.bvps||[],S.bif.conns||[]])for(const o of L){if(o.pi!==pi)continue;const k=bifGroupOf(o);if(!g.has(k)){const p=bifParamsOf(o);g.set(k,p&&Number.isFinite(p[j])?p[j]:S.M.getParam(j));}}
-  return[...g].map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);}
+  return[...g].map(([k,v])=>({k,v})).sort((a,b)=>a.v-b.v);}
 const bifStacked=()=>S.view==='bif'&&!!S.M&&S.bif.stack!==false&&bifGroups().length>1;
 const inGrp=o=>S.bif.grp==null||bifGroupOf(o)===S.bif.grp;
+// the diagram on top: the one at the current value of the second parameter, otherwise the tab chosen last
+function bifTopGroup(G){const cur=grpKey(S.M.getParam(bifSec()));return G.find(g=>g.k===cur)||G.find(g=>g.k===S.bif.tabK)||G[G.length-1];}
 function renderBifStack(ctx,w,h){
-  const M=S.M,G=bifGroups(),n=G.length,j=bifSec(),LB=18,ph=h/n,cur=grpKey(M.getParam(j)),compact=ph<200;
-  ctx.fillStyle=TK.surface;ctx.fillRect(0,0,w,h);S.bifPanels=[];
-  try{G.forEach((g,k)=>{const y0=Math.round(k*ph),y1=Math.round((k+1)*ph),b=frameOf(w,y1-y0-LB,compact),fr={...b,T:b.T+y0+LB,top:y0,bot:y1};
-      S.bif.grp=g.k;renderBif(ctx,w,h,fr);
-      const on=g.k===cur;ctx.font='600 12px "IBM Plex Mono", ui-monospace, monospace';ctx.textAlign='left';ctx.textBaseline='top';
-      ctx.fillStyle=on?TK.accent:TK['ink-2'];ctx.fillText(`${M.parNames[j]} = ${fmt(g.v,6)}${on?'  (current value)':''}`,fr.L,y0+4);
-      if(k>0){ctx.strokeStyle=TK.line;ctx.lineWidth=1;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(0,y0+.5);ctx.lineTo(w,y0+.5);ctx.stroke();}
-      S.bifPanels.push({fr,k:g.k,v:g.v,top:y0,bot:y1});});}
-  finally{S.bif.grp=null;}
-  S.lastFrame=(S.bifPanels[Math.min(S.bif.panelK||0,n-1)]||S.bifPanels[0]).fr;
+  const M=S.M,G=bifGroups(),j=bifSec(),top=bifTopGroup(G),cur=grpKey(M.getParam(j)),TH=26,OFF=4,nb=Math.min(G.length-1,3);
+  ctx.fillStyle=TK.surface;ctx.fillRect(0,0,w,h);
+  // the tabs
+  ctx.font='600 11.5px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='middle';ctx.textAlign='center';
+  const labs=G.map(g=>`${M.parNames[j]} = ${fmt(g.v,6)}`),fr0=frameOf(w,h-TH-nb*OFF),pad=10;
+  let ws=labs.map(t=>ctx.measureText(t).width+2*pad);const tot=ws.reduce((a,b)=>a+b,0)+2*(G.length-1),avail=w-fr0.L-8;
+  if(tot>avail){const f=avail/tot;ws=ws.map(x=>x*f);}
+  S.bifTabs=[];let x=fr0.L;
+  G.forEach((g,k)=>{const on=g===top,y0=on?3:6,y1=TH;
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y0+4);ctx.lineTo(x+4,y0);ctx.lineTo(x+ws[k]-4,y0);ctx.lineTo(x+ws[k],y0+4);ctx.lineTo(x+ws[k],y1);
+    ctx.fillStyle=on?TK.surface:TK.grid;ctx.fill();ctx.strokeStyle=on?TK.accent:TK.line;ctx.lineWidth=on?1.5:1;ctx.stroke();
+    ctx.fillStyle=on?TK.accent:g.k===cur?TK['ink-2']:TK.muted;ctx.save();ctx.beginPath();ctx.rect(x+2,0,ws[k]-4,TH);ctx.clip();ctx.fillText(labs[k],x+ws[k]/2,(y0+y1)/2+1);ctx.restore();
+    S.bifTabs.push({x0:x,x1:x+ws[k],y0:0,y1:TH,k:g.k,v:g.v});x+=ws[k]+2;});
+  // the cards behind: outlines offset up and to the right
+  const fr={...fr0,T:TH+nb*OFF,noBg:true};
+  for(let b=nb;b>=1;b--){ctx.strokeStyle=TK.line;ctx.lineWidth=1;ctx.fillStyle=TK.surface;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.strokeRect(fr.L+b*OFF+.5,fr.T-b*OFF+.5,fr.W-1,fr.H-1);}
+  try{S.bif.grp=top.k;renderBif(ctx,w,h,fr);}finally{S.bif.grp=null;}
+  ctx.strokeStyle=TK.accent;ctx.lineWidth=1.5;ctx.strokeRect(fr.L+.75,fr.T+.75,fr.W-1.5,fr.H-1.5);
+  S.bifPanels=[{fr,k:top.k,v:top.v,top:0,bot:h}];S.lastFrame=fr;
 }
-// the panel of a stacked diagram under a point of the plot: it becomes the frame used for the mouse
-function bifPanelAt(py){if(S.view!=='bif'||!S.bifPanels||!S.bifPanels.length)return null;
-  let k=S.bifPanels.findIndex(P=>py>=P.top&&py<P.bot);if(k<0)k=py<0?0:S.bifPanels.length-1;
-  S.bif.panelK=k;S.lastFrame=S.bifPanels[k].fr;return S.bifPanels[k];}
+// the diagram under a point of the plot: it becomes the frame used for the mouse
+function bifPanelAt(py){if(S.view!=='bif'||!S.bifPanels||!S.bifPanels.length||!bifStacked())return null;S.lastFrame=S.bifPanels[0].fr;return S.bifPanels[0];}
+function bifTabAt(px,py){if(S.view!=='bif'||!S.bifTabs||!bifStacked())return null;return S.bifTabs.find(t=>px>=t.x0&&px<=t.x1&&py>=t.y0&&py<=t.y1)||null;}
+function chooseBifTab(t){const j=bifSec();S.bif.tabK=t.k;setParamVal(j,t.v,true);liveUpdate();refreshSpecial();
+  status(`${S.M.parNames[j]} = ${fmt(t.v,6)}: its diagram is on top`);}
 function legendEntries(view){
   const M=S.M,out=[],pi=S.bif.pi,mode=S.bif.mode||'var';
   if(view==='bif'){
@@ -5590,7 +5603,12 @@ function tcWinKey(){
   if(S.tc.adj&&S.adj&&S.adj.curves.length)return adjKey();return'win';
 }
 function curWin(){return S.view==='pp'?S.pp.win:S.view==='tc'?S.tc[tcWinKey()]:S.view==='tp'?S.tp.win:S.bif.win;}
-function setWin(wn){if(S.view==='pp')S.pp.win=wn;else if(S.view==='tc')S.tc[tcWinKey()]=wn;else if(S.view==='tp')S.tp.win=wn;else S.bif.win=wn;}
+function setWin(wn){if(S.view==='pp')S.pp.win=wn;else if(S.view==='tc')S.tc[tcWinKey()]=wn;else if(S.view==='tp'){S.tp.win=wn;tpRangeFromWin();}else S.bif.win=wn;}
+// in the Two-parameter view the ranges of the two parameters follow the window: panning, zooming or setting the window
+// changes them, so curves are followed across what is on screen
+function tpRangeFromWin(){const w=S.tp.win,r=v=>+v.toPrecision(6);if(!w||!(w.xhi>w.xlo)||!(w.yhi>w.ylo))return;
+  S.bif.pmin=r(w.xlo);S.bif.pmax=r(w.xhi);S.tp.p2min=r(w.ylo);S.tp.p2max=r(w.yhi);
+  for(const[id,v]of[['#tMin1',S.bif.pmin],['#tMax1',S.bif.pmax],['#bMin',S.bif.pmin],['#bMax',S.bif.pmax],['#tMin2',S.tp.p2min],['#tMax2',S.tp.p2max]]){const e=$(id);if(e)e.value=fmtIn(v);}}
 
 /* ======================= fitting ======================= */
 function bounds(pairs,pad=0.08){return fitBounds(pairs,pad);}
@@ -5712,6 +5730,7 @@ function updateReadout(px,py){
 }
 function onPlotClick(px,py,shift){
   if(is3())return;
+  {const t=bifTabAt(px,py);if(t){chooseBifTab(t);return;}}
   const pan=bifPanelAt(py);
   if(S.noteMode&&noteKey()){const f=S.lastFrame;if(f&&px>=f.L&&px<=f.L+f.W&&py>=f.T&&py<=f.T+f.H)addNoteAt(px,py);return;}
   const fr=S.lastFrame;if(!fr||px<fr.L||px>fr.L+fr.W||py<fr.T||py>fr.T+fr.H)return;
@@ -5812,7 +5831,7 @@ function attachPlot(cv){
   cv.addEventListener('pointermove',e=>{
     const r=cv.getBoundingClientRect();
     if(objDrag){moveObjDrag(e,r);return;}
-    if(!drag)cv.style.cursor=S.noteMode?'crosshair':hitObj(e.clientX-r.left,e.clientY-r.top)?'move':'';
+    if(!drag)cv.style.cursor=S.noteMode?'crosshair':hitObj(e.clientX-r.left,e.clientY-r.top)?'move':bifTabAt(e.clientX-r.left,e.clientY-r.top)?'pointer':'';
     if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
       if(!drag.moved&&Math.hypot(dx,dy)>4){drag.moved=true;S.interacting=true;cv.classList.add('panning');}
       if(drag.moved&&is3()){
@@ -6232,10 +6251,12 @@ function refreshBifStart(){
 }
 function refreshSpecial(){
   const box=$('#spList'),M=S.M,vi=S.bif.vi,sp=[...allSpecial().filter(s=>s.pi===S.bif.pi),...pickedOrbits().filter(o=>o.pi===S.bif.pi),...connPoints().filter(o=>o.pi===S.bif.pi)];
+  // with curves at several values of the second parameter of the pair, the list is in increasing order of that value
+  const j2=bifSec(),multi=j2>=0&&bifGroups().length>1;if(multi){const g=sp.map((s,k)=>({s,k,v:bifGroupOf(s)}));g.sort((a,b)=>a.v-b.v||a.k-b.k);sp.splice(0,sp.length,...g.map(q=>q.s));}
   $('#spCount').textContent=sp.length?String(sp.length):'';
   if(!sp.length){box.replaceChildren(el('p',{class:'empty',text:M.discrete?'Folds (LP), period doublings (PD) and Neimark–Sacker points (NS) found during continuation are listed here.':'Folds (LP), Hopf points (HB) and branch points (BP) of equilibria, and folds (LPC), period doublings (PD) and torus points (TR) of periodic orbits, are listed here.'}));return;}
   const tb=el('table',{class:'sp'});
-  tb.append(el('tr',null,el('th',{text:'Pt'}),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
+  tb.append(el('tr',null,el('th',{text:'Pt'}),...(multi?[el('th',{text:M.parNames[j2]})]:[]),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
   tb.firstChild.append(el('th',{text:''}));
   const per=s=>{if(s.conn)return'∞';const N=(s.br&&s.br.period)||1;return s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?String(2*N):N>1?String(N):'—';};
   const NAMES={HB:'Hopf',LP:'fold',BP:'branch-point',PD:'period-doubling',NS:'Neimark–Sacker',LPC:'fold-of-cycles',TR:'torus'};
@@ -6253,9 +6274,9 @@ function refreshSpecial(){
     if(s.type==='OR'){if(M.parNames.length>1)acts.append(btn('Const. T',`Follow this orbit in two parameters keeping its period fixed at ${fmt(s.T,5)}`,()=>followConstT(s)));
       acts.append(btn('Remove','Take this orbit off the list',()=>{S.bif.picked=S.bif.picked.filter(o=>o!==s.ref);refreshSpecial();buildTpControls();requestRender();}));}
     const crit=s.snic?el('span',{class:'crit',text:'SNIC',title:'A branch of periodic orbits ends here with its period growing without bound: probably a saddle-node on an invariant circle (SNIC)'}):s.type==='HB'&&Number.isFinite(s.l1)?el('span',{class:'crit',text:s.l1>0?'sub':'super',title:`First Lyapunov coefficient l1 = ${fmt(s.l1,3)}: ${s.l1>0?'subcritical, unstable orbits are born':'supercritical, stable orbits are born'}. Computed with the projection formula of Kuznetsov, Elements of Applied Bifurcation Theory, 3rd edn (Springer, 2004), Section 5.4, p. 180.`}):null;
-    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
+    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),...(multi?[el('td',{text:fmt(bifParamsOf(s)?bifParamsOf(s)[j2]:S.M.getParam(j2),5)})]:[]),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
     if(s.conn)tr.title=`Click to move here and draw the orbit; it takes time ${fmt(s.conn.T,4)} from ε = ${fmt(s.conn.eps,2)} of the ${s.conn.rev?'last':'first'} saddle to its closest approach to the ${s.conn.rev?'first':'last'}`;
-    tr.addEventListener('click',()=>{if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
+    tr.addEventListener('click',()=>{if(multi){const pp=bifParamsOf(s);if(pp&&Number.isFinite(pp[j2]))setParamVal(j2,pp[j2],true);}if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
   box.replaceChildren(tb);
 }
 
@@ -7496,7 +7517,7 @@ function init(){
   S.curveCol=store.get('xpps-curvecol')==='1';S.notes=S.notes||[];
   $('#tgCurveCol').addEventListener('click',()=>{S.curveCol=!S.curveCol;store.set('xpps-curvecol',S.curveCol?'1':'0');updateToolbar();requestRender();});
   $('#tgNote').addEventListener('click',()=>{S.noteMode=!S.noteMode;updateToolbar();status(S.noteMode?'Click the plot where the label should go':'Label mode off');requestRender();});
-  $('#tgStack').addEventListener('click',()=>{S.bif.stack=S.bif.stack===false;rec(`stack ${S.bif.stack?'on':'off'}`);status(S.bif.stack?`One diagram for each value of ${S.M.parNames[bifSec()]||'the second parameter'}, stacked`:'All curves on one diagram');requestRender();});
+  $('#tgStack').addEventListener('click',()=>{S.bif.stack=S.bif.stack===false;rec(`stack ${S.bif.stack?'on':'off'}`);status(S.bif.stack?`One diagram for each value of ${S.M.parNames[bifSec()]||'the second parameter'}, stacked: choose one with the tabs above it`:'All curves on one diagram');requestRender();});
   $('#tgLegend').addEventListener('click',()=>{S.legend=!S.legend;store.set('xpps-legend',S.legend?'1':'0');$('#tgLegend').setAttribute('aria-pressed',S.legend);requestRender();});
   $('#fitBtn').addEventListener('click',fit);
   $('#eqFind').addEventListener('click',findEquilibria);

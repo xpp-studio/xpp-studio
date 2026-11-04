@@ -417,7 +417,7 @@ where $A$ is the Jacobian, $Aq=i\omega q$, $A^{\mathsf T}p=-i\omega p$ and $\lan
   \label{fig:mltp}
 \end{figure}
 
-Any special point in the table with a \ui{Follow} button can be continued in a second parameter. The Two-parameter view (\key{5}) shows the result, and its inspector panel selects the two parameters and their ranges.
+Any special point in the table with a \ui{Follow} button can be continued in a second parameter. The Two-parameter view (\key{5}) shows the result, and its inspector panel selects the two parameters and their ranges. The ranges follow the window: panning or zooming the two-parameter plot, or setting its \ui{Window}, sets them to what is on screen, so a curve that runs off the edge can be followed further by zooming out and pressing \ui{Follow} again.
 
 \begin{tryit}
 \begin{enumerate}
@@ -451,14 +451,14 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 \begin{itemize}
   \item \ui{Legend}, above the Bifurcation and Two-parameter plots, adds a key with one line per curve: what it is, where it was started from, and any parameter values that differ between curves. The legend is included in \ui{Export SVG}. It starts in the top right corner of the plot; drag it elsewhere, and double-click it to send it back. \ui{Colours}, next to \ui{Legend}, gives every curve its own colour instead of colouring by kind, so that the legend lines can be told apart.
   \item \textbf{Slices in a third parameter}, at the bottom of the Two-parameter panel, repeat the curve chosen under \ui{Start} at several values of a third parameter. Choose \ui{Parameter 3}, its smallest and largest values and the number of slices, and press \ui{Compute slices}. Each slice starts from the special point on the previous one, so the curves are followed continuously as the third parameter changes. This works for fold and Hopf curves, and for folds of cycles that start from a Hopf point of the diagram.
-  \item \textbf{Stacked one-parameter diagrams.} The two parameters of the Two-parameter panel make a pair. When curves of the Bifurcation view have been computed at different values of the second parameter of the pair, they are not drawn on top of one another: the diagram becomes a stack of panels, one for each value, largest at the top, each labelled at the top with the second parameter and its value (Figure~\ref{fig:stack}). The panel at the current value is labelled in blue. All the panels share the axes, so zooming or panning one moves them all; clicking in a panel sets the second parameter to that panel's value as well as loading the point or moving the first parameter. Choosing the other parameter of the pair for the Bifurcation view swaps the two, and the curves continued in it are then stacked by the value of the first. \ui{Stack}, above the plot, puts all the curves back on one diagram and returns to the stack; it is shown when there is more than one value. Choosing a different pair of parameters returns to one diagram, and the next continuation or sweep stacks again. In a script: \texttt{stack on} or \texttt{stack off}.
+  \item \textbf{Stacked one-parameter diagrams.} The two parameters of the Two-parameter panel make a pair. When curves of the Bifurcation view have been computed at different values of the second parameter of the pair, they are not drawn on top of one another: there is one diagram for each value, stacked like cards, with a row of tabs above them labelled with the second parameter and its value, in increasing order (Figure~\ref{fig:stack}). The diagram on top, outlined in blue, is the one at the current value of the second parameter. Clicking a tab sets the parameter to that value and brings its diagram to the top. While there are several values, the \ui{Special points} table has a column for the second parameter and is in increasing order of it, and clicking a row sets both parameters. Choosing the other parameter of the pair for the Bifurcation view swaps the two, and the curves continued in it are then stacked by the value of the first. \ui{Stack}, above the plot, puts all the curves on one diagram and returns to the stack; it is shown when there is more than one value. Choosing a different pair of parameters returns to one diagram, and the next continuation or sweep stacks again. In a script: \texttt{stack on} or \texttt{stack off}.
   \item \ui{3D}, above the Two-parameter plot, draws the curves in a box with the third parameter as the vertical axis, each curve at the value of that parameter it was computed with (Figure~\ref{fig:slices}). Drag to rotate and scroll to zoom, as in the 3D view of trajectories.
 \end{itemize}
 
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=0.72\textwidth]{snics-stack.pdf}
-  \caption{Stacked diagrams: the equilibria of \ui{Interacting saddle-nodes} continued in $\mu$ at three values of $\gamma$, the second parameter of the pair $(\mu,\gamma)$. Each value has its own panel, labelled at the top; the current value ($\gamma=0$) is in blue. The fold LP moves to larger $\mu$ as $\gamma$ decreases.}
+  \caption{Stacked diagrams: the equilibria of \ui{Interacting saddle-nodes} continued in $\mu$ at three values of $\gamma$, the second parameter of the pair $(\mu,\gamma)$. Each value has its own diagram and a tab above the stack; the diagram on top is the one at the current value, $\gamma=0.3$. Clicking the tabs shows that the fold LP moves to larger $\mu$ as $\gamma$ decreases.}
   \label{fig:stack}
 \end{figure}
 
@@ -471,7 +471,7 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 
 \begin{tryit}
 \begin{enumerate}
-  \item Load \ui{Interacting saddle-nodes}, open the Bifurcation view, set the range of $\mu$ to $-8$ to $4$ and choose $\gamma$ as Parameter~2 in the Two-parameter panel. Press \ui{Continue equilibria}, then set $\gamma=0.3$ and press it again, then $\gamma=0$ and again. The diagram splits into three labelled panels (Figure~\ref{fig:stack}).
+  \item Load \ui{Interacting saddle-nodes}, open the Bifurcation view, set the range of $\mu$ to $-8$ to $4$ and choose $\gamma$ as Parameter~2 in the Two-parameter panel. Press \ui{Continue equilibria} at $\gamma=0.6$, then set $\gamma=0$ and press it again, then $\gamma=0.3$ and again. Three tabs appear above the diagram, and the diagram for $\gamma=0.3$ is on top (Figure~\ref{fig:stack}). Click the other tabs in turn, and look at the Special points table, now in order of $\gamma$.
   \item Press \ui{Stack} to see the three branches on one diagram, and again to go back.
 \end{enumerate}
 \end{tryit}

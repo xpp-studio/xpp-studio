@@ -464,14 +464,20 @@ test('Stacked bifurcation diagrams: one panel for each value of the second param
     await P.run('example snics\nview bif\nbifpar mu -8 4\ntppar gamma\npar gamma=0.6\ncontinue\npar gamma=0\ncontinue');
     ok(P);
     P.app('render()');
-    assert.deepEqual(J(P, 'bifGroups().map(g=>g.v)'), [0.6, 0]);
+    assert.deepEqual(J(P, 'bifGroups().map(g=>g.v)'), [0, 0.6]);
     assert.equal(P.app('bifStacked()'), true);
     assert.equal(P.$('#tgStack').hidden, false);
-    assert.equal(J(P, 'S.bifPanels.length'), 2);
-    // a click away from the curves in the upper panel sets mu there and gamma to the panel's value
-    const [x, y] = J(P, '(()=>{const f=S.bifPanels[0].fr;return[f.L+3,f.T+3];})()');
+    // one tab for each value; the diagram on top is the one at the current value (gamma = 0)
+    assert.deepEqual(J(P, 'S.bifTabs.map(t=>t.v)'), [0, 0.6]);
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0);
+    // the special points are listed in increasing order of gamma, with a column for it
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#spList tr')].slice(1).map(r=>+r.children[1].textContent)"), [0, 0, 0.6, 0.6]);
+    // clicking the other tab sets gamma to its value and brings its diagram to the top
+    const [x, y] = J(P, '(()=>{const t=S.bifTabs[1];return[(t.x0+t.x1)/2,(t.y0+t.y1)/2];})()');
     P.app(`onPlotClick(${x},${y},false)`);
     assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
+    P.app('render()');
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0.6);
     // stacking can be turned off and on
     await P.run('stack off');
     P.app('render()');
@@ -511,5 +517,15 @@ test('Version 1.3 settings: Auto-update tick box, hi-slo-lo by default, no equil
     ok(P);
     assert.equal(J(P, 'S.M.discrete'), true);
     assert.equal(J(P, "EXAMPLES.find(e=>e.id==='snics').name"), 'Interacting saddle-nodes');
+  } finally { P.close(); }
+});
+
+test('Two-parameter view: the ranges of the two parameters follow the window', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview tp\nwindow 10 80 0.02 0.5');
+    ok(P);
+    assert.deepEqual(J(P, '[S.bif.pmin,S.bif.pmax,S.tp.p2min,S.tp.p2max]'), [10, 80, 0.02, 0.5]);
+    assert.deepEqual(['#tMin1', '#tMax1', '#tMin2', '#tMax2'].map(id => +P.$(id).value), [10, 80, 0.02, 0.5]);
   } finally { P.close(); }
 });
