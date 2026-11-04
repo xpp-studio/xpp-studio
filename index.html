@@ -2565,10 +2565,10 @@ done
 {id:'snics',name:'Interacting saddle-nodes',text:`# Interacting saddle-nodes
 # (Ashwin, Postlethwaite and Sieber Nonlinearity 2026 DOI:10.1088/1361-6544/ae788a)
 # 
-init x=4.420941241 y=-3.344263964
+init x=1 y=1
 
 # Params
-par mu=-2.7 gamma=0.6
+par mu=-0.005 gamma=3.58
 par alpha=3.1 beta=-1.3
 
 # transform to lambda
@@ -2583,10 +2583,10 @@ y'=y^2-lambda+2*beta*x+gamma
 @ maxstor=10000
 # auto defaults
 @ epsu=0.000001, epss=0.000001
-# Settings written by XPP Studio, 2026-11-03 15:49
+# Settings written by XPP Studio, 2026-11-04 15:31
 @ meth=dormprince, total=10, dt=0.01, toler=0.000001, bound=10
-@ xp=x, yp=y, xlo=-2.17823, xhi=4.90982, ylo=-3.67579, yhi=1.13119
-@ ds=0.01, dsmin=0.0001, dsmax=0.1, nmax=3000, parmin=-50, parmax=50
+@ xp=x, yp=y, xlo=-8.53076, xhi=19.5591, ylo=-13.1545, yhi=5.8955
+@ ds=0.01, dsmin=0.0001, dsmax=0.05, nmax=3000, parmin=-1, parmax=1
 done
 `},
 {id:'logistic',name:'Logistic map',map:true,text:`# Logistic map (period doubling at r=3, chaos near r=3.57)
@@ -4671,6 +4671,14 @@ const bifStacked=()=>S.view==='bif'&&!!S.M&&S.bif.stack!==false&&bifGroups().len
 const inGrp=o=>S.bif.grp==null||bifGroupOf(o)===S.bif.grp;
 // the diagram on top: the one at the current value of the second parameter, otherwise the tab chosen last
 function bifTopGroup(G){const cur=grpKey(S.M.getParam(bifSec()));return G.find(g=>g.k===cur)||G.find(g=>g.k===S.bif.tabK)||G[G.length-1];}
+// the other diagrams of a stack, drawn into the frame of the one on top: every colour becomes one pale grey
+function drawBifGhosts(ctx,w,h,fr){
+  const real=TK,cc=S.curveCol,keys=S.bif.ghostKeys,grp=S.bif.grp,mix=(a,b,t)=>{const p=x=>[1,3,5].map(i=>parseInt(x.slice(i,i+2),16));const A=p(a),Bc=p(b);return'#'+A.map((v,i)=>Math.round(v*(1-t)+Bc[i]*t).toString(16).padStart(2,'0')).join('');};
+  let g;try{g=mix(real.muted,real.surface,0.55);}catch(e){g=real.line;}if(!/^#[0-9a-f]{6}$/i.test(g))g=real.line;
+  TK=Object.fromEntries(Object.keys(real).map(k=>[k,g]));TK.surface=real.surface;S.curveCol=false;S.bif.ghostKeys=null;
+  try{for(const k of keys){S.bif.grp=k;S.bif.ghost=true;renderBif(ctx,w,h,fr);}}
+  finally{TK=real;S.curveCol=cc;S.bif.ghost=false;S.bif.ghostKeys=keys;S.bif.grp=grp;}
+}
 function renderBifStack(ctx,w,h){
   const M=S.M,G=bifGroups(),j=bifSec(),top=bifTopGroup(G),cur=grpKey(M.getParam(j)),TH=26,OFF=7,nb=Math.min(G.length-1,3);
   ctx.fillStyle=TK.surface;ctx.fillRect(0,0,w,h);
@@ -4687,10 +4695,10 @@ function renderBifStack(ctx,w,h){
     S.bifTabs.push({x0:x,x1:x+ws[k],y0:0,y1:TH,k:g.k,v:g.v});x+=ws[k]+2;});
   // the cards behind: outlines offset up and to the right
   const fr={...fr0,T:TH+nb*OFF,noBg:true};
-  // the diagrams behind, greyed out, offset up and to the right, darker further back
-  for(let b=nb;b>=1;b--){ctx.fillStyle=TK.muted;ctx.globalAlpha=0.16+0.08*b;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.fillStyle=TK.surface;ctx.globalAlpha=0.35;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.strokeStyle=TK.muted;ctx.lineWidth=1;ctx.strokeRect(fr.L+b*OFF+.5,fr.T-b*OFF+.5,fr.W-1,fr.H-1);}
+  // the diagrams behind, greyed out, offset up and to the right
+  for(let b=nb;b>=1;b--){ctx.fillStyle=TK.muted;ctx.globalAlpha=0.22;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.fillStyle=TK.surface;ctx.globalAlpha=0.35;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.strokeStyle=TK.muted;ctx.lineWidth=1;ctx.strokeRect(fr.L+b*OFF+.5,fr.T-b*OFF+.5,fr.W-1,fr.H-1);}
   ctx.fillStyle=TK.surface;ctx.fillRect(fr.L,fr.T,fr.W,fr.H);
-  try{S.bif.grp=top.k;renderBif(ctx,w,h,fr);}finally{S.bif.grp=null;}
+  try{S.bif.ghostKeys=G.filter(g=>g!==top).map(g=>g.k);S.bif.grp=top.k;renderBif(ctx,w,h,fr);}finally{S.bif.grp=null;S.bif.ghostKeys=null;}
   ctx.strokeStyle=TK.accent;ctx.lineWidth=1.5;ctx.strokeRect(fr.L+.75,fr.T+.75,fr.W-1.5,fr.H-1.5);
   S.bifPanels=[{fr,k:top.k,v:top.v,top:0,bot:h}];S.lastFrame=fr;
 }
@@ -4851,11 +4859,13 @@ function renderBif(ctx,w,h,frIn){
   const M=S.M,fr=frIn||frameOf(w,h),win=S.bif.win,m=mapper(fr,win),vi=S.bif.vi,pi=S.bif.pi;S.lastFrame=fr;
   const mode=S.bif.mode||'var',tv=T=>mode==='f'?1/T:T,yOf=(q,key)=>key==='T'?tv(q.T):key==='N'?(q.nr?q.nr[S.bif.vn||0]:NaN):q[key][vi];
   if(mode==='N')ensureL2All();
-  const sel=S.bif.sel,halo=(P,ys)=>{ctx.save();ctx.strokeStyle=TK.accent;ctx.globalAlpha=0.28;ctx.lineWidth=9;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);ctx.beginPath();
+  const gh=!!S.bif.ghost,sel=gh?null:S.bif.sel,halo=(P,ys)=>{ctx.save();ctx.strokeStyle=TK.accent;ctx.globalAlpha=0.28;ctx.lineWidth=9;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);ctx.beginPath();
     for(const yf of ys){let pen=false;for(const q of P){const Y=yf(q);if(!Number.isFinite(Y)){pen=false;continue;}const X=m.X(q.p);if(pen)ctx.lineTo(X,m.Y(Y));else{ctx.moveTo(X,m.Y(Y));pen=true;}}}ctx.stroke();ctx.restore();};
-  drawAxes(ctx,fr,win,m,M.parNames[pi]||'',bifYName());
+  if(!gh)drawAxes(ctx,fr,win,m,M.parNames[pi]||'',bifYName());
   clip(ctx,fr);
-  const pc=M.getParam(pi),X=m.X(pc);ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X,fr.T);ctx.lineTo(X,fr.T+fr.H);ctx.stroke();ctx.setLineDash([]);
+  // in a stack of diagrams, the others are drawn first, faintly, in grey
+  if(!gh&&S.bif.ghostKeys)drawBifGhosts(ctx,w,h,fr);
+  if(!gh){const pc=M.getParam(pi),X=m.X(pc);ctx.setLineDash([3,4]);ctx.strokeStyle=TK.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X,fr.T);ctx.lineTo(X,fr.T+fr.H);ctx.stroke();ctx.setLineDash([]);}
   for(const sw of S.bif.sweeps){if(sw.pi!==pi||!inGrp(sw)||mode==='N')continue;
     if(sw===sel){ctx.save();ctx.fillStyle=TK.accent;ctx.globalAlpha=0.25;for(const r of sw.rows){const X=m.X(r.p);const ys=mode==='var'?[r.max[vi],r.min[vi]]:r.per>0?[tv(r.per)]:[];for(const v of ys){ctx.beginPath();ctx.arc(X,m.Y(v),6,0,7);ctx.fill();}}ctx.restore();}
     ctx.fillStyle=ccol(sw,TK.sweep);
@@ -4902,6 +4912,7 @@ function renderBif(ctx,w,h,frIn){
     for(const key of mode==='N'?['N']:['mx','mn']){ctx.beginPath();ctx.strokeStyle=ccol(bb,TK.po);ctx.lineWidth=2.2;ctx.setLineDash([]);
       for(let k=0;k+1<P.length;k++){ctx.moveTo(m.X(P[k].p),m.Y(bvY(P[k],key)));ctx.lineTo(m.X(P[k+1].p),m.Y(bvY(P[k+1],key)));}
       ctx.stroke();}}
+  if(gh){ctx.restore();return;}
   ctx.font='600 11px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='bottom';ctx.textAlign='left';
   allSpecial().forEach(sp=>{if(sp.pi!==pi||!inGrp(sp))return;const yv=spVal(sp);if(!Number.isFinite(yv))return;const x=m.X(sp.p),y=m.Y(yv);const col=spColor(sp.type);ctx.fillStyle=col;ctx.strokeStyle=TK.surface;ctx.lineWidth=2;
     ctx.beginPath();if(sp.type==='HB'||sp.type==='NS'||sp.type==='TR')ctx.rect(x-4.5,y-4.5,9,9);else{ctx.moveTo(x,y-6);ctx.lineTo(x+5.5,y+4);ctx.lineTo(x-5.5,y+4);ctx.closePath();}ctx.stroke();ctx.fill();
