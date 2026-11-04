@@ -478,6 +478,14 @@ test('Stacked bifurcation diagrams: one panel for each value of the second param
     assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
     P.app('render()');
     assert.equal(J(P, 'S.bifPanels[0].v'), 0.6);
+    // Follow on a special point of another diagram brings that diagram to the top and continues in two parameters
+    await P.run('par gamma=0\nfollow LP1');
+    ok(P);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
+    await P.run('view bif');
+    P.app('render()');
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0.6);
+    assert.equal(J(P, "S.tp.curves.filter(c=>c.type==='LP').length"), 1);
     // stacking can be turned off and on
     await P.run('stack off');
     P.app('render()');

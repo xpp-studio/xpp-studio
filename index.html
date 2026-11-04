@@ -4672,7 +4672,7 @@ const inGrp=o=>S.bif.grp==null||bifGroupOf(o)===S.bif.grp;
 // the diagram on top: the one at the current value of the second parameter, otherwise the tab chosen last
 function bifTopGroup(G){const cur=grpKey(S.M.getParam(bifSec()));return G.find(g=>g.k===cur)||G.find(g=>g.k===S.bif.tabK)||G[G.length-1];}
 function renderBifStack(ctx,w,h){
-  const M=S.M,G=bifGroups(),j=bifSec(),top=bifTopGroup(G),cur=grpKey(M.getParam(j)),TH=26,OFF=4,nb=Math.min(G.length-1,3);
+  const M=S.M,G=bifGroups(),j=bifSec(),top=bifTopGroup(G),cur=grpKey(M.getParam(j)),TH=26,OFF=7,nb=Math.min(G.length-1,3);
   ctx.fillStyle=TK.surface;ctx.fillRect(0,0,w,h);
   // the tabs
   ctx.font='600 11.5px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='middle';ctx.textAlign='center';
@@ -4687,13 +4687,19 @@ function renderBifStack(ctx,w,h){
     S.bifTabs.push({x0:x,x1:x+ws[k],y0:0,y1:TH,k:g.k,v:g.v});x+=ws[k]+2;});
   // the cards behind: outlines offset up and to the right
   const fr={...fr0,T:TH+nb*OFF,noBg:true};
-  for(let b=nb;b>=1;b--){ctx.strokeStyle=TK.line;ctx.lineWidth=1;ctx.fillStyle=TK.surface;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.strokeRect(fr.L+b*OFF+.5,fr.T-b*OFF+.5,fr.W-1,fr.H-1);}
+  // the diagrams behind, greyed out, offset up and to the right, darker further back
+  for(let b=nb;b>=1;b--){ctx.fillStyle=TK.muted;ctx.globalAlpha=0.16+0.08*b;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.fillStyle=TK.surface;ctx.globalAlpha=0.35;ctx.fillRect(fr.L+b*OFF,fr.T-b*OFF,fr.W,fr.H);ctx.globalAlpha=1;ctx.strokeStyle=TK.muted;ctx.lineWidth=1;ctx.strokeRect(fr.L+b*OFF+.5,fr.T-b*OFF+.5,fr.W-1,fr.H-1);}
+  ctx.fillStyle=TK.surface;ctx.fillRect(fr.L,fr.T,fr.W,fr.H);
   try{S.bif.grp=top.k;renderBif(ctx,w,h,fr);}finally{S.bif.grp=null;}
   ctx.strokeStyle=TK.accent;ctx.lineWidth=1.5;ctx.strokeRect(fr.L+.75,fr.T+.75,fr.W-1.5,fr.H-1.5);
   S.bifPanels=[{fr,k:top.k,v:top.v,top:0,bot:h}];S.lastFrame=fr;
 }
 // the diagram under a point of the plot: it becomes the frame used for the mouse
 function bifPanelAt(py){if(S.view!=='bif'||!S.bifPanels||!S.bifPanels.length||!bifStacked())return null;S.lastFrame=S.bifPanels[0].fr;return S.bifPanels[0];}
+// a special point from another diagram of the stack: set the second parameter to its value and bring that diagram to the top
+function bifToGroupOf(o){const j=bifSec();if(j<0||!o||!bifStacked())return;const p=bifParamsOf(o);if(!p||!Number.isFinite(p[j]))return;
+  if(grpKey(S.M.getParam(j))===bifGroupOf(o))return;S.bif.tabK=bifGroupOf(o);setParamVal(j,p[j],true);liveUpdate();
+  status(`${S.M.parNames[j]} = ${fmt(p[j],6)}: its diagram is on top`);}
 function bifTabAt(px,py){if(S.view!=='bif'||!S.bifTabs||!bifStacked())return null;return S.bifTabs.find(t=>px>=t.x0&&px<=t.x1&&py>=t.y0&&py<=t.y1)||null;}
 function chooseBifTab(t){const j=bifSec();S.bif.tabK=t.k;setParamVal(j,t.v,true);liveUpdate();refreshSpecial();
   status(`${S.M.parNames[j]} = ${fmt(t.v,6)}: its diagram is on top`);}
@@ -5083,6 +5089,7 @@ function setTPBusy(on){
   document.querySelectorAll('#spList button').forEach(x=>x.disabled=on);
 }
 async function runCycTwoPar(sp){
+  bifToGroupOf(sp);
   const M=S.M,p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
   if(S.bif.busy)return;
   if(p1===p2){status('Choose two different parameters',true);return;}
@@ -5121,6 +5128,7 @@ async function runCycTwoPar(sp){
   status(`${type==='LPC'?'Fold-of-cycles':type==='CPER'?`Constant-period (T = ${fmt(sts[0].sys.T0,5)})`:'Period-doubling-of-cycles'} curve from ${sp.label}: ${curve.pts.length} points in ${((performance.now()-t0)/1000).toFixed(1)} s · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no codimension-two points'} · ends: ${why||'finished'}`);
 }
 function runTwoPar(sp){
+  bifToGroupOf(sp&&(sp.conn||sp));
   if(sp&&sp.conn)return connFollow(sp.conn,sp.label);
   if(sp&&sp.cyc)return runCycTwoPar(sp);
   const M=iterModel(S.M,(sp&&sp.br&&sp.br.period)||1),p1=S.bif.pi,p2=S.tp.p2i;readTpInputs();
@@ -5403,6 +5411,7 @@ async function connFindClick(){
 }
 // follow a connection in two parameters: step Parameter 2 and solve again for Parameter 1 near the last value, both ways
 async function connFollow(rec,label){
+  bifToGroupOf(rec);
   const M=S.M,p1=rec.pi,p2=S.tp.p2i;readTpInputs();
   if(S.bif.busy)return;
   if(M.parNames.length<2||p1===p2){status('Choose a second parameter, different from the first, in the Two-parameter view',true);return;}
