@@ -1,0 +1,22 @@
+# Hodgkin-Huxley model of the squid giant axon: v in mV, t in ms, i in uA/cm^2
+# At i=10 it fires repeatedly, with a period of 14.64 ms.
+# The coupling line is for the interaction function H of two cells coupled through the voltage: press G,
+# then open Phase reduction, choose "current trajectory" and press Adjoint, then the H chip.
+dv/dt=(i-gna*m^3*h*(v-ena)-gk*n^4*(v-ek)-gl*(v-el))/cm
+dm/dt=am(v)*(1-m)-bm(v)*m
+dh/dt=ah(v)*(1-h)-bh(v)*h
+dn/dt=an(v)*(1-n)-bn(v)*n
+am(v)=if(abs(v+40)<1e-7)then(1)else(0.1*(v+40)/(1-exp(-(v+40)/10)))
+bm(v)=4*exp(-(v+65)/18)
+ah(v)=0.07*exp(-(v+65)/20)
+bh(v)=1/(1+exp(-(v+35)/10))
+an(v)=if(abs(v+55)<1e-7)then(0.1)else(0.01*(v+55)/(1-exp(-(v+55)/10)))
+bn(v)=0.125*exp(-(v+65)/80)
+par i=10,gna=120,gk=36,gl=0.3,ena=50,ek=-77,el=-54.4,cm=1,g=1
+init v=-65,m=0.05,h=0.6,n=0.32
+#@coupling v: g*(v'-v)
+#@range i 0 30
+#@range g 0 4
+@ total=300,dt=0.02,meth=rk4,xp=v,yp=n
+@ xlo=-85,xhi=55,ylo=0.2,yhi=0.85
+done

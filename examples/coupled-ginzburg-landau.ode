@@ -1,0 +1,15 @@
+# Complex Ginzburg-Landau oscillator in real coordinates (Wilson & Ermentrout, Phys. Rev. Lett. 123, 164101, 2019, Eq. 7).
+# Uncoupled, the limit cycle is (cos qt, sin qt) with period 2 pi/q, and its adjoint and isostable functions are known exactly.
+# The coupling lines are G(X,X') for a pair of cells, as in the paper: the overall strength epsilon is not in them.
+# Press G, then open Phase reduction, choose "current trajectory" and press Adjoint; then try the H and H2 chips.
+x'=x*(1-x^2-y^2)-q*(x^2+y^2)*y
+y'=y*(1-x^2-y^2)+q*(x^2+y^2)*x
+par q=1,d=0.9
+init x=1,y=0
+#@coupling x: (x'-x)-d*(y'-y)
+#@coupling y: (y'-y)+d*(x'-x)
+#@range q 0.5 2
+#@range d 0 1.8
+@ total=40,dt=0.01,meth=rk4,xp=x,yp=y
+@ xlo=-1.5,xhi=1.5,ylo=-1.5,yhi=1.5
+done

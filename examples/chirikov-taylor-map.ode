@@ -1,0 +1,15 @@
+# Chirikov-Taylor map (area preserving twist map)
+#
+#
+temp=p+K*sin(q)/6.28318530718
+p(t+1)=temp
+q(t+1)=q+temp
+par K=6.0
+init p=4.1,q=1.2
+#@range a -0.2 1.45
+#@range b -0.4 0.4
+@ total=10000,meth=discrete,xp=q,yp=p
+@ xlo=0,xhi=6.28318530718,ylo=0,yhi=6.28318530718,bound=100
+@ fold=p tor_per=6.28318530718
+@ fold=q tor_per=6.28318530718
+done

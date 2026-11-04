@@ -12,6 +12,7 @@ A browser workbench for differential equations, maps and stochastic models that 
   - folds, Hopf points (sub- or supercritical, from the first Lyapunov coefficient) and branch points;
   - period doublings, torus points and folds of cycles.
 - **Homoclinic and heteroclinic orbits:** found from the Bifurcation view between saddles with one real unstable (or stable) direction, marked on the diagram, and followed in a second parameter. A branch of periodic orbits whose period grows to its end offers the saddle it approaches to the search.
+- **Phase reduction:** the adjoint (phase response) of a limit cycle or of a whole family of them, the isostable response, Floquet eigenfunction and phase-response correction of the slowest multiplier, and the interaction functions H and H₂ of two weakly coupled copies (first and second order, Wilson and Ermentrout), from `#@coupling` lines in the `.ode` file.
 - **Two-parameter continuation:** curves of folds, Hopf points, period doublings, folds and period doublings of cycles, and periodic orbits of constant period. Detects Bogdanov–Takens, cusp, generalised Hopf (Bautin) and zero-Hopf points. Curves can be repeated at several values of a third parameter and drawn in 3D.
 - **Model types:**
   - maps, with cobweb and orbit diagrams, continuation of orbits of any period, and period-doubling cascades followed by branch switching;
@@ -32,7 +33,7 @@ A browser workbench for differential equations, maps and stochastic models that 
 
 Open `index.html` in any recent browser, or use the GitHub Pages link above. Choose a model from the **Model** menu or paste or open your own `.ode` file in the **Equations** tab. The `examples/` folder has the example models as `.ode` files.
 
-A 41-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
+A 58-page introduction and tutorial is in [`docs/xpp-studio-tutorial.pdf`](docs/xpp-studio-tutorial.pdf). Its LaTeX source is in `docs/tutorial/` and can be uploaded to Overleaf.
 
 ## Tests
 

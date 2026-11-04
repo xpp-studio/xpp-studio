@@ -368,6 +368,194 @@ test('Reset all forgets everything stored and starts afresh; About names the ver
     assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script').length"), 0, 'stored choices are forgotten');
     assert.match(P.status(), /Reset/);
     P.$('#aboutBtn').click();
-    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.2');
+    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.3');
+  } finally { P.close(); }
+});
+
+test('the Adjoint button is blue when there is a limit cycle or a family of them to look at', async () => {
+  const P = await openPage();
+  try {
+    const lit = () => { P.app('render()'); return P.$('#bAdj').classList.contains('attn'); };
+    await P.run('example ml\nview ph');
+    assert.equal(lit(), false, 'at the stable focus there is nothing to look at');
+    await P.run('par i=150\ngo');
+    assert.equal(P.$('#bAdjSrc').value, 'traj', 'with no family the menu offers the current trajectory');
+    assert.equal(lit(), true);
+    P.$('#bAdj').click();
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(lit(), false, 'done');
+    await P.run('view bif\nbifpar i 90 220 ds=2\nlimitcycle\nview ph');
+    assert.equal(P.$('#bAdjSrc').value, 'fam');
+    assert.equal(lit(), true, 'a new family');
+    await P.run('adjoint n=4 range=150,200');
+    assert.equal(lit(), false, 'done by a script too');
+    await P.run('example lorenz\nview ph\ngo');
+    assert.equal(lit(), false, 'chaos is not a limit cycle');
+  } finally { P.close(); }
+});
+
+test('hi-slo-lo: the slow points of orbits approaching a homoclinic orbit run into the saddle', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example mlhom\nview bif\ncontinue eq 3\ncycles HB1\nshow hi-slo-lo');
+    ok(P);
+    assert.equal(P.$('#bShow').value, 'S');
+    assert.equal(J(P, '[S.bif.mode,S.bif.slow]').join(), 'var,true');
+    assert.equal(P.$('#slowRow').hidden, false);
+    const end = J(P, 'S.bif.cycles[0].pts.slice(-3).map(q=>slowPts(q).map(z=>[z.x[0],z.r]))');
+    for (const pts of end) {
+      assert.equal(pts.length, 1, 'one slow point: the saddle, counted once');
+      assert.ok(Math.abs(pts[0][0] + 22.32) < 0.05, `v = ${pts[0][0]}`);
+      assert.ok(pts[0][1] < 1e-4);
+    }
+    assert.equal(J(P, 'S.bif.cycles[0].pts.slice(0,5).filter(q=>slowPts(q).length).length'), 0, 'none near the Hopf point, where the speed hardly varies');
+    // a looser threshold shows more of the branch, and the settings can be changed by script
+    const n1 = J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length');
+    assert.ok(n1 > 0);
+    assert.equal(P.$('#bSlowR').value, '5', 'the threshold is shown in percent, 5% by default');
+    await P.run('slowpoints max=1 threshold=20%');
+    assert.deepEqual(J(P, '[S.bif.slowN,S.bif.slowR]'), [1, 0.2]);
+    assert.equal(P.$('#bSlowR').value, '20');
+    assert.ok(J(P, 'S.bif.cycles[0].pts.filter(q=>slowPts(q).length).length') > n1);
+    await P.run('show hilo');
+    assert.equal(P.app('S.bif.slow'), false);
+    assert.equal(P.$('#slowRow').hidden, true);
+  } finally { P.close(); }
+});
+
+test('the Adjoint menu greys out what is not there', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview ph');
+    P.app('render()');
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>[o.textContent,o.disabled])"), [['Current periodic branch', true], ['Current periodic orbit', true]]);
+    await P.run('par i=150\ngo');
+    P.app('render()');
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>o.disabled)"), [true, false]);
+    assert.equal(P.$('#bAdjSrc').value, 'traj');
+  } finally { P.close(); }
+});
+
+test('Current periodic orbit is offered for slow and many-peaked cycles too, and Adjoint then works', async () => {
+  const P = await openPage();
+  try {
+    // FitzHugh–Nagumo at i = 0.5: a period of 39 in a run of 200, only a few peaks; Lorenz 84 at F = 6
+    for (const [id, cmd] of [['fhn', 'par i=0.5\ngo'], ['lorenz84', 'par f=6\ngo']]) {
+      await P.run(`example ${id}\nview ph\n${cmd}`);
+      P.app('render()');
+      assert.deepEqual(J(P, "[...document.querySelectorAll('#bAdjSrc option')].map(o=>o.disabled)"), [true, false], id);
+      assert.equal(P.$('#bAdjSrc').value, 'traj');
+      P.$('#bAdj').click();
+      await new Promise(r => setTimeout(r, 50));
+      assert.match(P.status(), /^Adjoint of the limit cycle of the active trajectory/, `${id}: ${P.status()}`);
+    }
+    // not offered at an equilibrium, or for chaos
+    for (const [id, cmd] of [['ml', 'par i=60\ngo'], ['lorenz', 'go']]) {
+      await P.run(`example ${id}\nview ph\n${cmd}`);
+      P.app('render()');
+      assert.equal(J(P, "document.querySelector('#bAdjSrc option[value=traj]').disabled"), true, id);
+    }
+  } finally { P.close(); }
+});
+
+test('Stacked bifurcation diagrams: one panel for each value of the second parameter of the pair', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example snics\nview bif\nbifpar mu -8 4\ntppar gamma\npar gamma=0.6\ncontinue\npar gamma=0\ncontinue');
+    ok(P);
+    P.app('render()');
+    assert.deepEqual(J(P, 'bifGroups().map(g=>g.v)'), [0, 0.6]);
+    assert.equal(P.app('bifStacked()'), true);
+    assert.equal(P.$('#tgStack').hidden, false);
+    // one tab for each value; the diagram on top is the one at the current value (gamma = 0)
+    assert.deepEqual(J(P, 'S.bifTabs.map(t=>t.v)'), [0, 0.6]);
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0);
+    // the special points are listed in increasing order of gamma, with a column for it
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#spList tr')].slice(1).map(r=>+r.children[1].textContent)"), [0, 0, 0.6, 0.6]);
+    // clicking the other tab sets gamma to its value and brings its diagram to the top
+    const [x, y] = J(P, '(()=>{const t=S.bifTabs[1];return[(t.x0+t.x1)/2,(t.y0+t.y1)/2];})()');
+    P.app(`onPlotClick(${x},${y},false)`);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
+    P.app('render()');
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0.6);
+    // Follow on a special point of another diagram brings that diagram to the top and continues in two parameters
+    await P.run('par gamma=0\nfollow LP1');
+    ok(P);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
+    await P.run('view bif');
+    P.app('render()');
+    assert.equal(J(P, 'S.bifPanels[0].v'), 0.6);
+    assert.equal(J(P, "S.tp.curves.filter(c=>c.type==='LP').length"), 1);
+    // stacking can be turned off and on
+    await P.run('stack off');
+    P.app('render()');
+    assert.equal(P.app('bifStacked()'), false);
+    await P.run('stack on');
+    assert.equal(P.app('bifStacked()'), true);
+    // making mu the second parameter keeps the pair (gamma, mu): curves are grouped by mu, all at the same value
+    await P.run('bifpar gamma');
+    assert.equal(J(P, 'S.tp.p2i'), J(P, `S.M.parNames.indexOf('mu')`));
+    assert.equal(J(P, 'S.bif.stack'), true);
+    // a new pair goes back to one diagram
+    await P.run('bifpar mu\ntppar alpha');
+    assert.equal(J(P, 'S.bif.stack'), false);
+    P.app('render()');
+    assert.equal(P.app('bifStacked()'), false);
+  } finally { P.close(); }
+});
+
+test('Version 1.3 settings: Auto-update tick box, hi-slo-lo by default, no equilibria search for BVPs, new examples', async () => {
+  const P = await openPage();
+  try {
+    assert.equal(P.$('#tgAuto').type, 'checkbox');
+    assert.equal(P.$('#tgAuto').checked, true);
+    P.$('#tgAuto').click();
+    assert.equal(J(P, 'S.auto'), false);
+    assert.match(P.status(), /Auto-update is off/);
+    P.$('#tgAuto').click();
+    assert.equal(J(P, 'S.auto'), true);
+    await P.run('example fhn');
+    assert.equal(J(P, 'S.bif.slow'), true);
+    assert.equal(J(P, 'S.bif.mode'), 'var');
+    const bvp = J(P, "EXAMPLES.find(e=>/BVP|boundary/i.test(e.name)||/^bndry/m.test(e.text)).id");
+    await P.run(`example ${bvp}`);
+    assert.equal(P.$('#eqFind').hidden, true);
+    assert.equal(J(P, 'S.bif.slow'), false);
+    await P.run('example chirikov\ngo');
+    ok(P);
+    assert.equal(J(P, 'S.M.discrete'), true);
+    assert.equal(J(P, "EXAMPLES.find(e=>e.id==='snics').name"), 'Interacting saddle-nodes');
+  } finally { P.close(); }
+});
+
+test('Two-parameter view: the ranges of the two parameters follow the window', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example ml\nview tp\nwindow 10 80 0.02 0.5');
+    ok(P);
+    assert.deepEqual(J(P, '[S.bif.pmin,S.bif.pmax,S.tp.p2min,S.tp.p2max]'), [10, 80, 0.02, 0.5]);
+    assert.deepEqual(['#tMin1', '#tMax1', '#tMin2', '#tMax2'].map(id => +P.$(id).value), [10, 80, 0.02, 0.5]);
+  } finally { P.close(); }
+});
+
+test('Stacks: Cycles on a Hopf point of another diagram brings it to the top first; L2 norm of the whole solution; SVG export has no current-value lines', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example fhn\nview bif\nbifpar i 0 1.6\ntppar eps\npar eps=0.08\ncontinue\npar eps=0.1\ncontinue\ncycles HB1');
+    ok(P);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('eps'))`), 0.08);
+    assert.equal(J(P, `S.bif.cycles[0].params[S.M.parNames.indexOf('eps')]`), 0.08);
+    // L2: over v and w together
+    await P.run('show L2');
+    P.app('render()');
+    assert.equal(P.app('bifYName()'), 'L2 norm');
+    const [nr, all] = J(P, '(()=>{const q=S.bif.cycles[0].pts[3];return[Array.from(q.nr),l2All(q.nr)];})()');
+    assert.ok(Math.abs(all - Math.hypot(nr[0], nr[1])) < 1e-12);
+    const x = J(P, 'Array.from(S.bif.branches[0].pts[0].x)');
+    assert.ok(Math.abs(J(P, 'eqN(S.bif.branches[0].pts[0].x)') - Math.hypot(x[0], x[1])) < 1e-12);
+    // the dashed line at the current parameter value is drawn on screen but not exported
+    await P.run('show hilo\nexport svg b.svg');
+    const svg = P.files.at(-1).data;
+    assert.doesNotMatch(svg, /stroke-dasharray="3,4"|stroke-dasharray="3 4"/);
   } finally { P.close(); }
 });

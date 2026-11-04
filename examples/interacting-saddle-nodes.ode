@@ -1,0 +1,27 @@
+# Interacting saddle-nodes
+# (Ashwin, Postlethwaite and Sieber Nonlinearity 2026 DOI:10.1088/1361-6544/ae788a)
+# 
+init x=1 y=1
+
+# Params
+par mu=-0.005 gamma=3.58
+par alpha=3.1 beta=-1.3
+
+# transform to lambda
+lambda=mu + gamma*(gamma+alpha^2-beta^2)/(alpha+beta)^2
+
+# Equations
+x'=x^2-lambda+2*alpha*y-gamma
+y'=y^2-lambda+2*beta*x+gamma
+
+# plot to vector field
+@ xplot=x, yplot=y
+@ maxstor=10000
+# auto defaults
+@ epsu=0.000001, epss=0.000001
+# Settings written by XPP Studio, 2026-11-04 15:31
+@ meth=dormprince, total=10, dt=0.01, toler=0.000001, bound=10
+@ xp=x, yp=y, xlo=-8.53076, xhi=19.5591, ylo=-13.1545, yhi=5.8955
+@ ds=0.01, dsmin=0.0001, dsmax=0.05, nmax=3000, parmin=-1, parmax=1
+done
+
