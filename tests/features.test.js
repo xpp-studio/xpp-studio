@@ -457,3 +457,59 @@ test('Current periodic orbit is offered for slow and many-peaked cycles too, and
     }
   } finally { P.close(); }
 });
+
+test('Stacked bifurcation diagrams: one panel for each value of the second parameter of the pair', async () => {
+  const P = await openPage();
+  try {
+    await P.run('example snics\nview bif\nbifpar mu -8 4\ntppar gamma\npar gamma=0.6\ncontinue\npar gamma=0\ncontinue');
+    ok(P);
+    P.app('render()');
+    assert.deepEqual(J(P, 'bifGroups().map(g=>g.v)'), [0.6, 0]);
+    assert.equal(P.app('bifStacked()'), true);
+    assert.equal(P.$('#tgStack').hidden, false);
+    assert.equal(J(P, 'S.bifPanels.length'), 2);
+    // a click away from the curves in the upper panel sets mu there and gamma to the panel's value
+    const [x, y] = J(P, '(()=>{const f=S.bifPanels[0].fr;return[f.L+3,f.T+3];})()');
+    P.app(`onPlotClick(${x},${y},false)`);
+    assert.equal(J(P, `S.M.getParam(S.M.parNames.indexOf('gamma'))`), 0.6);
+    // stacking can be turned off and on
+    await P.run('stack off');
+    P.app('render()');
+    assert.equal(P.app('bifStacked()'), false);
+    await P.run('stack on');
+    assert.equal(P.app('bifStacked()'), true);
+    // making mu the second parameter keeps the pair (gamma, mu): curves are grouped by mu, all at the same value
+    await P.run('bifpar gamma');
+    assert.equal(J(P, 'S.tp.p2i'), J(P, `S.M.parNames.indexOf('mu')`));
+    assert.equal(J(P, 'S.bif.stack'), true);
+    // a new pair goes back to one diagram
+    await P.run('bifpar mu\ntppar alpha');
+    assert.equal(J(P, 'S.bif.stack'), false);
+    P.app('render()');
+    assert.equal(P.app('bifStacked()'), false);
+  } finally { P.close(); }
+});
+
+test('Version 1.3 settings: Auto-update tick box, hi-slo-lo by default, no equilibria search for BVPs, new examples', async () => {
+  const P = await openPage();
+  try {
+    assert.equal(P.$('#tgAuto').type, 'checkbox');
+    assert.equal(P.$('#tgAuto').checked, true);
+    P.$('#tgAuto').click();
+    assert.equal(J(P, 'S.auto'), false);
+    assert.match(P.status(), /Auto-update is off/);
+    P.$('#tgAuto').click();
+    assert.equal(J(P, 'S.auto'), true);
+    await P.run('example fhn');
+    assert.equal(J(P, 'S.bif.slow'), true);
+    assert.equal(J(P, 'S.bif.mode'), 'var');
+    const bvp = J(P, "EXAMPLES.find(e=>/BVP|boundary/i.test(e.name)||/^bndry/m.test(e.text)).id");
+    await P.run(`example ${bvp}`);
+    assert.equal(P.$('#eqFind').hidden, true);
+    assert.equal(J(P, 'S.bif.slow'), false);
+    await P.run('example chirikov\ngo');
+    ok(P);
+    assert.equal(J(P, 'S.M.discrete'), true);
+    assert.equal(J(P, "EXAMPLES.find(e=>e.id==='snics').name"), 'Interacting saddle-nodes');
+  } finally { P.close(); }
+});
