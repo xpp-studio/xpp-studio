@@ -7,7 +7,7 @@
 <!--
   XPP Studio — a browser workbench for ODEs, maps and stochastic models that reads XPPAUT .ode files.
   Copyright (C) 2026 the XPP Studio authors.
-  This version (October 2026): Peter Ashwin and Bard Ermentrout, in collaboration with Claude Opus 5.5 (Anthropic).
+  This version (v1.4, November 2026): Peter Ashwin and Bard Ermentrout, in collaboration with Claude Opus 5.5 (Anthropic).
   SPDX-License-Identifier: GPL-3.0-or-later
 
   This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -94,9 +94,9 @@ select{padding-right:4px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 
 /* side tabs */
-.tabs{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:0 4px;flex:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:0 2px;flex:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:none;background:none;border:0;padding:10px 3px 8px;font-family:var(--f-cond);font-size:11.5px;letter-spacing:0;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
+.tab{flex:none;background:none;border:0;padding:10px 2px 8px;font-family:var(--f-cond);font-size:10px;letter-spacing:0;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600}
 .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
 .tabbody{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 /* the script box: a transparent textarea over a bar that marks the command running (or next, or failed) */
@@ -121,6 +121,7 @@ select{padding-right:4px}
 .scrlog{font:11.5px/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:6px 8px;max-height:200px;min-height:60px;overflow:auto;white-space:pre-wrap}
 .scrlog .d{color:var(--muted)}.scrlog .e{color:var(--err)}.scrlog .w{color:var(--accent)}.scrlog .o{color:var(--ink)}.scrlog .h{color:var(--ink);padding:1px 0}
 #scrRec[aria-pressed=true]{color:var(--err);border-color:var(--err)}
+#aniText{flex:1;min-height:260px;width:100%;resize:none;font:12.5px/1.6 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:10px 12px;tab-size:2;white-space:pre;overflow:auto}
 #odeText{flex:1;min-height:300px;width:100%;resize:none;font:12.5px/1.6 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:10px 12px;tab-size:2;white-space:pre;overflow:auto}
 .msgs{display:flex;flex-direction:column;gap:3px;font-size:12.5px}
 .msgs .e{color:var(--err)} .msgs .w{color:var(--warn)} .msgs .o{color:var(--ok)}
@@ -171,6 +172,14 @@ body.running{cursor:progress}
 .wgrid label{font-family:var(--f-mono);font-size:12.5px;font-weight:600;max-width:9ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wgrid .lbl{text-align:center}
 .winpop .note{margin:0;min-height:0}
+.exppop{position:fixed;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px;display:flex;flex-direction:column;gap:2px;width:290px;box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 18%,transparent)}
+.exppop .eh{font:600 10.5px var(--f-cond);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:2px 6px 4px}
+.exppop button{display:grid;grid-template-columns:44px 1fr;gap:2px 8px;align-items:baseline;text-align:left;background:none;border:0;border-radius:5px;padding:6px;cursor:pointer;color:var(--ink);font:inherit}
+.exppop button:hover:not(:disabled),.exppop button:focus-visible{background:var(--accent-soft);outline:none}
+.exppop button b{font:600 12.5px var(--f-mono);color:var(--accent)}
+.exppop button span{font-size:12px;color:var(--ink-2);line-height:1.35}
+.exppop button:disabled{cursor:default;opacity:.5}
+.exppop button:disabled b{color:var(--muted)}
 .notepop{position:fixed;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px;display:flex;flex-direction:column;gap:6px;width:250px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
 .notepop textarea{width:100%;box-sizing:border-box;font:12px/1.35 ui-monospace,Menlo,monospace;resize:vertical;min-height:54px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px}
 .notepop .nprow{display:flex;gap:6px;align-items:center}
@@ -179,6 +188,13 @@ body.running{cursor:progress}
 .hint{position:absolute;bottom:38px;right:14px;font-size:11.5px;color:var(--muted);pointer-events:none;text-align:right}
 .strip{position:relative;height:150px;border-top:1px solid var(--line);flex:none}
 .strip canvas{position:absolute;inset:0;width:100%;height:100%}
+.stripbtn{position:absolute;top:4px;right:8px;z-index:3;padding:1px 8px!important;font-size:11.5px!important;opacity:.9}
+.strippop{position:absolute;right:8px;bottom:calc(100% + 4px);z-index:6;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;min-width:180px;max-height:min(420px,70vh);overflow:auto;box-shadow:0 6px 20px color-mix(in srgb,var(--ink) 14%,transparent);font-size:12.5px}
+.strippop h4{margin:6px 0 3px;font:600 10.5px var(--f-cond);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.strippop h4:first-child{margin-top:0}
+.strippop label{display:flex;gap:6px;align-items:center;padding:1px 0;cursor:pointer;font-family:var(--f-mono);font-size:12px}
+.strippop label i{width:10px;height:3px;border-radius:2px;flex:none}
+.strippop .row{margin-top:6px;gap:6px}
 
 /* inspector */
 .insp .tabbody{gap:16px}
@@ -218,6 +234,8 @@ table.sp th:first-child,table.sp td:first-child{text-align:left}
 table.sp td{padding:4px 3px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
 table.sp tr{cursor:pointer}
 table.sp tr:hover td{background:var(--surface-2)}
+table.sp tr.grp{cursor:default}
+table.sp tr.grp td,table.sp tr.grp:hover td{font:600 11px var(--f-cond);letter-spacing:.04em;color:var(--ink-2);background:var(--surface-2);text-align:left;padding:6px 4px 3px;border-bottom:1px solid var(--line)}
 .tag{font-weight:600}
 .tag.HB{color:var(--hb)} .tag.LP{color:var(--lp)} .tag.BP{color:var(--bp)}
 .tag.BT{color:var(--bt)} .tag.CP{color:var(--cp)} .tag.ZH{color:var(--zh)}
@@ -241,6 +259,11 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
 
 .status{font:12px/1.4 var(--f-mono);color:var(--muted);padding-top:7px;min-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .status.err{color:var(--err)}
+/* while anything is computing, the status line is highlighted, with a pulsing dot */
+.status.busy{color:var(--ink);font-weight:600;background:var(--accent-soft);border-radius:4px;padding:3px 10px 3px 22px;margin-top:4px;position:relative}
+.status.busy::before{content:"";position:absolute;left:8px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--accent);animation:xpsPulse 1s ease-in-out infinite}
+@keyframes xpsPulse{0%,100%{opacity:1}50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.status.busy::before{animation:none}}
 .statusbar{display:flex;align-items:flex-end;gap:8px;min-width:0}
 .statusbar .status{flex:1;min-width:0}
 .statusbar #histBtn,.statusbar #runStop{margin-bottom:1px;flex:none}
@@ -288,12 +311,12 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
   <div class="exsel"><label class="lbl" for="exSel">Model</label><select id="exSel"></select></div>
   <div class="modeltitle" id="modelTitle"></div>
   <div class="runctl" role="group" aria-label="Running">
-    <label class="autoupd" title="Ticked: changing a parameter, an initial value or a numerical setting updates the trajectories at once. Unticked: change as many as you like, then press Run."><input type="checkbox" id="tgAuto" checked> Auto-update</label>
-    <button class="btn small" id="runNow" title="Bring the trajectories up to date with the current parameters, initial values and settings">Run</button>
+    <label class="autoupd" title="Ticked: changing a parameter, an initial value or a numerical setting updates the trajectories at once. Unticked: change as many as you like, then press Update."><input type="checkbox" id="tgAuto" checked> Auto-update</label>
+    <button class="btn small" id="runNow" title="Bring the trajectories up to date with the current parameters, initial values and settings">Update</button>
     <select id="setSel" hidden aria-label="Sets" title="Apply a named set from the equations (XPP's set lines): parameter values, initial values and numerical settings. Choosing one changes them all together."></select>
   </div>
   <div class="spacer"></div>
-  <div class="keys" aria-label="Keyboard shortcuts"><span><kbd>G</kbd>go</span><span><kbd>E</kbd>erase</span><span><kbd>N</kbd>nullclines</span><span><kbd>D</kbd>field</span><span><kbd>F</kbd>fit</span><span><kbd>1</kbd>–<kbd>6</kbd>views</span></div>
+  <div class="keys" aria-label="Keyboard shortcuts"><span><kbd>G</kbd>go</span><span><kbd>E</kbd>erase</span><span><kbd>N</kbd>nullclines</span><span><kbd>D</kbd>field</span><span><kbd>F</kbd>fit</span><span><kbd>1</kbd>–<kbd>7</kbd>views</span></div>
   <button class="btn small" id="aboutBtn" title="Credits and licence">About</button>
 </header>
 
@@ -305,6 +328,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       <button class="tab" role="tab" data-tab="ic" id="tb-ic">Initial</button>
       <button class="tab" role="tab" data-tab="num" id="tb-num">Numerics</button>
       <button class="tab" role="tab" data-tab="scr" id="tb-scr">Script</button>
+      <button class="tab" role="tab" data-tab="ani" id="tb-ani">Animate</button>
     </nav>
     <section class="tabbody" id="tab-eq" hidden>
       <div class="row">
@@ -335,28 +359,38 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <li><code>sin cos tanh exp ln sqrt abs heav max min mod atan2</code>, <code>if(c)then(a)else(b)</code></li>
           <li><code>#@range p lo hi</code> sets a slider range (a comment, so XPPAUT ignores it); <code>#@irange u lo hi</code> gives the initial value of u a slider in the Initial tab</li>
           <li><code>set name {a=1, x=0.5, total=200}</code> a named set of parameter values, initial values and settings, as in XPPAUT; choose it in the Sets menu at the top, or write <code>use name</code> in a script. Axis limits and plotted variables in a set are ignored</li>
-          <li><code>#@do command</code> stores a script command in the file (see the Script tab); <b>Run file script</b> replays them, so an .ode file can carry its own figures</li>
+          <li><code>#@ani line .5;.5;…</code> stores an animation script in the file, one line of it per <code>#@ani</code> line (see the Animate tab); loading the file loads the animation</li>
+          <li><code>#@do command</code> stores a script command in the file (see the Script tab); <b>Load .ode script</b> there puts them in the script box, so an .ode file can carry its own figures</li>
           <li><code>b u-1</code>, <code>b u'-2</code> boundary conditions (also <code>bndry</code>): u is the value at the left end, u' the value at the right end; <code>@ t0=…</code> sets the start time. Turn on Solve BVP above the plot, and in the Bifurcation view Continue BVP follows the solution as a parameter changes, round folds. An unknown parameter is a variable with zero derivative, <code>lam'=0</code></li>
           <li><code>markov z 2</code> followed by rows <code>{0} {kon}</code> and <code>{koff} {0}</code>: a Markov variable; entry (i,j) is the rate of jumping from state i to j</li>
           <li><code>table h % 101 0 6.283 sin(t)</code> samples an expression; <code>table h data.tab</code> reads a file of npts, xlo, xhi, then the values (add files with “Table files”); lookups interpolate linearly</li>
           <li><code>x[1..20]'=-x[j]+x[j-1]</code> arrays: the line is repeated for j = 1…20 and each <code>[expr]</code> becomes its value; <code>%[1..20]</code> … <code>%</code> repeats a block of lines; <code>init x[1..20]=0</code></li>
           <li><code>int{K(t,t',x)}</code> is ∫₀ᵗ K dt′ with the variables at t′; <code>int{K#x}</code> is the convolution ∫₀ᵗ K(t−t′)x(t′)dt′ with K written in t; <code>int[mu]{…}</code> adds the weight (t−t′)^(−mu); <code>u(t)=…int{…}</code> or <code>volterra u=…</code> defines an integral equation; <code>@ vmaxpts=4000</code> sets the memory</li>
           <li><code>delay(x,tau)</code> is x(t − tau); tau may depend on the state. <code>x(0)=sin(t)</code> gives the history for t &lt; 0 (also editable in the Initial tab); otherwise it is constant</li>
+          <li><code>special bob=conv(periodic,N,M,w,u0)</code> (types <code>periodic</code>, <code>zero</code>, <code>even</code>) is the convolution of the N variables u0,u1,… with weights taken from the first 2M+1 values of the table <code>w</code> (for i=−M…M). <code>special bob=mmult(N,M,w,u0)</code> is a matrix product with the table w as the matrix (M rows of N, row by row). Then <code>bob(j)</code> is entry j (0 to N−1, and 0 outside). Computed after the fixed quantities</li>
+          <li><code>sum(lo,hi)of(expr)</code> adds expr for i' = lo, …, hi (integer parts); write the dummy as <code>i'</code>. <code>shift(u0,k)</code> is the variable k places after u0 in its list (fixed quantities and parameters too), so <code>sum(0,50)of(shift(u0,i'))</code> adds u0 … u50. Fixed quantities are computed in file order, as in XPP</li>
           <li><code>global 1 x-1 {x=0;y=y+1}</code>: when x−1 crosses zero upwards (1), downwards (−1) or either way (0), make the assignments; <code>arret=1</code> stops the run</li>
         </ul>
       </details>
     </section>
     <section class="tabbody" id="tab-par" hidden>
-      <div class="row"><span class="note" style="flex:1">Drag a slider: trajectories, nullclines and equilibria update live. To change several values first, untick Auto-update at the top and press Run when ready.</span><button class="btn small" id="parReset">Reset</button></div>
+      <div class="row"><span class="note" style="flex:1">Drag a slider: trajectories, nullclines and equilibria update live. To change several values first, untick Auto-update at the top and press Update when ready.</span><button class="btn small" id="parReset">Reset</button></div>
       <div class="plist" id="parList"></div>
     </section>
     <section class="tabbody" id="tab-ic" hidden>
+      <div id="fmBox"><div class="sech" style="margin-top:0"><span class="lbl">Fill by formula</span></div>
+      <div class="row" style="gap:6px;flex-wrap:nowrap">
+        <input type="text" id="fmVars" class="pval" style="width:84px;text-align:left" placeholder="u[0..49]" spellcheck="false" autocomplete="off" aria-label="Variables to set, such as u[0..49]">
+        <input type="text" id="fmExpr" class="pval" style="flex:1;min-width:0;text-align:left" placeholder="sin(2*pi*[j]/50)" spellcheck="false" autocomplete="off" aria-label="Formula, with [j] for the index">
+        <button class="btn" id="fmGo" title="Set these initial conditions from the formula (XPP: Initialconds › formula). Parameters are not changed.">Set</button>
+      </div>
+      <p class="note" id="fmNote" style="margin:2px 0 8px">Sets the initial conditions from a formula in <code>[j]</code>, with the parameters as they are now. <code>ran(1)</code> gives a new random value each time.</p></div>
       <div class="plist" id="icList"></div>
       <div id="bcBox" hidden><div class="sech" style="margin-top:6px"><span class="lbl">Boundary conditions</span><span class="note" id="bcNote" style="margin-left:6px">residuals of the current trajectory</span></div><div id="bcList"></div></div>
       <div class="row">
         <button class="btn primary" id="icGo">Integrate</button>
         <select id="icDir" aria-label="Direction of integration" title="Direction of integration (also in the Numerics tab)"><option value="f">Forward</option><option value="b">Backward</option><option value="fb">Both</option></select>
-        <button class="btn" id="icLast" title="XPP: Initialconds › Last">Last point → IC</button>
+        <button class="btn primary" id="icLast" title="Set the initial values to the end of the active trajectory (XPP: Initialconds › Last). Recorded in scripts as last">Last point → IC</button>
         <button class="btn" id="icReset">Reset</button>
       </div>
       <p class="note" id="mkNote" hidden></p>
@@ -409,7 +443,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
     </section>
     <section class="tabbody" id="tab-scr" hidden>
       <div class="row">
-        <button class="btn primary" id="scrRun" title="Run the script from the top (Ctrl+Enter); while stepping, run the rest of it">Run</button>
+        <button class="btn primary" id="scrRun" style="min-width:92px;justify-content:center" title="Run the script from the top (Ctrl+Enter); while stepping, run the rest of it">Run</button>
         <button class="btn" id="scrStep1" title="Run the next command only (Ctrl+Shift+Enter). The next command is marked in the script, which you can edit between steps.">Step</button>
         <button class="btn small" id="scrRestart" hidden title="Go back to the first command; the next Step starts from the top">Restart</button>
         <span class="spacer" style="flex:1"></span>
@@ -417,14 +451,36 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
       </div>
       <div class="scred"><div class="scrbar" id="scrBar" aria-hidden="true"></div><textarea id="scrText" spellcheck="false" aria-label="Script" placeholder="# one command per line, e.g.\nexample ml\nview pp\ngrid\nexport svg phase.svg"></textarea></div>
       <div class="row">
-        <button class="btn small" id="scrHelp" title="List every command in the log below">Commands</button>
         <button class="btn small" id="scrEx" title="Replace the script with the Morris–Lecar example">Example</button>
         <button class="btn small" id="scrInsert" title="Store the script in the equations as #@do lines, so the .ode file carries its own figures">Put in .ode</button>
-        <button class="btn small" id="scrOde" title="Run the #@do lines in the equations text">Run file script</button>
+        <button class="btn small" id="scrOde" hidden title="Put the script stored in the equations (its #@do lines) into the script box, ready to Run or Step">Load .ode script</button>
         <button class="btn small" id="scrRestore" hidden title="Put back the script that was cleared when the model changed">Restore old script</button>
       </div>
       <div class="scrlog" id="scrLog" aria-live="polite"></div>
+      <details class="help" id="scrSyntax"><summary>Supported script syntax</summary><ul id="scrSyntaxList"></ul></details>
       <p class="note">A script repeats the same steps as the buttons, so it always gives the same figures. The command running is marked in the script. Exports are saved together at the end, in one zip when there are several.</p>
+    </section>
+    <section class="tabbody" id="tab-ani" hidden>
+      <div class="row">
+        <label class="btn" title="Load an XPPAUT animation file (.ani)">Open .ani<input type="file" id="aniIn" accept=".ani,.txt,text/plain"></label>
+        <button class="btn" id="aniEx" title="Replace the text with a pendulum example">Example</button>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn primary" id="aniApply" title="Ctrl/⌘ + Enter">Apply</button>
+      </div>
+      <textarea id="aniText" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Animation script" placeholder="# one object per line, e.g.&#10;line .5;.5;.5+.4*sin(x);.5-.4*cos(x);$BLACK;3&#10;fcirc .5+.4*sin(x);.5-.4*cos(x);.05;$RED"></textarea>
+      <div class="msgs" id="aniMsgs" role="status"></div>
+      <div class="row"><button class="btn small" id="aniPut" title="Store the animation in the equations as #@ani lines (XPPAUT ignores them), so the .ode file carries its own animation">Put in .ode</button></div>
+      <details class="help"><summary>Animation commands</summary>
+        <ul>
+          <li>One object per line; values are separated by semicolons and may be any expression in the variables, parameters, fixed quantities, aux outputs and <code>t</code>. Commands can be shortened to three letters.</li>
+          <li><code>line x1;y1;x2;y2;color;thick</code> · <code>rline dx;dy;color;thick</code> (from the end of the last line) · <code>rect</code> / <code>frect x1;y1;x2;y2;color</code> · <code>circ</code> / <code>fcirc x;y;r;color</code> · <code>ellip</code> / <code>fellip x;y;rx;ry;color</code></li>
+          <li><code>comet x;y;type;n;color</code> keeps the last n points (type ≥ 0: a line that many pixels wide; type &lt; 0: dots)</li>
+          <li><code>text x;y;string</code> · <code>vtext x;y;string;value</code> · <code>settext size;font;$COLOR</code> (size 0–4, font <code>rom</code> or <code>sym</code>)</li>
+          <li>Colour is a number from 0 (red) to 1 (violet), a formula, or a name such as <code>$BLUE</code>. The thickness needs the colour before it.</li>
+          <li><code>dimension xlo;ylo;xhi;yhi</code> (default 0;0;1;1) · <code>speed ms</code> (pause between frames) · <code>permanent</code> / <code>transient</code> (fixed at the first point / redrawn every frame) · <code>end</code></li>
+          <li>Arrays work as in .ode files: <code>fcirc .05+.04*[0..20];.5*(v[j]+1);.02;1-w[j]</code> is 21 lines. <code>grab</code>, <code>xnull</code> and <code>ynull</code> are ignored for now.</li>
+        </ul>
+      </details>
     </section>
   </aside>
 
@@ -436,6 +492,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button data-view="tc" aria-pressed="false">Time course</button>
         <button data-view="bif" aria-pressed="false">Bifurcation</button>
         <button data-view="tp" aria-pressed="false">Two-parameter</button>
+        <button data-view="an" aria-pressed="false" title="Animate the current trajectory with an XPPAUT-style animation script (Animate tab)">Animate</button>
         <button data-view="ph" aria-pressed="false" title="Phase reduction of a limit cycle: the adjoint Z (phase response), the isostable response I, the Floquet eigenfunction and the correction B of the slowest multiplier, and the interaction function H">Phase reduction</button>
       </div>
       <div class="axes" id="ppAxes"><label class="lbl" for="xSel">x</label><select id="xSel"></select><label class="lbl" for="ySel">y</label><select id="ySel"></select></div>
@@ -470,10 +527,25 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <button class="chip" id="tgField" aria-pressed="false"><i style="background:var(--field)"></i>Direction field</button>
         <button class="chip" id="tgEq" aria-pressed="true"><i style="background:var(--ink);border-radius:50%"></i>Equilibria</button>
       </div>
+      <div class="row" id="anBar" hidden style="flex:1 1 100%;gap:8px;align-items:center">
+        <button class="btn small primary" id="anPlay" style="min-width:56px">Play</button>
+        <button class="btn small" id="anStart" title="Back to the first point">Start</button>
+        <input type="range" id="anSlide" min="0" max="1" step="1" value="0" style="flex:1 1 200px;min-width:120px" aria-label="Time in the trajectory">
+        <span class="note" id="anTime" style="min-width:90px"></span>
+        <select id="anSpd" aria-label="Playback speed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="10">10×</option></select>
+        <label style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="checkbox" id="anLoop" checked> Loop</label>
+        <button class="btn small" id="anExpBtn" title="Save the animation as a GIF or a WebM video">GIF / video…</button>
+      </div>
+      <div class="row" id="anExp" hidden style="flex:1 1 100%;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap">
+        <label>Format <select id="anFmt"><option value="gif">GIF</option><option value="webm">WebM video</option></select></label>
+        <label>Width <select id="anSize"><option>320</option><option selected>480</option><option>640</option><option>800</option><option>1080</option></select> px</label>
+        <label title="How many pictures to make, spread evenly over the whole run">Frames <input type="number" id="anN" value="150" min="2" max="2000" style="width:62px"></label>
+        <label title="Pictures per second of the finished file">Rate <input type="number" id="anFps" value="25" min="1" max="50" style="width:46px"> /s</label>
+        <button class="btn small primary" id="anMake">Make file</button>
+        <span class="note" id="anExpSt"></span>
+      </div>
       <div class="spacer"></div>
-      <button class="btn" id="svgBtn" title="Save the current view as an SVG figure">Export SVG</button>
-      <button class="btn" id="csvBtn" hidden title="Save the data in this view as a CSV table: trajectories in the time course, branches and sweeps in the bifurcation diagram, curves in the two-parameter diagram">Export CSV</button>
-      <button class="btn" id="datBtn" hidden title="Save the same data as .dat files (one per kind of curve): numbers only, no header, space-separated columns, for gnuplot and XPPAUT">Export DAT</button>
+      <button class="btn" id="expBtn" aria-haspopup="true" aria-expanded="false" aria-controls="expPop" title="Save this view: the figure as SVG, or its data as CSV or DAT">Export…</button>
       <button class="btn" id="winBtn" aria-pressed="false" aria-controls="winPop" title="Set the axis limits by hand">Window</button>
       <button class="btn" id="fitBtn" title="Fit the axes to the data (also releases limits set by hand)">Fit</button>
       <button class="btn" id="eraseBtn">Erase</button>
@@ -489,7 +561,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
         <p class="note" id="wMsg">These limits stay put when new results arrive. Fit releases them.</p>
         <div class="row"><button type="button" class="btn small" id="wClose">Close</button><span class="spacer"></span><button type="submit" class="btn small primary" id="wApply">Apply</button></div>
       </form></div>
-    <div class="strip" id="stripWrap"><canvas id="strip" aria-hidden="true"></canvas></div>
+    <div class="strip" id="stripWrap"><canvas id="strip" aria-hidden="true"></canvas><button class="btn small stripbtn" id="stripVarsBtn" aria-expanded="false" aria-controls="stripPop" title="Choose what the time series below the plot shows: variables and auxiliary functions">Variables ▾</button><div class="strippop" id="stripPop" hidden role="group" aria-label="Variables in the time series"></div></div>
   </main>
 
   <aside class="panel insp" aria-label="Inspector">
@@ -508,7 +580,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="bDs">Step ds</label><input type="number" id="bDs" step="any">
           <label for="bStart">Start</label><select id="bStart"></select>
           <label for="bPer" id="lblPer" hidden title="Follow orbits of this period: fixed points of the p-th iterate of the map">Period</label><div id="perBox" hidden><input type="number" id="bPer" min="1" max="24" step="1" style="width:64px"><label id="wrapMinPer" hidden title="Look only for orbits whose least period is the period set here (not orbits of a period that divides it, such as fixed points), and draw a branch only where its orbits have that least period"><input type="checkbox" id="bMinPer"> minimal period only</label></div>
-          <label for="bSlowN" id="lblSlow" hidden title="hi-slo-lo: on each periodic orbit, the points where the phase-space speed has a local minimum below this percentage of the fastest speed on the orbit (5% by default), at most this many, slowest first. They mark where the orbits linger: near an equilibrium (a homoclinic orbit) or the ghost of one (a SNIC)."><span style="color:var(--zh)">●</span> Slow points</label><div id="slowRow" hidden title="hi-slo-lo: on each periodic orbit, the points where the phase-space speed has a local minimum below this percentage of the fastest speed on the orbit (5% by default), at most this many, slowest first. They mark where the orbits linger: near an equilibrium (a homoclinic orbit) or the ghost of one (a SNIC).">≤ <input type="number" id="bSlowN" min="1" max="8" step="1" value="2" aria-label="Most slow points on each orbit">, speed&lt;<input type="number" id="bSlowR" min="0" max="100" step="any" value="5" aria-label="Threshold, as a percentage of the fastest speed on the orbit">% of max</div>
+          <label for="bSlowN" id="lblSlow" hidden title="hi-slo-lo: on each periodic orbit, the points where the phase-space speed has a local minimum below this percentage of the fastest speed on the orbit (5% by default), at most this many, slowest first. They mark where the orbits linger: near an equilibrium (a homoclinic orbit) or the ghost of one (a SNIC). A point is drawn solid where the speed is zero and fades out towards the threshold, so the slowest stand out."><span style="color:var(--zh)">●</span> Slow points</label><div id="slowRow" hidden title="hi-slo-lo: on each periodic orbit, the points where the phase-space speed has a local minimum below this percentage of the fastest speed on the orbit (5% by default), at most this many, slowest first. They mark where the orbits linger: near an equilibrium (a homoclinic orbit) or the ghost of one (a SNIC). A point is drawn solid where the speed is zero and fades out towards the threshold, so the slowest stand out.">≤ <input type="number" id="bSlowN" min="1" max="8" step="1" value="2" aria-label="Most slow points on each orbit">, speed&lt;<input type="number" id="bSlowR" min="0" max="100" step="any" value="5" aria-label="Threshold, as a percentage of the fastest speed on the orbit">% of max</div>
         </div>
         
         <div class="row"><button class="btn primary" id="bBvp" hidden title="Follow the solution of the boundary value problem as the parameter changes: pseudo-arclength continuation in the initial values and the parameter, so it turns round folds">Continue BVP</button><button class="btn primary" id="bRun">Continue equilibria</button><button class="btn" id="bSweep" title="XPP-style range integration">Sweep max/min</button><button class="btn" id="bPO" title="Continue the limit cycle that the active trajectory has settled onto">Limit cycle</button><button class="btn" id="bSkip" hidden title="End this direction or branch and carry on with the rest (Esc). Shift+Esc stops everything.">Skip direction</button></div>
@@ -544,6 +616,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
           <label for="tP2">Parameter 2</label><select id="tP2"></select>
           <label for="tMin2">Range</label><div class="pair"><input type="number" id="tMin2" step="any" aria-label="Parameter 2 minimum"><span>to</span><input type="number" id="tMax2" step="any" aria-label="Parameter 2 maximum"></div>
           <label for="tStart">Start</label><select id="tStart"></select>
+          <label for="tDs" title="First (and typical) arclength step along fold, Hopf and period-doubling curves. Empty: automatic, 1/100 of the smaller of the two ranges when the curve is started. A value set here stays as it is when you pan or zoom.">Step ds</label><input type="number" id="tDs" step="any" min="0" placeholder="auto (range / 100)">
         </div>
         <div class="row"><button class="btn primary" id="tRun">Follow curve</button><button class="btn" id="tSkip" hidden title="End this direction and carry on with the other (Esc). Shift+Esc stops everything.">Skip direction</button><button class="btn small" id="tClear">Clear curves</button><button class="btn small" id="tDel" disabled title="Delete the curve you selected by clicking it (Delete key)">Delete curve</button></div>
         <div class="sech" style="margin-top:10px"><span class="lbl">Slices in a third parameter</span></div>
@@ -571,6 +644,7 @@ table.sp .btn.small{padding:1px 7px;font-size:11px}
     </div>
   </aside>
 </div>
+<div class="exppop" id="expPop" hidden role="menu" aria-label="Export as"></div>
 <div class="statusbar"><footer class="status" id="status" role="status"></footer><button class="btn small" id="runStop" hidden title="Stop the run now: the part already computed is kept">Stop</button><button class="btn small" id="histBtn" title="The history of messages in this status line, with the time of each: view, download or clear it">History</button></div>
 
 <script>
@@ -591,7 +665,8 @@ function tokenize(src){
     const ch=src[i];
     if(/\s/.test(ch)){i++;continue;}
     if(/[0-9.]/.test(ch)){const m=/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(src.slice(i));if(!m)throw new Error(`bad number near "${src.slice(i,i+8)}"`);toks.push({t:'num',v:parseFloat(m[0])});i+=m[0].length;continue;}
-    if(/[a-z_]/i.test(ch)){const m=/^[a-z_][a-z0-9_]*/i.exec(src.slice(i));toks.push({t:'id',v:m[0].toLowerCase()});i+=m[0].length;continue;}
+    if(/[a-z_]/i.test(ch)){const m=/^[a-z_][a-z0-9_]*/i.exec(src.slice(i));const id=m[0].toLowerCase();i+=m[0].length;
+      if(id==='i'&&src[i]==="'"){i++;toks.push({t:'id',v:'__i'});}else toks.push({t:'id',v:id});continue;}
     const two=src.slice(i,i+2);
     if(['<=','>=','==','!=','**','&&','||'].includes(two)){toks.push({t:'op',v:two==='**'?'^':two==='&&'?'&':two==='||'?'|':two});i+=2;continue;}
     if('+-*/^(),<>&|!='.includes(ch)){toks.push({t:'op',v:ch});i++;continue;}
@@ -616,6 +691,7 @@ function parseExpr(src){
     if(t.t==='num')return{k:'num',v:t.v};
     if(t.t==='id'){
       if(t.v==='if'&&isOp('(')){k++;const c=orE();expect(')');expectId('then');expect('(');const a=orE();expect(')');expectId('else');expect('(');const b=orE();expect(')');return{k:'if',c,a,b};}
+      if(t.v==='sum'&&isOp('(')){k++;const lo=orE();expect(',');const hi=orE();expect(')');expectId('of');expect('(');const body=orE();expect(')');return{k:'sum',lo,hi,body};}
       if(isOp('(')){k++;const args=[];if(!isOp(')')){args.push(orE());while(isOp(',')){k++;args.push(orE());}}expect(')');return{k:'call',n:t.v,args};}
       return{k:'id',n:t.v};
     }
@@ -625,6 +701,8 @@ function parseExpr(src){
   if(!toks.length)throw new Error('empty expression');
   const e=orE();if(k<toks.length)throw new Error(`unexpected "${toks[k].v}"`);return e;
 }
+// visit every node of an expression tree
+function astWalk(a,f){if(!a||typeof a!=='object')return;f(a);for(const k of['a','b','c','lo','hi','body'])if(a[k])astWalk(a[k],f);if(a.args)a.args.forEach(x=>astWalk(x,f));}
 function compile(ast,S){
   switch(ast.k){
     case 'num':{const v=ast.v;return()=>v;}
@@ -653,12 +731,34 @@ function compile(ast,S){
       }
       throw new Error('bad operator '+ast.op);
     }
+    case 'sum':{
+      // sum(lo,hi)of(body): i' runs over lo,lo+1,…,hi (integer parts); a sum inside the body has its own i'
+      const lo=compile(ast.lo,S),hi=compile(ast.hi,S),body=compile(ast.body,S);
+      if(ast.lo.k==='num'&&ast.hi.k==='num'){const a=Math.trunc(ast.lo.v),b=Math.trunc(ast.hi.v);
+        astWalk(ast.body,nd=>{if(nd.k==='call'&&nd.n==='shift'&&nd.args.length===2&&nd.args[0].k==='id'&&nd.args[1].k==='id'&&nd.args[1].n==='__i'){
+          const sh=S.shift&&S.shift(nd.args[0].n);
+          if(sh&&(sh.i0+a<0||sh.i0+b>=sh.len))throw new Error(`shift(${nd.args[0].n},i') runs off the end of the list for i' from ${a} to ${b}`);}});}
+      return c=>{const a=Math.trunc(lo(c)),b=Math.trunc(hi(c));if(!Number.isFinite(a)||!Number.isFinite(b)||b-a>1e6)return NaN;
+        const sv=c.iv;let s=0;for(let i=a;i<=b;i++){c.iv=i;s+=body(c);}c.iv=sv;return s;};
+    }
     case 'call':{
+      if(ast.n==='shift'){
+        // shift(name,k): the k-th entry after name in the list it belongs to (u5 and 6 give u11)
+        if(ast.args.length!==2||ast.args[0].k!=='id')throw new Error('shift(name,k) takes a variable name and a number');
+        const nm=ast.args[0].n,sh=S.shift&&S.shift(nm);
+        if(!sh)throw new Error(`shift: "${nm}" is not a variable, fixed quantity or parameter`);
+        const kf=compile(ast.args[1],S);
+        if(ast.args[1].k==='num'){const j=sh.i0+Math.trunc(ast.args[1].v);if(j<0||j>=sh.len)throw new Error(`shift(${nm},${ast.args[1].v}) is off the end of the list`);}
+        return c=>{const j=sh.i0+Math.trunc(kf(c));return j>=0&&j<sh.len?sh.get(c,j):NaN;};
+      }
       const n=ast.n,args=ast.args.map(x=>compile(x,S));
       if(B1[n]){if(args.length!==1)throw new Error(`${n}() takes 1 argument`);const f=B1[n],a=args[0];return c=>f(a(c));}
       if(B2[n]){if(args.length!==2)throw new Error(`${n}() takes 2 arguments`);const f=B2[n],a=args[0],b=args[1];return c=>f(a(c),b(c));}
       const tb=S.table&&S.table(n);
       if(tb){if(args.length!==1)throw new Error(`table ${n}() takes 1 argument`);const a=args[0];return c=>tb.at(a(c));}
+      const sp=S.special&&S.special(n);
+      if(sp){if(args.length!==1)throw new Error(`${n}() takes 1 argument`);const a=args[0],k=sp.k,L=sp.len;
+        return c=>{const j=Math.trunc(a(c));return j>=0&&j<L?c.sp[k][j]:0;};}
       const uf=S.func(n);
       if(uf){
         if(args.length!==uf.args.length)throw new Error(`${n}() takes ${uf.args.length} argument(s)`);
@@ -710,7 +810,7 @@ function expandArrays(text,errors){
   return out;
 }
 function parseSpec(text){
-  const spec={title:'',vars:[],params:[],consts:[],fixed:[],aux:[],funcs:[],derived:[],opts:{},ranges:{},warnings:[],errors:[],fold:[],wiener:[],markov:[],tables:[],volt:[],flags:[],hist:{},iranges:{},bcs:[],sets:[],coupling:[]};
+  const spec={title:'',vars:[],params:[],consts:[],fixed:[],aux:[],funcs:[],derived:[],opts:{},ranges:{},warnings:[],errors:[],fold:[],wiener:[],markov:[],tables:[],volt:[],flags:[],hist:{},iranges:{},bcs:[],sets:[],coupling:[],specials:[]};
   const varInit={};
   const lines=expandArrays(text,spec.errors);spec.expanded=lines.length;
   const constVal=(expr,ln,tv)=>{
@@ -732,7 +832,7 @@ function parseSpec(text){
     const chint=/^\s*#@\s*coupling\s+([a-z_]\w*)\s*:\s*(.+)$/i.exec(raw);
     if(chint){spec.coupling.push({var:chint[1].toLowerCase(),expr:chint[2].trim().toLowerCase(),line:ln});continue;}
     let s=raw;let hi=-1;for(let k=0,dep=0;k<s.length;k++){const ch=s[k];if(ch==='{')dep++;else if(ch==='}')dep=Math.max(0,dep-1);else if(ch==='#'&&!dep){hi=k;break;}}// # inside int{K#u} is a convolution, not a comment
-    if(hi>=0){if(!spec.title&&s.trim().startsWith('#')){const tt=s.trim().replace(/^#+\s*/,'');if(tt)spec.title=tt;}s=s.slice(0,hi);}
+    if(hi>=0){if(!spec.title&&s.trim().startsWith('#')&&!/^#@\s*ani(?![a-z0-9_])/i.test(s.trim())){const tt=s.trim().replace(/^#+\s*/,'');if(tt)spec.title=tt;}s=s.slice(0,hi);}
     s=s.trim();
     if(s.endsWith('\\')){if(!buf)bufLn=ln;buf+=s.slice(0,-1)+' ';continue;}
     let at=ln;if(buf){s=buf+s;at=bufLn;buf='';}
@@ -790,6 +890,15 @@ function parseSpec(text){
       if(spec.sets.some(x=>x.name===m[1]))spec.warnings.push(`Line ${at}: the set “${m[1]}” is defined again; the later definition is used`);
       spec.sets=spec.sets.filter(x=>x.name!==m[1]);spec.sets.push({name:m[1],items,line:at});continue;}
     if(/^set\b/.test(s)){spec.warnings.push(`Line ${at}: a set is written  set name {a=1, b=2}  and this line was skipped`);continue;}
+    if((m=/^special\s+([a-z_]\w*)\s*=\s*(conv|mmult)\s*\((.*)\)\s*$/.exec(s))){
+      // special name=conv(type,N,M,w,u0)   or   special name=mmult(N,M,w,u0)
+      const kind=m[2],a=m[3].split(',').map(x=>x.trim()),want=kind==='conv'?5:4;
+      if(a.length!==want){spec.errors.push(`Line ${at}: ${kind==='conv'?'conv(type,N,M,weights,u0)':'mmult(N,M,weights,u0)'} takes ${want} arguments`);continue;}
+      let type='';if(kind==='conv'){const t0=a.shift()[0];type=t0==='e'?'even':t0==='0'||t0==='z'?'zero':t0==='p'?'periodic':'';
+        if(!type){spec.errors.push(`Line ${at}: the type of a convolution is even, zero (or 0) or periodic`);continue;}}
+      const N=Math.round(constVal(a[0],at)),Mw=Math.round(constVal(a[1],at));
+      if(!(N>=1)||!(Mw>=1)){spec.errors.push(`Line ${at}: ${kind} needs whole numbers N ≥ 1 and M ≥ 1`);continue;}
+      spec.specials.push({name:m[1],kind,type,N,M:Mw,w:a[2],u0:a[3],line:at});continue;}
     if((m=/^(special|export|0=|options|option)\b/.exec(s))){spec.warnings.push(`Line ${at}: "${m[1]}" is not supported yet and was skipped`);continue;}
     if((m=/^([a-z_]\w*)\s*\(\s*t\s*\+\s*1\s*\)\s*=(.+)$/.exec(s))){
       if(spec.vars.find(v=>v.name===m[1])){spec.errors.push(`Line ${at}: "${m[1]}" has two equations`);continue;}
@@ -850,12 +959,12 @@ function parseTableFile(text,name,file){
   return makeTable(npts,xlo,xhi,Float64Array.from(ys),null);
 }
 function buildModel(spec,tableFiles){
-  const ctx={varIdx:new Map(),parIdx:new Map(),fixIdx:new Map(),consts:new Map(),funcs:new Map()};
+  const ctx={varIdx:new Map(),parIdx:new Map(),fixIdx:new Map(),auxIdx:new Map(),consts:new Map(),funcs:new Map(),specials:new Map()};
   spec.vars.forEach((v,i)=>ctx.varIdx.set(v.name,i));
   const pnames=[...spec.params.map(p=>p.name),...spec.derived.map(d=>d.name)];
   pnames.forEach((n,i)=>ctx.parIdx.set(n,i));
   spec.consts.forEach(c=>ctx.consts.set(c.name,c.value));
-  spec.fixed.forEach((f,i)=>ctx.fixIdx.set(f.name,i));
+  spec.fixed.forEach((f,i)=>ctx.fixIdx.set(f.name,i));spec.aux.forEach((a,i)=>ctx.auxIdx.set(a.name,i));(spec.specials||[]).forEach((q,k)=>ctx.specials.set(q.name,{k,len:q.kind==='conv'?q.N:q.M}));
   for(const f of spec.funcs)ctx.funcs.set(f.name,{args:f.args,fn:null});
   const mkIdx=new Map();spec.markov.forEach((q,i)=>mkIdx.set(q.name,i));
   const tbl=new Map();
@@ -866,8 +975,9 @@ function buildModel(spec,tableFiles){
   for(const n of[...ctx.varIdx.keys(),...pnames,...ctx.fixIdx.keys(),...wIdx.keys(),...mkIdx.keys(),...vIdx.keys(),...spec.tables.map(q=>q.name)])if(RESERVED.has(n))throw new Error(`"${n}" is a reserved name`);
   for(const q of mkIdx.keys())if(ctx.varIdx.has(q)||ctx.parIdx.has(q)||wIdx.has(q))throw new Error(`"${q}" is declared as a Markov variable and also used as another name`);
   for(const w of wIdx.keys())if(ctx.varIdx.has(w)||ctx.parIdx.has(w))throw new Error(`"${w}" is declared as a Wiener variable and also used as another name`);
-  const scope=(argNames,noVars)=>({
+  const scope=(argNames,noVars,withAux)=>({
     resolve(n){
+      if(n==='__i')return c=>c.iv;
       if(argNames){const j=argNames.indexOf(n);if(j>=0)return c=>c.a[j];}
       if(n==='t'&&!noVars)return c=>c.t;
       if(n.endsWith('__r')){const b=n.slice(0,-3);if(ctx.varIdx.has(b)&&!noVars){const j=ctx.varIdx.get(b);return c=>c.yr[j];}throw new Error(`"${b}'" is not a state variable`);}
@@ -879,15 +989,23 @@ function buildModel(spec,tableFiles){
       if(/^__vi\d+$/.test(n)&&!noVars){const j=+n.slice(4);return c=>c.vi[j];}
       if(/^__dl\d+$/.test(n)&&!noVars){const j=+n.slice(4);return c=>c.dl[j];}
       if(ctx.fixIdx.has(n)&&!noVars){const j=ctx.fixIdx.get(n);return c=>c.fx[j];}
+      if(withAux&&ctx.auxIdx.has(n)){const j=ctx.auxIdx.get(n);return c=>c.ax[j];}
       if(ctx.parIdx.has(n)){const j=ctx.parIdx.get(n);return c=>c.p[j];}
       if(ctx.consts.has(n)){const v=ctx.consts.get(n);return()=>v;}
       if(n in KCONST){const v=KCONST[n];return()=>v;}
       throw new Error(`unknown name "${n}"`);
     },
+    shift(n){if(noVars)return null;
+      if(ctx.varIdx.has(n))return{i0:ctx.varIdx.get(n),len:spec.vars.length,get:(c,j)=>c.y[j]};
+      if(ctx.fixIdx.has(n))return{i0:ctx.fixIdx.get(n),len:spec.fixed.length,get:(c,j)=>c.fx[j]};
+      if(withAux&&ctx.auxIdx.has(n))return{i0:ctx.auxIdx.get(n),len:spec.aux.length,get:(c,j)=>c.ax[j]};
+      if(ctx.parIdx.has(n))return{i0:ctx.parIdx.get(n),len:pnames.length,get:(c,j)=>c.p[j]};
+      return null;},
     func(n){return ctx.funcs.get(n);},
-    table(n){return tbl.get(n);}
+    table(n){return tbl.get(n);},
+    special(n){return noVars?null:ctx.specials.get(n)||null;}
   });
-  const comp0=(expr,where,argNames,noVars)=>{try{return compile(parseExpr(expr),scope(argNames,noVars));}catch(e){throw new Error(`${where}: ${e.message}`);}};
+  const comp0=(expr,where,argNames,noVars,withAux)=>{try{return compile(parseExpr(expr),scope(argNames,noVars,withAux));}catch(e){throw new Error(`${where}: ${e.message}`);}};
   // Volterra integrals: each int{…} / int[mu]{…} is cut out of its expression and replaced by a slot __vi<k>,
   // which the Volterra stepper fills. int{K#u} is a convolution ∫₀ᵗ K(t−t′)u(t′)dt′ with K written in t;
   // otherwise int{K} is ∫₀ᵗ K(t,t′,state(t′))dt′. int[mu] multiplies the kernel by (t−t′)^(−mu).
@@ -936,7 +1054,7 @@ function buildModel(spec,tableFiles){
     if(/\bdelay\s*\(/.test(expr)){if(argNames||noVars)throw new Error(`${where}: delay(…) can't appear here`);expr=cutDelays(expr,where);}
     return comp0(expr,where,argNames,noVars);};
   // the context object is created before tables, so function tables can read parameters
-  const c={t:0,y:null,p:new Float64Array(pnames.length),fx:new Float64Array(spec.fixed.length),a:null,wv:new Float64Array(wIdx.size),mk:Float64Array.from(spec.markov.map(q=>q.init)),vv:new Float64Array(spec.volt.length),vi:new Float64Array(64),tp:0,dl:new Float64Array(64)};
+  const c={t:0,y:null,p:new Float64Array(pnames.length),fx:new Float64Array(spec.fixed.length),ax:new Float64Array(spec.aux.length),a:null,iv:0,sp:[],wv:new Float64Array(wIdx.size),mk:Float64Array.from(spec.markov.map(q=>q.init)),vv:new Float64Array(spec.volt.length),vi:new Float64Array(64),tp:0,dl:new Float64Array(64)};
   spec.params.forEach((p,i)=>c.p[i]=p.value);
   const autoeval=String(spec.opts.autoeval??'1')!=='0';
   for(const q of spec.tables){
@@ -989,7 +1107,35 @@ function buildModel(spec,tableFiles){
   updDer();
   // fill function tables now, with the parameters as loaded (XPP evaluates tables when the file is read)
   for(const t of tbl.values())t.at(t.xlo);
-  const prep=(t,y)=>{c.t=t;c.y=y;if(nd)fillDl();for(let j=0;j<nf;j++)c.fx[j]=fixFns[j](c);};
+  // special name=conv(type,N,M,w,u0) and special name=mmult(N,M,w,u0): XPP's convolution and matrix product.
+  // They are computed after the fixed quantities, so u0 … can be state variables or fixed quantities; name(j) then reads the result.
+  const spFns=(spec.specials||[]).map((q,k)=>{
+    const at=`Line ${q.line}, special ${q.name}`,tb=tbl.get(q.w);
+    if(!tb)throw new Error(`${at}: "${q.w}" is not a table`);
+    if(ctx.funcs.has(q.name)||tbl.has(q.name)||ctx.varIdx.has(q.name)||ctx.fixIdx.has(q.name)||ctx.parIdx.has(q.name))throw new Error(`${at}: that name is already used`);
+    let fx=false,i0,len;
+    if(ctx.varIdx.has(q.u0)){i0=ctx.varIdx.get(q.u0);len=spec.vars.length;}
+    else if(ctx.fixIdx.has(q.u0)){fx=true;i0=ctx.fixIdx.get(q.u0);len=spec.fixed.length;}
+    else throw new Error(`${at}: "${q.u0}" is not a variable or a fixed quantity`);
+    const N=q.N,Mw=q.M;
+    if(i0+N>len)throw new Error(`${at}: needs ${N} entries starting at ${q.u0}, but only ${len-i0} follow it`);
+    const nw=q.kind==='conv'?2*Mw+1:N*Mw;
+    if(tb.npts<nw)throw new Error(`${at}: needs a table with at least ${nw} points (it has ${tb.npts})`);
+    const out=c.sp[k]=new Float64Array(q.kind==='conv'?N:Mw);
+    // the weights are the table's own values by position, w[i+M] for i=-M..M (the range of the table does not matter), as in XPP
+    const weights=()=>{tb.at(tb.xlo);return tb.ys;};
+    if(q.kind==='mmult')return c=>{const w=weights(),s=fx?c.fx:c.y;for(let j=0;j<Mw;j++){let a=0;const r=j*N;for(let i=0;i<N;i++)a+=w[r+i]*s[i0+i];out[j]=a;}};
+    const ty=q.type,twoN=2*N;
+    return c=>{const w=weights(),s=fx?c.fx:c.y;
+      for(let j=0;j<N;j++){let a=0;
+        if(ty==='zero'){const l0=Math.max(-Mw,-j),l1=Math.min(Mw,N-1-j);for(let i=l0;i<=l1;i++)a+=w[i+Mw]*s[i0+j+i];}
+        else if(ty==='periodic'){for(let i=-Mw;i<=Mw;i++){let l=(j+i)%N;if(l<0)l+=N;a+=w[i+Mw]*s[i0+l];}}
+        else{for(let i=-Mw;i<=Mw;i++){let l=Math.abs(j+i);if(l<twoN){if(l>=N)l=Math.abs(twoN-2-l);if(l<N)a+=w[i+Mw]*s[i0+l];}}}   // even: reflect about 0 and N-1, and 0 beyond 2N
+        out[j]=a;}};
+  });
+  const nsp=spFns.length;
+  for(const f of spec.fixed)for(const q of spec.specials||[])if(new RegExp('\\b'+q.name+'\\s*\\(').test(f.expr)){spec.warnings.push(`Line ${f.line}: ${f.name} uses ${q.name}, but special functions are computed after the fixed quantities, so it sees the values from the previous step`);break;}
+  const prep=(t,y)=>{c.t=t;c.y=y;if(nd)fillDl();for(let j=0;j<nf;j++)c.fx[j]=fixFns[j](c);for(let k=0;k<nsp;k++)spFns[k](c);};
   const evalF=(t,y,dy)=>{prep(t,y);for(let i=0;i<n;i++)dy[i]=rhsFns[i](c);};
   const disc=!!spec.discrete;
   return{
@@ -1005,6 +1151,9 @@ function buildModel(spec,tableFiles){
     map:evalF,
     rhs:disc?(t,y,dy)=>{evalF(t,y,dy);for(let i=0;i<n;i++)dy[i]-=y[i];}:evalF,
     aux(t,y,out){prep(t,y);for(let j=0;j<na;j++)out[j]=auxFns[j](c);},
+    // animation: setFrame puts the model in state (t,y); animExpr compiles an expression that reads that state
+    setFrame(t,y){prep(t,y);for(let j=0;j<na;j++)c.ax[j]=auxFns[j](c);},
+    animExpr(src,where){const f=comp0(String(src),where||'animation',null,false,true);return()=>f(c);},
     hasDelay:nd>0,nd,delayNames:[...new Set(dls.map(d=>`delay(${d.name}, ${d.src})`))],
     setHistory(fn){histGet=fn;},
     // linearisation of a delay equation at an equilibrium x: f ≈ A0·u(t) + Σ B_k·u(t − tau_k)
@@ -2313,6 +2462,135 @@ function poSpecial(pts){
   // a planar flow is orientable: its nontrivial multiplier is positive, so PD or TR there can only be numerical noise
   return findSpecialMap(P).filter(s=>!(planar&&(s.type==='PD'||s.type==='NS'))).map(s=>({...s,type:REN[s.type],k:s.k+off,T:P[s.k].T+s.t*(P[s.k+1].T-P[s.k].T)}));
 }
+
+// ---- animation scripts: XPPAUT's .ani language (every command abbreviates to its first three letters) ----
+// parseAni compiles a script against a model; aniDraw draws one frame. Neither touches the page, so both can be tested alone.
+const ANI_CMD={dim:'dimension',spe:'speed',tra:'transient',per:'permanent',lin:'line',rli:'rline',rec:'rect',fre:'frect',cir:'circ',fci:'fcirc',
+  ell:'ellip',fel:'fellip',com:'comet',tex:'text',vte:'vtext',set:'settext',xnu:'xnull',ynu:'ynull',gra:'grab',end:'end',don:'end'};
+const ANI_ARGS={line:[4,4,5],rline:[2,2,3],rect:[4,4,5],frect:[4,4,-1],circ:[3,3,4],fcirc:[3,3,-1],ellip:[4,4,5],fellip:[4,4,-1],comet:[4,4,-1]};
+const ANI_COL={white:'#ffffff',red:'#e02020',redorange:'#ec4a1a',orange:'#f28a00',yelloworange:'#f5b800',yellow:'#e6d300',yellowgreen:'#8fc230',
+  green:'#1b9e2f',bluegreen:'#10a08e',blue:'#1f4fd8',purple:'#7a2fbd',black:'#000000'};
+const ANI_GREEK={a:'α',b:'β',g:'γ',d:'δ',e:'ε',z:'ζ',h:'η',q:'θ',i:'ι',k:'κ',l:'λ',m:'μ',n:'ν',x:'ξ',o:'ο',p:'π',r:'ρ',s:'σ',t:'τ',u:'υ',f:'φ',c:'χ',y:'ψ',w:'ω',
+  A:'Α',B:'Β',G:'Γ',D:'Δ',E:'Ε',Z:'Ζ',H:'Η',Q:'Θ',I:'Ι',K:'Κ',L:'Λ',M:'Μ',N:'Ν',X:'Ξ',O:'Ο',P:'Π',R:'Ρ',S:'Σ',T:'Τ',U:'Υ',F:'Φ',C:'Χ',Y:'Ψ',W:'Ω'};
+function parseAni(text,M){
+  const P={items:[],speed:20,dim:[0,0,1,1],errors:[],notes:[]};
+  const lines=expandArrays(text,P.errors);
+  let perm=false;const noted=new Set();
+  const note=(k,msg)=>{if(!noted.has(k)){noted.add(k);P.notes.push(msg);}};
+  const ex=(s,ln)=>{const q=String(s).trim();if(!q)throw new Error(`Line ${ln}: a value is missing`);return M.animExpr(q,`Line ${ln}`);};
+  const colour=(s,ln)=>{const q=String(s==null?'':s).trim();if(!q)return null;
+    if(q[0]==='$'){const nm=q.slice(1).toLowerCase();if(!ANI_COL[nm])throw new Error(`Line ${ln}: unknown colour ${q}`);return{name:nm};}
+    return{fn:ex(q,ln)};};
+  for(const{s,ln}of lines){
+    const L=s.trim();if(!L||L[0]==='#'||L[0]==='{')continue;     // {…} lines are the bodies of grab commands
+    const m=/^([A-Za-z]+)\s*(.*)$/.exec(L);
+    if(!m){P.errors.push(`Line ${ln}: can't read "${L.slice(0,30)}"`);continue;}
+    const cmd=ANI_CMD[m[1].slice(0,3).toLowerCase()],a=m[2];
+    if(!cmd){P.errors.push(`Line ${ln}: unknown command "${m[1]}"`);continue;}
+    if(cmd==='end')break;
+    try{
+      if(cmd==='transient'){perm=false;continue;}
+      if(cmd==='permanent'){perm=true;continue;}
+      if(cmd==='grab'){note('grab','grab (dragging objects) is not supported yet, so those lines are ignored');continue;}
+      if(cmd==='xnull'||cmd==='ynull'){note('null','xnull and ynull (nullcline ranges) are not supported and are ignored');continue;}
+      if(cmd==='speed'){const v=parseFloat(a);if(!(v>=0))throw new Error(`Line ${ln}: speed needs a number of milliseconds`);P.speed=v;continue;}
+      if(cmd==='dimension'){const d=a.split(';').map(x=>ex(x,ln)());if(d.length<4||d.some(v=>!Number.isFinite(v))||!(d[2]>d[0])||!(d[3]>d[1]))throw new Error(`Line ${ln}: dimension needs xlo;ylo;xhi;yhi with xlo<xhi and ylo<yhi`);P.dim=d.slice(0,4);continue;}
+      if(cmd==='settext'){const w=a.split(';').map(x=>x.trim());if(w.length<3)throw new Error(`Line ${ln}: settext needs size;font;color`);
+        const sz=Math.max(0,Math.min(4,Math.round(parseFloat(w[0]))));if(!Number.isFinite(sz))throw new Error(`Line ${ln}: the text size must be 0 to 4`);
+        const cl=colour(w[2],ln);if(!cl||!cl.name)throw new Error(`Line ${ln}: the text colour must be a name such as $BLACK`);
+        P.items.push({k:'settext',size:sz,sym:/^s/i.test(w[1]),col:cl,perm,ln});continue;}
+      if(cmd==='text'||cmd==='vtext'){
+        const w=a.split(';');
+        if(cmd==='text'){if(w.length<3)throw new Error(`Line ${ln}: text needs x;y;string`);P.items.push({k:'text',f:[ex(w[0],ln),ex(w[1],ln)],str:w.slice(2).join(';'),perm,ln});}
+        else{if(w.length<4)throw new Error(`Line ${ln}: vtext needs x;y;string;value`);P.items.push({k:'vtext',f:[ex(w[0],ln),ex(w[1],ln),ex(w[w.length-1],ln)],str:w.slice(2,-1).join(';'),perm,ln});}
+        continue;}
+      const[nc,ci,ti]=ANI_ARGS[cmd],w=a.split(';').map(x=>x.trim());
+      if(w.length<nc)throw new Error(`Line ${ln}: ${cmd} needs ${nc} values separated by semicolons`);
+      const it={k:cmd,f:w.slice(0,nc).map(x=>ex(x,ln)),col:colour(w[ci],ln),th:ti>0&&w[ti]?ex(w[ti],ln):null,perm,ln};
+      P.items.push(it);
+    }catch(e){P.errors.push(e.message);}
+  }
+  return P;
+}
+// hue 0 = red … 1 = violet, as in XPP
+function aniColour(cl,v){
+  if(!cl)return'#000000';if(cl.name)return ANI_COL[cl.name];
+  const x=Math.max(0,Math.min(1,Number.isFinite(v)?v:0));return`hsl(${Math.round(270*x)},88%,46%)`;}
+// Draw one frame. box={x,y,w,h} in pixels; fr={t,y,t0,y0,back(k)} gives the state now, at the first point and k frames earlier.
+function aniDraw(ctx,P,M,box,fr){
+  const[xlo,ylo,xhi,yhi]=P.dim,s=Math.min(box.w/(xhi-xlo),box.h/(yhi-ylo)),W=s*(xhi-xlo),H=s*(yhi-ylo);
+  const X0=box.x+(box.w-W)/2,Y0=box.y+(box.h-H)/2,px=x=>X0+(x-xlo)*s,py=y=>Y0+H-(y-ylo)*s;
+  ctx.save();ctx.fillStyle='#ffffff';ctx.fillRect(X0,Y0,W,H);
+  ctx.beginPath();ctx.rect(X0,Y0,W,H);ctx.clip();
+  const V=new Array(P.items.length);
+  const evalPass=wantPerm=>{for(let i=0;i<P.items.length;i++){const it=P.items[i];if(!it.f||!!it.perm!==wantPerm)continue;
+    V[i]={a:it.f.map(f=>f()),c:it.col&&it.col.fn?it.col.fn():0,th:it.th?it.th():0};}};
+  if(P.items.some(it=>it.f&&it.perm)){M.setFrame(fr.t0,fr.y0);evalPass(true);}
+  M.setFrame(fr.t,fr.y);evalPass(false);
+  // comets: the path of (x,y) over the last n frames, found by evaluating at the earlier frames
+  P.items.forEach((it,i)=>{if(it.k!=='comet'||!V[i])return;const n=Math.max(1,Math.min(500,Math.round(V[i].a[3])||1)),pts=[];
+    for(let k=0;k<n;k++){const st=fr.back(k);M.setFrame(st.t,st.y);pts.push([it.f[0](),it.f[1]()]);}
+    V[i].pts=pts;});
+  M.setFrame(fr.t,fr.y);
+  let last=[0,0],fs=1,sym=false,tcol='#000000';
+  const K=box.k||1,SZ=[9,11,14,18,24].map(z=>z*K),lw=th=>Math.max(1,Number.isFinite(th)?th:1)*K;
+  const stroke=(v,it)=>{ctx.strokeStyle=aniColour(it.col,v.c);ctx.lineWidth=lw(v.th);ctx.lineJoin='round';ctx.stroke();};
+  const fill=(v,it)=>{ctx.fillStyle=aniColour(it.col,v.c);ctx.fill();};
+  const ell=(cx,cy,rx,ry)=>{ctx.beginPath();for(let j=0;j<=48;j++){const q=2*Math.PI*j/48,x=cx+rx*Math.cos(q),y=cy+ry*Math.sin(q);j?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();};
+  const font=()=>`${SZ[fs]}px "Times New Roman", Times, serif`;
+  P.items.forEach((it,i)=>{
+    const v=V[i],a=v&&v.a;
+    switch(it.k){
+      case'settext':fs=it.size;sym=it.sym;tcol=ANI_COL[it.col.name];break;
+      case'line':ctx.beginPath();ctx.moveTo(px(a[0]),py(a[1]));ctx.lineTo(px(a[2]),py(a[3]));stroke(v,it);last=[a[2],a[3]];break;
+      case'rline':{const x=last[0]+a[0],y=last[1]+a[1];ctx.beginPath();ctx.moveTo(px(last[0]),py(last[1]));ctx.lineTo(px(x),py(y));stroke(v,it);last=[x,y];break;}
+      case'rect':ctx.beginPath();ctx.rect(Math.min(px(a[0]),px(a[2])),Math.min(py(a[1]),py(a[3])),Math.abs(px(a[2])-px(a[0])),Math.abs(py(a[3])-py(a[1])));stroke(v,it);break;
+      case'frect':ctx.fillStyle=aniColour(it.col,v.c);ctx.fillRect(Math.min(px(a[0]),px(a[2])),Math.min(py(a[1]),py(a[3])),Math.abs(px(a[2])-px(a[0])),Math.abs(py(a[3])-py(a[1])));break;
+      case'circ':ctx.beginPath();ctx.arc(px(a[0]),py(a[1]),Math.abs(a[2])*s,0,2*Math.PI);stroke(v,it);break;
+      case'fcirc':ctx.beginPath();ctx.arc(px(a[0]),py(a[1]),Math.abs(a[2])*s,0,2*Math.PI);fill(v,it);break;
+      case'ellip':ell(px(a[0]),py(a[1]),Math.abs(a[2])*s,Math.abs(a[3])*s);stroke(v,it);break;
+      case'fellip':ell(px(a[0]),py(a[1]),Math.abs(a[2])*s,Math.abs(a[3])*s);fill(v,it);break;
+      case'comet':{const ty=a[2],col=aniColour(it.col,v.c);
+        if(ty<0){ctx.fillStyle=col;for(const q of v.pts){ctx.beginPath();ctx.arc(px(q[0]),py(q[1]),Math.max(1,-ty)*K,0,2*Math.PI);ctx.fill();}}
+        else{ctx.beginPath();v.pts.forEach((q,j)=>j?ctx.lineTo(px(q[0]),py(q[1])):ctx.moveTo(px(q[0]),py(q[1])));ctx.strokeStyle=col;ctx.lineWidth=Math.max(1,ty)*K;ctx.lineJoin='round';ctx.stroke();}
+        break;}
+      case'text':case'vtext':{
+        let str=it.str;if(sym)str=str.replace(/[A-Za-z]/g,ch=>ANI_GREEK[ch]||ch);
+        if(it.k==='vtext'){const z=a[2];str+=Number.isFinite(z)?String(+z.toPrecision(5)):'NaN';}
+        ctx.font=font();ctx.fillStyle=tcol;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(str,px(a[0]),py(a[1]));break;}
+    }
+  });
+  ctx.restore();
+  ctx.strokeStyle='#9aa0a6';ctx.lineWidth=1;ctx.strokeRect(X0+.5,Y0+.5,W-1,H-1);
+}
+
+// "Fill by formula" for initial conditions. range is u[0..49] (or one name such as u3); the formula may use [j] and [j+1] as in the model file,
+// the parameters now in force, the other variables at their present initial values, and ran(1). Returns the new initial conditions, or an error.
+function fillIC(M,ic,range,formula,t0){
+  range=String(range||'').trim().toLowerCase();formula=String(formula||'').trim();
+  if(!range||!formula)return{error:'Give the variables, such as u[0..49], and a formula'};
+  if(/\[\s*[^\]]*\]/.test(range)&&!/\[\s*-?\d+\s*\.\.\s*-?\d+\s*\]/.test(range))return{error:'Write one variable as u3, or a range as u[0..49]'};
+  const errs=[],lines=expandArrays(`${range}=${formula}`,errs);
+  if(errs.length)return{error:errs[0].replace(/^Line \d+: /,'')};
+  const y=Float64Array.from(ic),vals=[];M.setFrame(t0||0,y);
+  for(const{s}of lines){
+    const m=/^([a-z_]\w*)\s*=([\s\S]+)$/i.exec(s.trim());if(!m)return{error:`Can't read "${s.slice(0,30)}"`};
+    const i=M.varNames.indexOf(m[1].toLowerCase());if(i<0)return{error:`There is no variable called ${m[1]}`};
+    let v;try{v=M.animExpr(m[2],'Formula')();}catch(e){return{error:e.message};}
+    if(!Number.isFinite(v))return{error:`The formula gives ${v} for ${m[1]}`};
+    vals.push([i,v]);
+  }
+  const out=Float64Array.from(ic);for(const[i,v]of vals)out[i]=v;
+  return{ic:out,n:vals.length};
+}
+
+// does the model have an array of state variables (u0,u1,u2,… : three or more in a row)? Only then is Fill by formula shown.
+function icHasArray(M){
+  const by=new Map();
+  M.varNames.forEach(nm=>{const m=/^([A-Za-z_]+)(\d+)$/.exec(nm);if(!m)return;if(!by.has(m[1]))by.set(m[1],new Set());by.get(m[1]).add(+m[2]);});
+  for(const js of by.values()){let run=0,best=0;for(const j of [...js].sort((a,b)=>a-b)){run=js.has(j-1)&&run?run+1:1;best=Math.max(best,run);}if(best>=3)return true;}
+  return false;
+}
 // ==CORE END==
 const CORE={tokenize,parseExpr,compile,parseSpec,buildModel,integrate,newton,numJac,eigvals,classify,eigvec,march,continueBoth,findSpecial,solve,METH};
 
@@ -2495,6 +2773,24 @@ init th=0,v=2.5
 @ fold=th,tor_per=6.283185307
 @ total=100,dt=0.05,xp=th,yp=v
 @ xlo=0,xhi=6.2832,ylo=-2,yhi=4
+done
+`},
+{id:'pendani',name:'Damped pendulum with animation',text:`# a damped pendulum with its animation stored in the file
+th'=v
+v'=-mu*v-sin(th)
+par mu=0.15
+init th=2.6,v=0
+#@range mu 0 1
+@ total=40,dt=0.05
+#@ani permanent
+#@ani line 0;.5;1;.5;$BLACK;2
+#@ani transient
+#@ani comet .5+.4*sin(th);.5-.4*cos(th);-2;60;$ORANGE
+#@ani line .5;.5;.5+.4*sin(th);.5-.4*cos(th);$BLUE;3
+#@ani fcirc .5+.4*sin(th);.5-.4*cos(th);.05;$RED
+#@ani settext 1;rom;$BLACK
+#@ani vtext .05;.92;t=;t
+#@ani end
 done
 `},
 {id:'forced',name:'Forced phase oscillator (Arnold tongues)',text:`# Forced phase oscillator on a torus: Arnold tongues
@@ -2688,6 +2984,31 @@ init w[1..20]=-0.62
 @ xlo=-2.5,xhi=2.5,ylo=-2.5,yhi=2.5
 done
 `},
+{id:'ring',name:'Ring of 50 rate units with a convolution (special conv)',text:`# A ring of 50 rate units coupled by a convolution (special conv)
+# w(i) is the weight from the unit i places away, i=-M..M, and the ring is periodic. The table is recomputed when sig changes.
+@ autoeval=1
+table w % 21 -10 10 exp(-abs(t)/sig)/(2*sig)
+special bob=conv(periodic,50,10,w,u0)
+par g=3,sig=4
+#@range g 0 6
+#@range sig 1 10
+u[0..49]'=-u[j]+g*tanh(bob([j]))
+u[0..49](0)=ran(1)-.5
+@ total=200
+done
+`},
+{id:'wcfront',name:'Wilson–Cowan wave front (convolution and animation)',text:`# Wilson-Cowan wave front: a stimulus at the left end recruits its neighbours (special conv, with an animation)
+f(u)=1/(1+exp(-a*(u-b)))
+table w % 41 -20 20 exp(-abs(t)/sig)/(2*sig)
+special wu=conv(even,100,20,w,u0)
+par a=20,b=.25,sig=5
+init u[0..10]=1
+u[0..99]'=-u[j]+f(wu([j]))
+@ total=20
+#@ani fcirc [0..99]/100;u[j];.02;$BLACK
+#@ani end
+done
+`},
 {id:'hutch',name:'Delayed logistic equation (delay)',text:`# Hutchinson's delayed logistic equation  x' = r x (1 - x(t-tau))
 # The equilibrium x=1 loses stability in a Hopf bifurcation at r*tau = pi/2.
 # x(0)=... with t gives the history for t<0; xlag is the delayed value, for the phase plane.
@@ -2816,7 +3137,8 @@ const S={
   num:{method:'rk4',T:20,dt:0.05,tol:1e-6,bound:1e4,back:false,dir:'f',res:140,sweepN:120,trans:0,t0:0},
   cont:{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300},
   trajs:[],active:-1,colorK:0,eqs:[],eqSel:-1,
-  ver:0,ncCache:null,ncKey:'',lastFrame:null,interacting:false,hover:null
+  ver:0,ncCache:null,ncKey:'',lastFrame:null,interacting:false,hover:null,
+  an:{text:'',prog:null,M:null,f:0,playing:false,mult:1,loop:true,sig:'',last:0,errs:[],buf:null,info:null}
 };
 
 /* ======================= helpers ======================= */
@@ -2912,10 +3234,31 @@ function resetAll(){
   for(const[id,v]of[['#tgLegend',false],['#tgCurveCol',false],['#tgEqual',false],['#tgField',false],['#tgEq',true],['#tgSpin',false],['#tgSpec',false],['#tgLog',false],['#tgSmooth',false],['#tgST',false]]){const b=$(id);if(b)b.setAttribute('aria-pressed',v);}
   SCRIPT.stepper=null;SCRIPT.rec=false;SCRIPT.cleared=null;$('#scrRec').setAttribute('aria-pressed',false);$('#scrRec').textContent='Record';
   $('#scrRestart').hidden=true;$('#scrRestore').hidden=true;scrMark(null);$('#scrLog').replaceChildren();$('#scrText').value=SCRIPT_EXAMPLE;
-  S.modelSig=null;S.view='pp';S.autoPref=true;
+  S.modelSig=null;S.modelTitle='';S.view='pp';S.autoPref=true;if(keepSheet){keepSheet.remove();keepSheet=null;}
   const text=EXAMPLES[0].text;$('#odeText').value=text;loadModel(text);syncExampleSel(text);
-  setView('pp');setTab('par');buildTpControls();updateToolbar();requestRender();
+  setView('pp');setTab('eq');buildTpControls();updateToolbar();requestRender();
   status('Reset: XPP Studio is as it is when first opened');
+}
+// a script belongs to a model: when a different model is loaded, ask whether to keep the script in the box
+let keepSheet=null;
+function askKeepScript(oldTitle,newTitle,own){
+  if(keepSheet)keepSheet.remove();const ta=$('#scrText');if(!ta.value.trim())return;
+  const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':'Keep the script?'});keepSheet=sh;
+  const done=v=>{sh.remove();keepSheet=null;document.removeEventListener('keydown',key,true);
+    if(v==='keep'){status('Script kept: it was written for '+oldTitle+', so check that its commands suit '+newTitle);return;}
+    SCRIPT.cleared=ta.value;$('#scrRestore').hidden=false;
+    if(v==='own'){ta.value=`# the script stored in the .ode file (its #@do lines)\napply\n${own}\n`;status('Script replaced by the one stored in the equations; Restore old script brings the old one back');}
+    else{ta.value='';status('Script cleared; Restore old script in the Script tab brings it back');}
+    store.set('xpps-script',ta.value);SCRIPT.stepper=null;$('#scrRestart').hidden=true;scrMark(null);};
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();done('keep');}};
+  const keep=el('button',{class:'btn primary',text:'Keep the script',onclick:()=>done('keep')});
+  sh.append(el('div',{class:'about'},el('h3',{text:'A different model: keep the script?'}),
+    el('p',{text:`The Script tab holds a script that was written for ${oldTitle}. Its commands may not suit ${newTitle}.${own?' The new equations carry a script of their own (#@do lines).':''}`}),
+    el('div',{class:'row'},el('span',{style:'flex:1'}),
+      ...(own?[el('button',{class:'btn',text:'Use the .ode script',onclick:()=>done('own')})]:[]),
+      el('button',{class:'btn',text:'Clear it',onclick:()=>done('clear')}),keep)));
+  sh.addEventListener('click',e=>{if(e.target===sh)done('keep');});document.addEventListener('keydown',key,true);
+  document.body.append(sh);keep.focus();
 }
 function caseClashes(text){
   const seen=new Map();
@@ -2981,7 +3324,7 @@ function loadModel(text,{fromUser}={}){
   const rk=Object.keys(spec.ranges).filter(n=>M.parNames.includes(n));
   const bp=rk.length?M.parNames.indexOf(rk[0]):-1;S.bif.mode='var';S.bif.pi=bp>=0?bp:0;S.bif.vi=Math.max(0,M.varNames.findIndex((_,i)=>!M.fold[i]));S.bif.period=1;S.bif.minPer=false;S.bif.slow=!M.discrete&&!(M.nbc>0);S.bif.slowN=2;S.bif.slowR=0.05;S.bif.stack=true;S.bif.tabK=null;{const a=document.getElementById('bSlowN'),b=document.getElementById('bSlowR');if(a)a.value=2;if(b)b.value=5;}S.bif.bvps=[];S.bif.branches=[];S.bif.sweeps=[];S.bif.cycles=[];S.bif.picked=[];S.bif.conns=[];S.bif.connCand=[];{const b=document.getElementById('cFind');if(b)b.classList.remove('attn');}
   {const a=parseFloat(o.parmin),b=parseFloat(o.parmax);if(Number.isFinite(a)&&Number.isFinite(b)&&b>a&&!spec.ranges[M.parNames[S.bif.pi]])S.ranges[S.bif.pi]={min:a,max:b};}
-  {const v=parseFloat(o.ds);S.bif.dsFile=Number.isFinite(v)&&v>0?v:null;}
+  {const v=parseFloat(o.ds);S.bif.dsFile=Number.isFinite(v)&&v>0?v:null;S.bif.dsHand=false;S.tp.ds=null;{const e=document.getElementById('tDs');if(e)e.value='';}}
   setBifRange();
   {const C=S.cont,pv=k=>{const v=parseFloat(o[k]);return Number.isFinite(v)&&v>0?v:null;};
     Object.assign(C,{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300});
@@ -2997,9 +3340,10 @@ function loadModel(text,{fromUser}={}){
   { // a script belongs to a model: clear it when a different model is loaded (not while recording or running a script)
     const sig=(spec.title||'')+'|'+M.varNames.join(',');
     if(S.modelSig&&S.modelSig!==sig&&!SCRIPT.running&&!SCRIPT.rec){const ta=$('#scrText');
-      if(ta&&ta.value.trim()){SCRIPT.cleared=ta.value;ta.value='';store.set('xpps-script','');$('#scrRestore').hidden=false;msgs.push(['w','The script was cleared because a different model was loaded; Restore old script in the Script tab brings it back.']);}}
-    S.modelSig=sig;
+      if(ta&&ta.value.trim()){const oldTitle=S.modelTitle||'the previous model',own=odeScript(text).trim();setTimeout(()=>askKeepScript(oldTitle,spec.title||'this model',own),0);}}
+    S.modelSig=sig;S.modelTitle=spec.title||'';
   }
+  anModelLoaded(text,(spec.title||'')+'|'+M.varNames.join(','),msgs);odeScriptBtn();
   buildAll();
   {const cc=caseClashes(text);if(cc.length)msgs.push(['w',`Names are not case-sensitive in .ode files (as in XPPAUT), so ${cc.slice(0,4).map(g=>g.join(' and ')).join(', ')}${cc.length>4?', …':''} ${cc.length===1&&cc[0].length===2?'are':'are each'} the same name. Rename one of them if they should differ.`]);}
   msgs.unshift(['o',`Loaded ${M.n} variable${M.n===1?'':'s'}${M.nv?`, ${M.nv} Volterra variable${M.nv===1?'':'s'}`:''}, ${M.parNames.length} parameter${M.parNames.length===1?'':'s'}${M.naux?`, ${M.naux} aux`:''}.`]);
@@ -3013,7 +3357,7 @@ function loadModel(text,{fromUser}={}){
   if(!S.pp.win)fitPP(true);
   computeEquilibria();refreshEqList();
   fitTC();
-  if(heldBack)status(`${spec.title||'Model'} ready · Auto-update is off${S.autoPref?` for a system of ${M.n} variables`:''}: press Run (or Integrate) to compute trajectories`);else
+  if(heldBack)status(`${spec.title||'Model'} ready · Auto-update is off${S.autoPref?` for a system of ${M.n} variables`:''}: press Update (or Integrate) to compute trajectories`);else
   status(`${spec.title||'Model'} ready · ${M.nbc>0?'boundary value problem: turn on Solve BVP above the plot, or press Integrate to run from the initial values':M.hasVolt&&M.n<2?'trajectories start at t = 0 from the values in the Initial tab':'click the phase plane to start trajectories'}`);
   requestRender();
   return true;
@@ -3021,7 +3365,8 @@ function loadModel(text,{fromUser}={}){
 function setBifRange(){
   if(!S.M||!S.M.parNames.length)return;
   // the file's ds (@ ds=) for every parameter, otherwise 1/150 of the parameter's range
-  const r=S.ranges[S.bif.pi];S.bif.pmin=r.min;S.bif.pmax=r.max;S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));
+  // a step set by hand (in the Bifurcation panel, the Numerics tab or a script) is kept until the bifurcation parameter changes
+  const r=S.ranges[S.bif.pi];S.bif.pmin=r.min;S.bif.pmax=r.max;if(!S.bif.dsHand)S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));
 }
 function setP2(q){
   S.tp.p2i=q;const r=S.ranges[q];if(!r)return;S.tp.p2min=r.min;S.tp.p2max=r.max;
@@ -4057,7 +4402,7 @@ function updateRunUI(){
   const has=S.trajs.some(t=>!t.kind);
   $('#runNow').classList.toggle('primary',!!S.stale);
   const bd=$('#staleBadge');bd.hidden=!S.stale;
-  bd.textContent=has?'Out of date: press Run':'Not run yet: press Run';
+  bd.textContent=has?'Out of date: press Update':'Not run yet: press Update';
 }
 function markStale(kind){S.pend[kind]=true;S.stale=true;updateRunUI();requestRender();}
 // everything a parameter or setting change touches, as the slider drag does it, but in time slices
@@ -4065,7 +4410,7 @@ async function liveUpdateAsync(){
   S.ver++;
   const r=await runJob(jb=>rerunAllG(jb));
   if(r===CANCELLED)return false;
-  if(RUN.stopped){markStale('live');status('Stopped: the curves are not complete. Press Run to compute them again');requestRender();return false;}
+  if(RUN.stopped){markStale('live');status('Stopped: the curves are not complete. Press Update to compute them again');requestRender();return false;}
   if(S.bvp)bvpSolve(false);
   if(S.M.n>EQ_AUTO_MAX||S.M.nbc>0){S.eqs=[];S.eqSel=-1;}
   computeEquilibria();refreshSeparatrices();refreshEqList();refreshTrajList();
@@ -4388,6 +4733,7 @@ function renderTC(ctx,w,h,compact){
     if(S.pp.points){ctx.fillStyle=col;const r=dotR(tr.t.length);drawPoints(ctx,m,tr.t,tr.cols[vi],compact?Math.min(1.3,r):r,fr);}
     else{ctx.strokeStyle=col;ctx.lineWidth=compact?1.4:1.8;polyline(ctx,m,tr.t,tr.cols[vi],0,{x:0,y:foldPer(vi)});}});
   ctx.restore();
+  if(compact&&S.view==='an')anMarker(ctx,fr,m);
   ctx.font='11px "IBM Plex Mono", ui-monospace, monospace';ctx.textBaseline='middle';ctx.textAlign='left';
   let x=fr.L+(compact?8:10);const y=fr.T+(compact?10:14);
   vars.forEach(vi=>{const lab=S.M.names[vi];ctx.fillStyle=TK[PAL[vi%PAL.length]];ctx.fillRect(x,y-1.5,14,3);ctx.fillStyle=TK['ink-2'];ctx.fillText(lab,x+18,y);x+=ctx.measureText(lab).width+32;});
@@ -4643,7 +4989,7 @@ let spinning=false;
 function spinLoop(){if(spinning)return;spinning=true;const step=()=>{if(!S.p3.spin||S.view!=='p3'){spinning=false;return;}S.p3.yaw+=0.005;render();requestAnimationFrame(step);};requestAnimationFrame(step);}
 const is3=()=>S.view==='p3'||(S.view==='tp'&&S.tp.three);
 function renderView(ctx,w,h){{const sc=document.getElementById('tgStack');if(sc){const g=S.view==='bif'&&S.M?bifGroups().length:0;sc.hidden=g<2;sc.setAttribute('aria-pressed',S.bif.stack!==false);}}
-  if(S.view==='pp')renderPP(ctx,w,h);else if(S.view==='p3')renderP3(ctx,w,h);else if(S.view==='tc')renderTC(ctx,w,h,false);else if(S.view==='tp')(S.tp.three?renderTP3:renderTP)(ctx,w,h);else if(bifStacked())renderBifStack(ctx,w,h);else{S.bifPanels=null;S.bif.grp=null;renderBif(ctx,w,h);}
+  if(S.view==='pp')renderPP(ctx,w,h);else if(S.view==='p3')renderP3(ctx,w,h);else if(S.view==='tc')renderTC(ctx,w,h,false);else if(S.view==='tp')(S.tp.three?renderTP3:renderTP)(ctx,w,h);else if(S.view==='an')renderAN(ctx,w,h);else if(bifStacked())renderBifStack(ctx,w,h);else{S.bifPanels=null;S.bif.grp=null;renderBif(ctx,w,h);}
   S.legendBox=null;
   if(S.legend&&(S.view==='bif'||S.view==='tp')&&S.lastFrame){const e=legendEntries(S.view);if(e.length)drawLegend(ctx,S.lastFrame,e);}
   drawNotes(ctx);}
@@ -4718,7 +5064,7 @@ function legendEntries(view){
     const note=legendNotes([...eq,...cy,...sw,...bv],[pi]);
     for(const b of eq.filter(b=>!b.fam))out.push({kind:'line',color:ccol(b,TK.ink),text:`${M.discrete?(b.period>1?`period-${b.period} orbits`:'fixed points'):'equilibria'}${b.from?` (${b.from})`:''}${note(b)}`});
     for(const c of cy)out.push({kind:'line',color:ccol(c,TK.po),text:`periodic orbits${c.from?` from ${c.from}`:''}${note(c)}`});
-    if(S.bif.slow&&(S.bif.mode||'var')==='var'&&cy.length)out.push({kind:'dot',color:TK.zh,text:`slow points of the orbits (speed below ${(S.bif.slowR*100).toPrecision(6)}% of the fastest, at most ${S.bif.slowN} per orbit)`});
+    if(S.bif.slow&&(S.bif.mode||'var')==='var'&&cy.length)out.push({kind:'dot',color:TK.zh,text:`slow points of the orbits (speed below ${(S.bif.slowR*100).toPrecision(6)}% of the fastest, at most ${S.bif.slowN} per orbit; solid at speed 0, fading out at ${(S.bif.slowR*100).toPrecision(6)}%)`});
     for(const c of bv)out.push({kind:'line',color:ccol(c,TK.po),text:`boundary value solutions${note(c)}`});
     for(const c of sw)out.push({kind:'dot',color:ccol(c,TK.sweep),text:`${c.disc?'orbit diagram':'sweep max/min'}${note(c)}`});
   }else{
@@ -4898,13 +5244,12 @@ function renderBif(ctx,w,h,frIn){
     for(const cb of S.bif.cycles){if(cb.pi!==pi||!inGrp(cb))continue;const P=cb.pts,n=M.n;
       for(let k=0;k+1<P.length;k++){const A=slowPts(P[k]),B=slowPts(P[k+1]);if(!A.length||!B.length)continue;
         const sc=i=>Math.max(1e-12,P[k].mx[i]-P[k].mn[i]),stab=!!(P[k].stable&&P[k+1].stable);
-        ctx.strokeStyle=col;ctx.lineWidth=stab?2:1.2;ctx.setLineDash(stab?[]:[4,3]);ctx.beginPath();
+        ctx.strokeStyle=col;ctx.lineWidth=stab?2:1.2;ctx.setLineDash(stab?[]:[4,3]);
         for(const a of A){let best=null,bd=Infinity;for(const b of B){let d=0;for(let i=0;i<n;i++)d=Math.max(d,Math.abs(a.x[i]-b.x[i])/sc(i));if(d<bd){bd=d;best=b;}}
-          if(best&&bd<0.25){ctx.moveTo(m.X(P[k].p),m.Y(a.x[vi]));ctx.lineTo(m.X(P[k+1].p),m.Y(best.x[vi]));}}
-        ctx.stroke();}
-      ctx.setLineDash([]);ctx.fillStyle=col;ctx.beginPath();
-      for(const q of P)for(const z of slowPts(q)){const X=m.X(q.p),Y=m.Y(z.x[vi]);ctx.moveTo(X+2,Y);ctx.arc(X,Y,2,0,7);}
-      ctx.fill();}
+          if(best&&bd<0.25){ctx.globalAlpha=slowAlpha((a.r+best.r)/2);ctx.beginPath();ctx.moveTo(m.X(P[k].p),m.Y(a.x[vi]));ctx.lineTo(m.X(P[k+1].p),m.Y(best.x[vi]));ctx.stroke();}}}
+      ctx.setLineDash([]);ctx.fillStyle=col;
+      for(const q of P)for(const z of slowPts(q)){const X=m.X(q.p),Y=m.Y(z.x[vi]);ctx.globalAlpha=slowAlpha(z.r);ctx.beginPath();ctx.arc(X,Y,2,0,7);ctx.fill();}
+      ctx.globalAlpha=1;}
     ctx.restore();}
   // boundary value problems: max and min of the plotted variable over the solution (or the L2 norm), one curve through folds
   for(const bb of S.bif.bvps){if(bb.pi!==pi||!inGrp(bb)||mode==='T'||mode==='f')continue;const P=bb.pts;
@@ -4986,6 +5331,8 @@ function ensureSlowAll(){for(const cb of S.bif.cycles)if(cb.pi===S.bif.pi)ensure
 // the slow points shown for an orbit: at most slowN, those slower than slowR times its fastest speed (slowR is a fraction;
 // it is shown and set as a percentage)
 const slowPts=q=>(q.slowAll||[]).filter(z=>z.r<(S.bif.slowR||0.05)).slice(0,Math.max(1,S.bif.slowN||2));
+// how opaque a slow point is drawn: solid where the speed is zero, fading to clear at the threshold, so the slowest stand out
+const slowAlpha=r=>Math.max(0.05,Math.min(1,1-r/(S.bif.slowR||0.05)));
 // the value plotted for a point of a branch, orbit family or special point in L2-norm mode
 // L2 norm of the whole solution: over all the state variables, sqrt(Σ_i (1/T)∫x_i² dt) for an orbit, |x| for an equilibrium
 const eqN=x=>{let a=0;for(let i=0;i<S.M.n;i++)a+=x[i]*x[i];return Math.sqrt(a);};
@@ -5155,7 +5502,7 @@ function runTwoPar(sp){
   M.setParam(p1,sp.p);
   const r1=S.bif.pmax-S.bif.pmin,r2=S.tp.p2max-S.tp.p2min,t0=performance.now();
   try{
-    const cv=twoParCurve(M,sp.type,p1,p2,sp.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:Math.min(r1,r2)/100,dsmax:Math.max(r1,r2)/40,maxPts:S.cont.tpNmax});
+    const cv=twoParCurve(M,sp.type,p1,p2,sp.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:S.tp.ds||Math.min(r1,r2)/100,dsmax:Math.max(4*(S.tp.ds||0),Math.max(r1,r2)/40),maxPts:S.cont.tpNmax});
     cv.from=sp.label;cv.start=`${M.parNames[p1]} = ${fmt(sp.p,5)}`;cv.params=Array.from(M.P.subarray(0,M.parNames.length));S.tp.curves.push(cv);
     const c={};for(const s of cv.special)c[s.type]=(c[s.type]||0)+1;
     status(`${({LP:'Fold',HB:'Hopf',PD:'Period-doubling'})[sp.type]} curve from ${sp.label}: ${cv.pts.length} points${cv.closed?', closed loop':''} in ${Math.round(performance.now()-t0)} ms · ${Object.entries(c).map(([t,n])=>`${n} ${t}`).join(', ')||'no codimension-two points'}`);
@@ -5556,7 +5903,7 @@ async function runSlices(){
     for(const c of cand){try{q=findPoint(c,vFrom,v,sp.type,c.p2);used=c;break;}catch(e){err=err||e;}}
     if(!q)throw err||new Error(`there is no ${sp.type} point at ${pn3} = ${fmt(v,4)}`);
     setBase(v);M.setParam(p2,used.p2);M.setParam(p1,q.p);
-    const cv=twoParCurve(M,sp.type,p1,p2,q.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:Math.min(r1,r2)/100,dsmax:Math.max(r1,r2)/40,maxPts:S.cont.tpNmax});
+    const cv=twoParCurve(M,sp.type,p1,p2,q.x,{p1min:S.bif.pmin,p1max:S.bif.pmax,p2min:S.tp.p2min,p2max:S.tp.p2max,ds:S.tp.ds||Math.min(r1,r2)/100,dsmax:Math.max(4*(S.tp.ds||0),Math.max(r1,r2)/40),maxPts:S.cont.tpNmax});
     cv.from=sp.label;cv.start=`${M.parNames[p1]} = ${fmt(q.p,5)}`;cv.params=Array.from(M.P.subarray(0,np));S.tp.curves.push(cv);made.push({v,ends:cv.ends||[],pts:cv.pts.length});
     return{x:q.x,p1:q.p,p2:used.p2,cv};
   };
@@ -5615,7 +5962,7 @@ function render(){
   if(!S.M)return;readTokens();
   const{ctx,w,h}=prep(cvMain);ctx.clearRect(0,0,w,h);
   renderView(ctx,w,h);
-  if((S.view==='pp'||S.view==='p3')&&!$('#stripWrap').hidden){const s=prep(cvStrip);s.ctx.clearRect(0,0,s.w,s.h);renderTC(s.ctx,s.w,s.h,true);}
+  if((S.view==='pp'||S.view==='p3'||S.view==='an')&&!$('#stripWrap').hidden){const s=prep(cvStrip);s.ctx.clearRect(0,0,s.w,s.h);renderTC(s.ctx,s.w,s.h,true);}
   updateReadout();syncWinPop();
   if(S.phTab)updateAdjLight();
 }
@@ -5850,7 +6197,7 @@ function grabCycle(cb,k,what,pick){
 }
 function attachPlot(cv){
   let drag=null;
-  cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;{const r=cv.getBoundingClientRect();bifPanelAt(e.clientY-r.top);}if(startObjDrag(e,cv))return;drag={x:e.clientX,y:e.clientY,moved:false,win:{...curWin()},yaw:S.p3.yaw,pitch:S.p3.pitch,pan:{...S.p3.pan},shift:e.shiftKey};cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;if(S.view==='an')return;{const r=cv.getBoundingClientRect();bifPanelAt(e.clientY-r.top);}if(startObjDrag(e,cv))return;drag={x:e.clientX,y:e.clientY,moved:false,win:{...curWin()},yaw:S.p3.yaw,pitch:S.p3.pitch,pan:{...S.p3.pan},shift:e.shiftKey};cv.setPointerCapture(e.pointerId);});
   cv.addEventListener('pointermove',e=>{
     const r=cv.getBoundingClientRect();
     if(objDrag){moveObjDrag(e,r);return;}
@@ -5872,6 +6219,7 @@ function attachPlot(cv){
   cv.addEventListener('pointerleave',()=>{if(!drag)updateReadout(null);});
   let wt=null;
   cv.addEventListener('wheel',e=>{
+    if(S.view==='an')return;
     e.preventDefault();
     if(is3()){S.p3.zoom=Math.max(0.2,Math.min(30,S.p3.zoom*Math.exp(-(e.deltaY||e.deltaX)*0.0015)));recWindow();requestRender();return;}
     {const r=cv.getBoundingClientRect();bifPanelAt(e.clientY-r.top);}
@@ -5985,8 +6333,10 @@ function runGridIC(){
   if(!S.gridEdited)S.lock.pp=true;
   runMany(pts,`Grid of ${va.length}${B.v>=0?` × ${vb.length}`:''} initial conditions in ${M.varNames[A.v]}${B.v>=0?` and ${M.varNames[B.v]}`:''}`);
 }
+// a new model starts with empty formula boxes
+function fmReset(){const n=$('#fmNote');if(n.dataset.d===undefined)n.dataset.d=n.innerHTML;n.innerHTML=n.dataset.d;n.style.color='';$('#fmVars').value=$('#fmExpr').value='';}
 function buildIC(){
-  const list=$('#icList');list.replaceChildren();
+  const list=$('#icList');list.replaceChildren();$('#fmBox').hidden=!icHasArray(S.M);fmReset();
   S.M.varNames.forEach((name,i)=>{
     const inp=el('input',{class:'pval',id:'ic-'+i,type:'number',step:'any','aria-label':`${name} initial value`});
     inp.value=fmtIn(S.ic[i]);
@@ -6171,7 +6521,7 @@ function updateToolbar(){
   const sig=sets.map(x=>x.text).join('|');if(fs.dataset.sig!==sig){fs.dataset.sig=sig;fs.replaceChildren(el('option',{value:'c',text:'custom (use the chips)',disabled:true}),...sets.map(x=>el('option',{value:x.key,text:x.text})));}
   const cur=sets.find(x=>x.idx.length===S.tc.stVars.size&&x.idx.every(i=>S.tc.stVars.has(i)));fs.value=cur?cur.key:'c';
   $('#stAxes').hidden=!(inST&&fams.length>0);
-  $('#varsLbl').textContent=inST?'Space-time variables':S.phTab?'Variables shown':'Time-course variables';$('#stAll').hidden=$('#stNone').hidden=!inST;
+  $('#varsLbl').textContent=inST?'Space-time variables':S.phTab?'Variables shown':S.view==='tc'?'Time-course variables':'Time series below the plot';$('#stAll').hidden=$('#stNone').hidden=!inST;
   if(S._chipMode!==inST){S._chipMode=inST;buildChips();}
   $('#tgSpec').setAttribute('aria-pressed',S.tc.spec);$('#tgLog').setAttribute('aria-pressed',S.tc.log);$('#tgSmooth').setAttribute('aria-pressed',S.tc.smooth);
   $('#tgPts').setAttribute('aria-pressed',S.pp.points);$('#tgEqual').setAttribute('aria-pressed',!!S.pp.equal);$('#tgEqual').hidden=v!=='pp'||cob;$('#tgSpin').setAttribute('aria-pressed',S.p3.spin);$('#tgBVP').hidden=!(S.M&&S.M.nbc>0)||v==='bif'||v==='tp';$('#tgBVP').setAttribute('aria-pressed',!!S.bvp);
@@ -6204,10 +6554,26 @@ function buildChips(){
         if(e.shiftKey&&S.tc.stLast!=null){const lo=Math.min(S.tc.stLast,i),hi=Math.max(S.tc.stLast,i);for(let k=lo;k<=hi;k++)set.add(k);}
         else if(set.has(i))set.delete(i);else set.add(i);
         S.tc.stLast=i;stSelChanged();return;}
-      if(set.has(i)){if(set.size>1)set.delete(i);}else set.add(i);b.setAttribute('aria-pressed',set.has(i));buildChips();fitTC();requestRender();});
+      if(set.has(i)){if(set.size>1)set.delete(i);}else set.add(i);b.setAttribute('aria-pressed',set.has(i));buildChips();if(!$('#stripPop').hidden)buildStripPop();fitTC();requestRender();});
     box.append(b);
   });
 }
+// the time series under the phase plane shows the variables chosen here (the same choice as the Time course view),
+// state variables and auxiliary functions alike; at least one stays chosen
+function buildStripPop(){
+  const pop=$('#stripPop'),M=S.M;if(!pop||!M)return;const set=S.tc.vars;
+  const item=i=>{const cb=el('input',{type:'checkbox'});cb.checked=set.has(i);
+    cb.addEventListener('change',()=>{if(cb.checked)set.add(i);else if(set.size>1)set.delete(i);else cb.checked=true;stripVarsChanged();});
+    return el('label',null,cb,el('i',{style:`background:var(--${PAL[i%PAL.length]})`}),M.names[i]);};
+  const nv=M.names.length-M.auxNames.length,idx=[...M.names.keys()];
+  const all=(on)=>{if(on)idx.forEach(i=>set.add(i));else{set.clear();set.add(idx[0]);}stripVarsChanged();};
+  pop.replaceChildren(el('h4',{text:'Variables'}),...idx.slice(0,nv).map(item),
+    ...(M.auxNames.length?[el('h4',{text:'Auxiliary functions'}),...idx.slice(nv).map(item)]:[]),
+    el('div',{class:'row'},el('button',{class:'btn small',type:'button',text:'All',onclick:()=>all(true)}),el('button',{class:'btn small',type:'button',text:'First only',onclick:()=>all(false)}),el('span',{style:'flex:1'}),el('button',{class:'btn small',type:'button',text:'Close',onclick:()=>openStripPop(false)})));
+}
+function stripVarsChanged(){const set=S.tc.vars;buildChips();buildStripPop();fitTC();requestRender();
+  if(set.size)rec(`tcvars ${[...set].sort((a,b)=>a-b).map(i=>S.M.names[i]).join(' ')}`,'tcvars');}
+function openStripPop(on){const pop=$('#stripPop');if(!pop)return;if(on)buildStripPop();pop.hidden=!on;$('#stripVarsBtn').setAttribute('aria-expanded',on);}
 function refreshEqList(){
   const box=$('#eqList'),M=S.M;box.replaceChildren();setTimeout(()=>{try{fillConnMenus();}catch(e){}},0);
   $('#eqCount').textContent=S.eqs.length?String(S.eqs.length):'';$('#eqLbl').textContent=M.discrete?'Fixed points':'Equilibria';
@@ -6275,31 +6641,37 @@ function refreshBifStart(){
 function refreshSpecial(){
   const box=$('#spList'),M=S.M,vi=S.bif.vi,sp=[...allSpecial().filter(s=>s.pi===S.bif.pi),...pickedOrbits().filter(o=>o.pi===S.bif.pi),...connPoints().filter(o=>o.pi===S.bif.pi)];
   // with curves at several values of the second parameter of the pair, the list is in increasing order of that value
-  const j2=bifSec(),multi=j2>=0&&bifGroups().length>1;if(multi){const g=sp.map((s,k)=>({s,k,v:bifGroupOf(s)}));g.sort((a,b)=>a.v-b.v||a.k-b.k);sp.splice(0,sp.length,...g.map(q=>q.s));}
+  // the points are grouped under a heading for each value of the second parameter of the pair
+  const j2=bifSec(),grouped=j2>=0;if(grouped){const g=sp.map((s,k)=>({s,k,v:bifGroupOf(s)}));g.sort((a,b)=>(a.v-b.v)||a.k-b.k);sp.splice(0,sp.length,...g.map(q=>q.s));}
   $('#spCount').textContent=sp.length?String(sp.length):'';
   if(!sp.length){box.replaceChildren(el('p',{class:'empty',text:M.discrete?'Folds (LP), period doublings (PD) and Neimark–Sacker points (NS) found during continuation are listed here.':'Folds (LP), Hopf points (HB) and branch points (BP) of equilibria, and folds (LPC), period doublings (PD) and torus points (TR) of periodic orbits, are listed here.'}));return;}
   const tb=el('table',{class:'sp'});
-  tb.append(el('tr',null,el('th',{text:'Pt'}),...(multi?[el('th',{text:M.parNames[j2]})]:[]),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
+  tb.append(el('tr',null,el('th',{text:'Pt'}),el('th',{text:M.parNames[S.bif.pi]}),el('th',{text:(S.bif.mode||'var')==='var'?M.varNames[vi]:bifYName()}),el('th',{text:'Period'})));
   tb.firstChild.append(el('th',{text:''}));
   const per=s=>{if(s.conn)return'∞';const N=(s.br&&s.br.period)||1;return s.cyc?fmt(s.T,4):(s.type==='HB'||s.type==='NS')&&s.omega>0?fmt(2*Math.PI/s.omega,4):s.type==='PD'?String(2*N):N>1?String(N):'—';};
   const NAMES={HB:'Hopf',LP:'fold',BP:'branch-point',PD:'period-doubling',NS:'Neimark–Sacker',LPC:'fold-of-cycles',TR:'torus'};
   const btn=(text,title,fn)=>el('button',{class:'btn small',text,title,onclick:ev=>{ev.stopPropagation();fn();}});
+  let lastGrp;
   sp.forEach(s=>{
-    const acts=el('div',{class:'acts'});
-    if(!s.cyc&&!s.bvp&&followable(s.type)&&M.parNames.length>1)acts.append(btn('Follow','Continue this point in two parameters',()=>runTwoPar(s)));
+    if(grouped){const g=bifGroupOf(s);if(g!==lastGrp){lastGrp=g;const pp=bifParamsOf(s),v=pp&&Number.isFinite(pp[j2])?pp[j2]:M.getParam(j2);
+      tb.append(el('tr',{class:'grp'},el('td',{colspan:'5',text:`${M.parNames[j2]} = ${fmt(v,5)}`})));}}
+    // Follow is always the last action of a row
+    const acts=el('div',{class:'acts'}),follow=[];
+    if(!s.cyc&&!s.bvp&&followable(s.type)&&M.parNames.length>1)follow.push(btn('Follow','Continue this point in two parameters',()=>runTwoPar(s)));
     if(!s.cyc&&!s.bvp&&s.type==='BP')acts.append(btn('Switch','Follow the other branch through this branch point',()=>runSwitch(s,false)));
     if(!s.cyc&&!s.bvp&&M.discrete&&s.type==='PD')acts.append(btn('Double','Follow the period-doubled orbits (the next iterate of the map)',()=>runSwitch(s,true)));
     if(!s.cyc&&!s.bvp&&s.type==='HB'&&!M.discrete)acts.append(btn('Cycles','Continue the periodic orbits born at this Hopf point',()=>runPOFromHopf(s)));
     if(s.cyc&&s.type==='PD')acts.append(btn('Double','Switch to the period-doubled branch of orbits',()=>runPODouble(s)));
-    if(s.cyc&&s.type!=='OR'&&followSp(s)&&M.parNames.length>1)acts.append(btn('Follow','Continue this bifurcation of cycles in two parameters',()=>runTwoPar(s)));
-    if(s.conn){if(M.parNames.length>1)acts.append(btn('Follow',`Follow this ${s.type==='HOM'?'homoclinic':'heteroclinic'} orbit in two parameters (Parameter 2 of the Two-parameter view)`,()=>runTwoPar(s)));
+    if(s.cyc&&s.type!=='OR'&&followSp(s)&&M.parNames.length>1)follow.push(btn('Follow','Continue this bifurcation of cycles in two parameters',()=>runTwoPar(s)));
+    if(s.conn){if(M.parNames.length>1)follow.push(btn('Follow',`Follow this ${s.type==='HOM'?'homoclinic':'heteroclinic'} orbit in two parameters (Parameter 2 of the Two-parameter view)`,()=>runTwoPar(s)));
       acts.append(btn('Remove','Take this orbit off the diagram',()=>{S.bif.conns=S.bif.conns.filter(q=>q!==s.conn);refreshSpecial();buildTpControls();requestRender();}));}
     if(s.type==='OR'){if(M.parNames.length>1)acts.append(btn('Const. T',`Follow this orbit in two parameters keeping its period fixed at ${fmt(s.T,5)}`,()=>followConstT(s)));
       acts.append(btn('Remove','Take this orbit off the list',()=>{S.bif.picked=S.bif.picked.filter(o=>o!==s.ref);refreshSpecial();buildTpControls();requestRender();}));}
+    acts.append(...follow);
     const crit=s.snic?el('span',{class:'crit',text:'SNIC',title:'A branch of periodic orbits ends here with its period growing without bound: probably a saddle-node on an invariant circle (SNIC)'}):s.type==='HB'&&Number.isFinite(s.l1)?el('span',{class:'crit',text:s.l1>0?'sub':'super',title:`First Lyapunov coefficient l1 = ${fmt(s.l1,3)}: ${s.l1>0?'subcritical, unstable orbits are born':'supercritical, stable orbits are born'}. Computed with the projection formula of Kuznetsov, Elements of Applied Bifurcation Theory, 3rd edn (Springer, 2004), Section 5.4, p. 180.`}):null;
-    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),...(multi?[el('td',{text:fmt(bifParamsOf(s)?bifParamsOf(s)[j2]:S.M.getParam(j2),5)})]:[]),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
+    const tr=el('tr',{title:'Click to move here'},el('td',null,el('span',{class:'tag '+s.type,text:s.label}),crit),el('td',{text:fmt(s.p,5)}),el('td',{text:Number.isFinite(spVal(s))?fmt(spVal(s),5):s.conn&&(S.bif.mode==='T')?'∞':'—'}),el('td',{text:per(s)}),el('td',{class:'fl'},acts.childElementCount?acts:null));
     if(s.conn)tr.title=`Click to move here and draw the orbit; it takes time ${fmt(s.conn.T,4)} from ε = ${fmt(s.conn.eps,2)} of the ${s.conn.rev?'last':'first'} saddle to its closest approach to the ${s.conn.rev?'first':'last'}`;
-    tr.addEventListener('click',()=>{if(multi){const pp=bifParamsOf(s);if(pp&&Number.isFinite(pp[j2]))setParamVal(j2,pp[j2],true);}if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
+    tr.addEventListener('click',()=>{if(grouped){const pp=bifParamsOf(s);if(pp&&Number.isFinite(pp[j2]))setParamVal(j2,pp[j2],true);}if(s.conn){connShow(s.conn);return;}if(s.bvp)grabBvp(s.bvp,s.t<0.5?s.k:Math.min(s.k+1,s.bvp.pts.length-1));else if(s.cyc)grabCycle(s.cyc,s.t<0.5?s.k:Math.min(s.k+1,s.cyc.pts.length-1),s.label);else grab(s.p,s.x,NAMES[s.type]);});tb.append(tr);});
   box.replaceChildren(tb);
 }
 
@@ -6697,6 +7069,230 @@ async function runSweep(){
 }
 
 /* ======================= views & tabs ======================= */
+
+/* ======================= animation view ======================= */
+// The script is compiled against the current model (parseAni). The timeline is the active trajectory, played at uniform steps of t
+// (or one frame per iterate for a map), with the state between stored points found by linear interpolation.
+function anTimeline(){
+  const tr=activeTraj(),M=S.M;if(!tr||!M||!tr.t||tr.t.length<1)return null;
+  const t=tr.t,N=t.length,n=M.n,A=S.an;
+  if(!A.buf||A.buf.n!==n)A.buf={n,y:new Float64Array(n),y0:new Float64Array(n),yb:new Float64Array(n)};
+  const NF=M.discrete||N<2?N:Math.max(200,Math.min(2000,N));
+  const tOf=f=>M.discrete||N<2?t[Math.min(N-1,f)]:t[0]+(t[N-1]-t[0])*f/(NF-1);
+  const dir=t[N-1]>=t[0];
+  const stateAt=(f,out)=>{
+    f=Math.max(0,Math.min(NF-1,f));
+    if(M.discrete||N<2){for(let i=0;i<n;i++)out[i]=tr.cols[i][Math.min(N-1,f)];return tOf(f);}
+    const tq=tOf(f);let lo=0,hi=N-1;
+    while(hi-lo>1){const m=(lo+hi)>>1;if((t[m]<=tq)===dir)lo=m;else hi=m;}
+    const d=t[hi]-t[lo],u=d?Math.max(0,Math.min(1,(tq-t[lo])/d)):0;
+    for(let i=0;i<n;i++){const a=tr.cols[i][lo],b=tr.cols[i][hi];out[i]=M.hasFold&&M.fold[i]?a:a+u*(b-a);}
+    return tq;};
+  return{tr,NF,tOf,stateAt};
+}
+function anCompile(){
+  const A=S.an;A.errs=[];A.prog=null;A.M=S.M;
+  if(!S.M||!A.text.trim()){anMsgs();return;}
+  A.prog=parseAni(A.text,S.M);
+  A.errs=A.prog.errors;anMsgs();
+}
+function anMsgs(){
+  const A=S.an,box=$('#aniMsgs');if(!box)return;
+  const list=[...A.errs.map(e=>['e',e]),...(A.prog?A.prog.notes.map(e=>['w',e]):[])];
+  if(A.prog&&!A.errs.length)list.unshift(['o',`${A.prog.items.length} object${A.prog.items.length===1?'':'s'} loaded.`]);
+  showMsgsTo(box,list);
+}
+function showMsgsTo(box,list){box.replaceChildren(...list.map(([c,t])=>el('div',{class:c,text:t})));}
+function anApply(goView){
+  const A=S.an;A.text=$('#aniText').value;store.set('xpps-ani',A.text);
+  anCompile();A.f=0;A.playing=false;
+  if(goView&&S.view!=='an')setView('an');else{anSync();requestRender();}
+  if(A.prog)status(A.errs.length?`Animation: ${A.errs[0]}`:`Animation loaded: ${A.prog.items.length} objects`,!!A.errs.length);
+}
+function anSync(){
+  const A=S.an,tl=anTimeline();
+  const sl=$('#anSlide');
+  if(!tl){sl.max=1;sl.value=0;$('#anTime').textContent='';$('#anPlay').textContent='Play';return;}
+  sl.max=tl.NF-1;sl.value=Math.round(A.f);
+  const f=Math.round(A.f);$('#anTime').textContent=`${S.M.discrete?'n':'t'} = ${fmt(tl.tOf(f),5)}`;
+  $('#anPlay').textContent=A.playing?'Pause':'Play';
+}
+function renderAN(ctx,w,h){
+  const A=S.an,M=S.M;S.lastFrame=null;A.info=null;
+  const say=(msg,col)=>{ctx.fillStyle=col||TK.muted;ctx.font='13px "IBM Plex Sans", system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(msg,w/2,h/2);};
+  if(A.M!==M)anCompile();
+  if(!A.prog){say(A.text.trim()?'The animation has errors: see the Animate tab.':'No animation yet. Open an .ani file or press Example in the Animate tab.');return;}
+  if(A.errs.length){say(A.errs[0].length>110?A.errs[0].slice(0,107)+'…':A.errs[0],TK.err||'#c33');return;}
+  const tl=anTimeline();if(!tl){say('No trajectory yet. Press Integrate first.');return;}
+  A.f=Math.max(0,Math.min(tl.NF-1,A.f));
+  const f=Math.round(A.f),B=A.buf,pad=10;
+  const t0=tl.stateAt(0,B.y0),t=tl.stateAt(f,B.y);
+  const fr={t,y:B.y,t0,y0:B.y0,back:k=>{const tt=tl.stateAt(Math.max(0,f-k),B.yb);return{t:tt,y:B.yb};}};
+  aniDraw(ctx,A.prog,M,{x:pad,y:pad,w:w-2*pad,h:h-2*pad},fr);
+  A.info={f,NF:tl.NF,t};
+  if(!A.playing)anSync();
+}
+// the red marker at the animation time on the time-course strip
+function anMarker(ctx,fr,m){
+  const A=S.an;if(!A.info)return;const x=m.X(A.info.t);if(!(x>=fr.L&&x<=fr.L+fr.W))return;
+  ctx.save();ctx.strokeStyle=TK.accent||'#d33';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,fr.T);ctx.lineTo(x,fr.T+fr.H);ctx.stroke();ctx.restore();
+}
+function anTick(ts){
+  const A=S.an;if(!A.playing||S.view!=='an'){A.playing=false;anSync();return;}
+  const tl=anTimeline();if(!tl||!A.prog){A.playing=false;anSync();return;}
+  const dt=A.last?Math.min(100,ts-A.last):16;A.last=ts;
+  const delay=Math.max(4,A.prog.speed||20);
+  A.f+=dt/delay*A.mult;
+  if(A.f>=tl.NF-1){if(A.loop)A.f=0;else{A.f=tl.NF-1;A.playing=false;}}
+  anSync();requestRender();
+  if(A.playing)requestAnimationFrame(anTick);else anSync();
+}
+function anPlay(on){
+  const A=S.an;A.playing=on===undefined?!A.playing:on;
+  if(A.playing){const tl=anTimeline();if(!tl||!A.prog||A.errs.length){A.playing=false;anSync();return;}
+    if(A.f>=tl.NF-1)A.f=0;A.last=0;requestAnimationFrame(anTick);}
+  anSync();
+}
+function anExample(){
+  const ex=S.M&&S.M.n>=1?`# pendulum-style picture of the first variable (${S.M.varNames[0]}) as an angle\nline .5;.5;.5+.4*sin(${S.M.varNames[0]});.5-.4*cos(${S.M.varNames[0]});$BLACK;3\nfcirc .5+.4*sin(${S.M.varNames[0]});.5-.4*cos(${S.M.varNames[0]});.05;$RED\nsettext 1;rom;$BLACK\nvtext .05;.05;t=;t\nend\n`:'';
+  $('#aniText').value=ex;
+}
+// put the script into the equations as #@ani lines; an .ode file carrying them loads the animation with the model
+function anPutInOde(){
+  const lines=$('#aniText').value.split(/\r?\n/).filter(l=>l.trim()).map(l=>'#@ani '+l);
+  const ta=$('#odeText');let txt=ta.value.split(/\r?\n/).filter(l=>!/^\s*#@\s*ani(?![a-z0-9_])/i.test(l)).join('\n').replace(/\s+$/,'');
+  const di=txt.search(/^\s*done\s*$/im);
+  txt=di>=0?txt.slice(0,di)+lines.join('\n')+'\n'+txt.slice(di):txt+'\n'+lines.join('\n')+'\n';
+  ta.value=txt;status(`Animation stored in the equations (${lines.length} lines). Press Apply there to keep it.`);
+}
+// called by loadModel: an .ode file with #@ani lines brings its animation; loading a different model clears the old one
+function anModelLoaded(text,sig,msgs){
+  const A=S.an,own=text.split(/\r?\n/).filter(l=>/^\s*#@\s*ani(?![a-z0-9_])/i.test(l)).map(l=>l.replace(/^\s*#@\s*ani\s*:?[ \t]?/i,''));
+  if(own.length){A.text=own.join('\n')+'\n';if(msgs)msgs.push(['o','The file contains an animation: see the Animate tab.']);}
+  else if(A.sig&&A.sig!==sig){A.text='';}
+  A.sig=sig;A.prog=null;A.M=null;A.f=0;A.playing=false;
+  const ta=$('#aniText');if(ta)ta.value=A.text;
+  store.set('xpps-ani',A.text);
+}
+
+/* ---- saving the animation: a GIF (encoded here, no library) or a WebM video (the browser's recorder) ---- */
+// LZW compression of one frame of palette indices, as GIF wants it (minimum code size 8)
+function gifLZW(idx){
+  const clear=256,eoi=257,out=[];let size=9,next=258,dict=new Map(),cur=0,bits=0;
+  const put=c=>{cur|=c<<bits;bits+=size;while(bits>=8){out.push(cur&255);cur>>>=8;bits-=8;}};
+  put(clear);let w=idx[0];
+  for(let i=1;i<idx.length;i++){
+    const c=idx[i],key=(w<<8)|c,v=dict.get(key);
+    if(v!==undefined){w=v;continue;}
+    put(w);dict.set(key,next++);
+    if(next>(1<<size)&&size<12)size++;
+    if(next===4096){put(clear);dict.clear();next=258;size=9;}
+    w=c;
+  }
+  put(w);put(eoi);if(bits>0)out.push(cur&255);
+  return out;
+}
+// palette of up to 256 colours: the most used 15-bit colours of some sample frames, each averaged
+function gifPalette(imgs){
+  const cnt=new Float64Array(32768),sr=new Float64Array(32768),sg=new Float64Array(32768),sb=new Float64Array(32768);
+  for(const d of imgs)for(let i=0;i<d.length;i+=4){const k=((d[i]>>3)<<10)|((d[i+1]>>3)<<5)|(d[i+2]>>3);cnt[k]++;sr[k]+=d[i];sg[k]+=d[i+1];sb[k]+=d[i+2];}
+  const ks=[];for(let k=0;k<32768;k++)if(cnt[k])ks.push(k);
+  ks.sort((a,b)=>cnt[b]-cnt[a]);
+  const pal=new Uint8Array(768);
+  ks.slice(0,256).forEach((k,j)=>{pal[3*j]=Math.round(sr[k]/cnt[k]);pal[3*j+1]=Math.round(sg[k]/cnt[k]);pal[3*j+2]=Math.round(sb[k]/cnt[k]);});
+  return pal;
+}
+function gifWriter(W,H,pal,delayCs){
+  const parts=[],u16=v=>[v&255,(v>>8)&255];
+  parts.push(new Uint8Array([71,73,70,56,57,97,...u16(W),...u16(H),0xF7,0,0,...pal,
+    0x21,0xFF,0x0B,...[...'NETSCAPE2.0'].map(c=>c.charCodeAt(0)),3,1,0,0,0]));
+  const cache=new Int16Array(32768).fill(-1);
+  return{
+    add(rgba){
+      const n=W*H,idx=new Uint8Array(n);
+      for(let i=0,j=0;j<n;i+=4,j++){
+        const r=rgba[i],g=rgba[i+1],b=rgba[i+2],k=((r>>3)<<10)|((g>>3)<<5)|(b>>3);let c=cache[k];
+        if(c<0){let best=1e9;c=0;for(let q=0;q<256;q++){const dr=pal[3*q]-r,dg=pal[3*q+1]-g,db=pal[3*q+2]-b,d=dr*dr+dg*dg+db*db;if(d<best){best=d;c=q;}}cache[k]=c;}
+        idx[j]=c;}
+      const code=gifLZW(idx),blocks=[];
+      for(let i=0;i<code.length;i+=255){const part=code.slice(i,i+255);blocks.push(part.length,...part);}
+      parts.push(new Uint8Array([0x21,0xF9,4,0,...u16(delayCs),0,0, 0x2C,0,0,0,0,...u16(W),...u16(H),0, 8,...blocks,0]));
+    },
+    blob(){parts.push(new Uint8Array([0x3B]));return new Blob(parts,{type:'image/gif'});}
+  };
+}
+function anSave(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),8000);status(`Saved ${name} (${(blob.size/1048576).toFixed(1)} MB)`);
+}
+const sleepMs=ms=>new Promise(r=>setTimeout(r,ms));
+async function anExport(){
+  const A=S.an;
+  if(A.exporting){A.expStop=true;return;}
+  const say=(m,err)=>{$('#anExpSt').textContent=m;if(err)status(m,true);};
+  if(!A.prog||A.errs.length){say('Load an animation script without errors first.',true);return;}
+  const tl=anTimeline();if(!tl){say('No trajectory yet. Press Integrate first.',true);return;}
+  const kind=$('#anFmt').value,W0=+$('#anSize').value||480,fps=Math.max(1,Math.min(50,+$('#anFps').value||25));
+  const n=Math.max(2,Math.min(tl.NF,Math.round(+$('#anN').value)||150)),P=A.prog,M=S.M,[xlo,ylo,xhi,yhi]=P.dim;
+  const W=Math.max(64,Math.round(W0/2)*2),H=Math.max(64,Math.round(W*(yhi-ylo)/(xhi-xlo)/2)*2);
+  const sw=Math.min(cvMain.clientWidth-20,(cvMain.clientHeight-20)*(xhi-xlo)/(yhi-ylo)),k=W/Math.max(100,sw);
+  const idx=Array.from({length:n},(_,i)=>Math.round(i*(tl.NF-1)/(n-1)));
+  A.playing=false;anSync();A.exporting=true;A.expStop=false;$('#anMake').textContent='Cancel';
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d',{willReadFrequently:true});
+  const B={y:new Float64Array(M.n),y0:new Float64Array(M.n),yb:new Float64Array(M.n)};
+  const paint=f=>{
+    const t0=tl.stateAt(0,B.y0),t=tl.stateAt(f,B.y);
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+    aniDraw(ctx,P,M,{x:0,y:0,w:W,h:H,k},{t,y:B.y,t0,y0:B.y0,back:q=>({t:tl.stateAt(Math.max(0,f-q),B.yb),y:B.yb})});};
+  const base=`${fileBase()}-animation`;
+  try{
+    if(kind==='gif'){
+      const ns=Math.min(12,n),imgs=[];
+      for(let q=0;q<ns;q++){paint(idx[Math.round(q*(n-1)/Math.max(1,ns-1))]);imgs.push(ctx.getImageData(0,0,W,H).data);}
+      const gw=gifWriter(W,H,gifPalette(imgs),Math.max(2,Math.round(100/fps)));
+      for(let i=0;i<n;i++){
+        if(A.expStop)throw new Error('Cancelled');
+        paint(idx[i]);gw.add(ctx.getImageData(0,0,W,H).data);
+        say(`Frame ${i+1} of ${n}`);await sleepMs(0);}
+      anSave(gw.blob(),base+'.gif');say('Done.');
+    }else{
+      if(!window.MediaRecorder||!cv.captureStream)throw new Error('This browser cannot record video; use GIF instead.');
+      const mt=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+      if(!mt)throw new Error('This browser cannot record WebM; use GIF instead.');
+      let stream=cv.captureStream(0),track=stream.getVideoTracks()[0];const manual=typeof track.requestFrame==='function';
+      if(!manual){stream=cv.captureStream(fps);}
+      const rec=new MediaRecorder(stream,{mimeType:mt,videoBitsPerSecond:Math.round(W*H*fps*0.4)}),chunks=[];
+      rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+      const done=new Promise(r=>{rec.onstop=r;});
+      paint(idx[0]);rec.start();if(manual)track.requestFrame();await sleepMs(1000/fps);
+      for(let i=0;i<n;i++){
+        if(A.expStop){rec.stop();await done;throw new Error('Cancelled');}
+        paint(idx[i]);if(manual)track.requestFrame();
+        say(`Frame ${i+1} of ${n} (a video is recorded in real time: keep this tab in view)`);await sleepMs(1000/fps);}
+      if(manual)track.requestFrame();await sleepMs(1000/fps);rec.stop();await done;
+      anSave(new Blob(chunks,{type:'video/webm'}),base+'.webm');say('Done.');
+    }
+  }catch(e){say(e.message==='Cancelled'?'Cancelled.':'Export failed: '+e.message,e.message!=='Cancelled');}
+  finally{A.exporting=false;$('#anMake').textContent='Make file';requestRender();}
+}
+function anInit(){
+  const A=S.an;
+  try{A.text=store.get('xpps-ani')||'';}catch(e){}
+  $('#aniText').value=A.text;
+  $('#aniApply').addEventListener('click',()=>anApply(true));
+  $('#aniText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();anApply(true);}});
+  $('#aniEx').addEventListener('click',()=>{anExample();anApply(true);});
+  $('#aniPut').addEventListener('click',anPutInOde);
+  $('#aniIn').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+    rd.onload=()=>{$('#aniText').value=String(rd.result);anApply(true);status(`Opened ${f.name}`);e.target.value='';};rd.readAsText(f);});
+  $('#anPlay').addEventListener('click',()=>anPlay());
+  $('#anStart').addEventListener('click',()=>{A.f=0;anSync();requestRender();});
+  $('#anSlide').addEventListener('input',e=>{A.f=+e.target.value;A.playing=false;anSync();requestRender();});
+  $('#anSpd').addEventListener('change',e=>{A.mult=+e.target.value||1;});
+  $('#anLoop').addEventListener('change',e=>{A.loop=e.target.checked;});
+  $('#anExpBtn').addEventListener('click',()=>{const e=$('#anExp');e.hidden=!e.hidden;});
+  $('#anMake').addEventListener('click',anExport);
+}
 function setView(v){
   // the Phase reduction view is the Time course plot machinery showing the adjoint, isostable and H curves; the Time course view never does
   const ph=v==='ph';if(ph)v='tc';
@@ -6706,11 +7302,12 @@ function setView(v){
   S.view=v;
   document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===(ph?'ph':v)));
   updateToolbar();
-  $('#winBtn').hidden=v==='p3';if(v==='p3')openWinPop(false);
-  $('#csvBtn').hidden=!(v==='bif'||v==='tp'||v==='tc');$('#datBtn').hidden=!(v==='bif'||v==='tp');
-  $('#stripWrap').hidden=!(v==='pp'||v==='p3');
+  $('#winBtn').hidden=v==='p3'||v==='an';if(v==='p3'||v==='an')openWinPop(false);$('#fitBtn').hidden=v==='an';
+  openExpPop(false);
+  $('#stripWrap').hidden=!(v==='pp'||v==='p3'||v==='an');
+  $('#anBar').hidden=v!=='an';if(v!=='an'){S.an.playing=false;$('#anExp').hidden=true;}
   const par=v==='bif'||v==='tp';
-  $('#secEq').hidden=par||ph;$('#secBif').hidden=$('#secSpecial').hidden=v!=='bif';$('#secPh').hidden=!ph;
+  $('#secEq').hidden=par||ph||v==='an';$('#secBif').hidden=$('#secSpecial').hidden=v!=='bif';$('#secPh').hidden=!ph;
   $('#secTp').hidden=$('#secTpSpecial').hidden=v!=='tp';
   $('#secVars').hidden=par;$('#secTraj').hidden=par||ph;
   const M=S.M,cob=M&&M.discrete&&M.n===1;
@@ -6718,6 +7315,7 @@ function setView(v){
   if(v==='bif'){if(!S.bif.branches.length&&!S.bif.sweeps.length)fitBif();refreshSpecial();}
   if(v==='tp'){buildTpControls();if(!S.tp.curves.some(c=>c.p1i===S.bif.pi&&c.p2i===S.tp.p2i))fitTP();}
   if(v==='tc')fitTC();
+  if(v==='an'){$('#hint').textContent='Play, or drag the slider, to animate the active trajectory (choose it in the Trajectories list)';anCompile();anSync();}
   if(ph){$('#hint').textContent='Drag: pan · Scroll: zoom (Shift: phase only)';phNoteUpdate();
     if(S.adj){const AD=S.adj;
       if(AD.stale&&AD.live&&AD.live.follow!==false){AD.stale=false;adjAfterChange(true);}
@@ -6726,7 +7324,7 @@ function setView(v){
   syncWinPop(true);
   S.lastFrame=null;requestRender();
 }
-function setTab(t){S.tab=t;if(t==='ic'&&S.M&&!S.gridEdited&&!$('#gridBox').hidden)gridDefaults();document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));for(const id of['eq','par','ic','num','scr'])$('#tab-'+id).hidden=id!==t;}
+function setTab(t){S.tab=t;if(t==='ic'&&S.M&&!S.gridEdited&&!$('#gridBox').hidden)gridDefaults();document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));for(const id of['eq','par','ic','num','scr','ani'])$('#tab-'+id).hidden=id!==t;}
 
 /* ======================= SVG export ======================= */
 // A recording 2D context: the same render functions draw into it and it writes SVG.
@@ -6777,7 +7375,7 @@ function svgCtx(W,H){
   };
   return ctx;
 }
-const VIEWNAME={pp:'phase-plane',p3:'3d',tc:'time-course',bif:'bifurcation',tp:'two-parameter'};
+const VIEWNAME={pp:'phase-plane',p3:'3d',tc:'time-course',bif:'bifurcation',tp:'two-parameter',an:'animation'};
 const dlPromise=(()=>{try{return window.claude&&window.claude.use?window.claude.use('downloads').catch(()=>null):null;}catch(e){return null;}})();
 // continuation data as a CSV table: one row per computed point, plus rows for the labelled special points
 const csvNum=v=>v==null||!Number.isFinite(v)?'':String(+v.toPrecision(12));
@@ -6836,7 +7434,7 @@ function exportCSV(){
       if(!SCRIPT.files)status(`Saved ${n1} and ${n2} (the first 20 Fourier coefficients)`);})();
     return;}
   if(S.view==='tc'&&S.tc.adj&&S.adj){if(adjQ().k==='U')deliverFile(adjAllCSV(),`${fileBase()}-orbit.csv`);else deliverFile(adjCSV(),`${fileBase()}-${ADJQFILE[adjQ().k]}.csv`);return;}
-  if(S.view==='tc'){const r=tcCSV();if(!r.n){status('No trajectories to export yet: integrate one first',true);return;}deliverFile(r.text,`${fileBase()}-timecourse.csv`);return;}
+  if(S.view==='tc'||S.view==='pp'||S.view==='p3'||S.view==='an'){const r=tcCSV();if(!r.n){status('No trajectories to export yet: integrate one first',true);return;}deliverFile(r.text,`${fileBase()}-${S.view==='tc'?'timecourse':'trajectories'}.csv`);return;}
   const r=S.view==='tp'?tpCSV():bifCSV();
   if(!r.n){status(S.view==='tp'?'No two-parameter curves for this pair of parameters yet':'Nothing to export yet: continue a branch, an orbit family or run a sweep first',true);return;}
   const name=S.view==='tp'?`${fileBase()}-two-parameter-${M.parNames[S.bif.pi]}-${M.parNames[S.tp.p2i]}.csv`:`${fileBase()}-bifurcation.csv`;
@@ -6879,6 +7477,8 @@ function tpDAT(){
 }
 async function exportDAT(){
   if(!S.M)return;const M=S.M;
+  if(S.view==='tc'&&S.phTab){status('DAT is not available for the phase reduction curves: use CSV',true);return;}
+  if(S.view==='pp'||S.view==='p3'||S.view==='an'||S.view==='tc'){saveTrajDAT();return;}
   if(S.view==='tp'){
     const r=tpDAT();
     if(!r.n){status('No two-parameter curves for this pair of parameters yet',true);return;}
@@ -6899,6 +7499,38 @@ function saveTrajDAT(){
   const tr=activeTraj();if(!tr){status('No trajectory to save',true);return;}
   const rows=[];for(let k=0;k<tr.t.length;k++)rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>Number.isFinite(v)?String(+v.toPrecision(9)):'nan').join(' '));
   deliverFile(rows.join('\n')+'\n',`${fileBase()}-trajectory.dat`);
+}
+// the Export button: a small menu of what can be saved from this view
+function expChoices(){
+  const v=S.view,M=S.M,phRed=v==='tc'&&S.phTab,traj=v==='pp'||v==='p3'||v==='an'||(v==='tc'&&!phRed);
+  const hasTr=S.trajs.length>0;
+  const csv=phRed?{ok:!!S.adj,d:'the curves shown (Z, I, ρ, B, the orbit or H), with all variables'}
+    :traj?{ok:hasTr,d:'every trajectory: t and all variables and auxiliary functions, one row per point'}
+    :v==='bif'?{ok:true,d:'branches, orbit families and sweeps, with the special points'}
+    :{ok:true,d:`the curves in (${M.parNames[S.bif.pi]}, ${M.parNames[S.tp.p2i]}), with the codimension-two points`};
+  const dat=phRed?{ok:false,d:'not for the phase reduction curves: use CSV'}
+    :traj?{ok:hasTr,d:'the active trajectory: numbers only, space-separated columns (gnuplot, XPPAUT)'}
+    :v==='bif'?{ok:true,d:'one .dat file for each kind of curve: numbers only, no header (gnuplot, XPPAUT)'}
+    :{ok:true,d:'the curves: numbers only, no header (gnuplot, XPPAUT)'};
+  const L=[{k:'csv',t:'CSV',...csv},{k:'svg',t:'SVG',ok:true,d:'the figure as it is on screen, as a vector drawing'},{k:'dat',t:'DAT',...dat}];
+  if(v==='an')L.push({k:'anim',t:'GIF',ok:true,d:'the animation as a GIF or a WebM video…'});
+  return L;
+}
+function openExpPop(on){
+  const pop=$('#expPop'),b=$('#expBtn');if(!pop||!b)return;
+  if(!on){pop.hidden=true;b.setAttribute('aria-expanded','false');return;}
+  if(!S.M)return;
+  pop.replaceChildren(el('div',{class:'eh',text:'Export as'}),...expChoices().map(c=>{
+    const it=el('button',{type:'button',role:'menuitem',disabled:!c.ok,title:c.ok?'':'Nothing to export yet'},el('b',{text:c.t}),el('span',{text:c.d}));
+    it.addEventListener('click',()=>{openExpPop(false);
+      if(c.k==='anim'){$('#anExp').hidden=false;return;}
+      rec(`export ${c.k}`);if(c.k==='svg')exportSVG();else if(c.k==='csv')exportCSV();else exportDAT();});
+    return it;}));
+  pop.hidden=false;b.setAttribute('aria-expanded','true');
+  const r=b.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))+'px';
+  pop.style.top=(r.bottom+6+h>window.innerHeight-8?Math.max(8,r.top-6-h):r.bottom+6)+'px';
+  const f=pop.querySelector('button:not(:disabled)');if(f)f.focus();
 }
 function exportSVG(){
   if(!S.M)return;
@@ -6958,10 +7590,10 @@ function showAbout(){
   const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-labelledby':'aboutTitle'});
   const a=(href,text)=>el('a',{href,target:'_blank',rel:'noopener',text});
   const box=el('div',{class:'about'},
-    el('div',{class:'row'},el('h2',{id:'aboutTitle',text:'XPP Studio v1.3',style:'flex:1'}),el('button',{class:'btn',text:'Close',onclick:()=>sh.remove()})),
+    el('div',{class:'row'},el('h2',{id:'aboutTitle',text:'XPP Studio v1.4',style:'flex:1'}),el('button',{class:'btn',text:'Close',onclick:()=>sh.remove()})),
     el('p',{text:'A browser workbench for differential equations, maps and stochastic models. It reads XPPAUT’s .ode files and follows XPPAUT’s approach: phase planes, nullclines, equilibria, and continuation of equilibria, periodic orbits and their bifurcations.'}),
     el('h3',{text:'This version'}),
-    el('p',{text:'October 2026. Created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5, an AI model made by Anthropic.'}),
+    el('p',{text:'v1.4, November 2026. Created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5, an AI model made by Anthropic.'}),
     el('p',null,'Source code, example models, the tutorial and new versions: ',a('https://github.com/xpp-studio/xpp-studio','github.com/xpp-studio/xpp-studio'),'.'),
     el('h3',{text:'Credits'}),
     el('p',null,'XPP Studio is built on the ideas, file format and conventions of ',a('https://sites.pitt.edu/~phase/bard/bardware/xpp/xpp.html','XPPAUT'),', created by G. Bard Ermentrout (Department of Mathematics, University of Pittsburgh), with Daniel Dougherty and other contributors. XPPAUT’s continuation tools use AUTO, by Eusebius J. Doedel and collaborators. '),
@@ -7058,12 +7690,17 @@ function applySet(name,{script}={}){
     }
   }finally{SCRIPT.mute=was;}
   const applied=[...did.par,...did.ic,...did.num];
-  status(`Set ${st.name}: ${applied.length?applied.join(', '):'nothing to change'}${did.view.length?` · view settings left as they are: ${did.view.join(', ')}`:''}${did.bad.length?` · not used here: ${did.bad.join(', ')}`:''}${!script&&S.stale&&!S.auto?' · press Run':''}`,false);
+  status(`Set ${st.name}: ${applied.length?applied.join(', '):'nothing to change'}${did.view.length?` · view settings left as they are: ${did.view.join(', ')}`:''}${did.bad.length?` · not used here: ${did.bad.join(', ')}`:''}${!script&&S.stale&&!S.auto?' · press Update':''}`,false);
   return st;
 }
 const parIndex=nm=>{const i=S.M.parNames.indexOf(String(nm).toLowerCase());if(i<0)throw new Error(`there is no parameter called “${nm}”`);return i;};
 const onoff=(v,cur)=>{v=String(v||'').toLowerCase();if(v==='on'||v==='1'||v==='true'||v==='yes')return true;if(v==='off'||v==='0'||v==='false'||v==='no')return false;if(v==='toggle'||v==='')return!cur;throw new Error('use on or off');};
 const dirArg=a=>{a=String(a||'').toLowerCase();return a===''?null:a.startsWith('b')&&a!=='both'?'b':a==='both'||a==='fb'?'fb':a.startsWith('f')?'f':null;};
+// Last point → IC: the initial values become the end of the active trajectory (false if there is none)
+function lastToIC(){const tr=activeTraj();if(!tr)return false;const L=tr.t.length-1;S.ic=Float64Array.from(tr.cols.slice(0,S.M.n).map(c=>c[L]));for(let k=0;k<S.M.nm;k++){S.mkIC[k]=tr.cols[S.M.n+k][L];S.M.mk[k]=S.mkIC[k];}refreshIC();S.ver++;computeEquilibria();refreshEqList();requestRender();return true;}
+// the Reset buttons: parameters, or initial values, back to the values in the file
+function resetPars(){S.par0.forEach((v,i)=>{S.M.setParam(i,v);syncParamRow(i);});S.ver++;}
+function resetIC(){S.ic=Float64Array.from(S.ic0);if(S.mkIC0){S.mkIC=Float64Array.from(S.mkIC0);S.M.mk.set(S.mkIC);}refreshIC();S.ver++;requestRender();if(S.bvp)bvpSolve(false);}
 function runIn(dir,fn){const sv=S.num.dir;if(dir){S.num.dir=dir;}try{return fn();}finally{S.num.dir=sv;}}
 const CMDS={
   example:{help:'example ID — load a built-in example (e.g. ml, fhn, rossler, lorenz, chain, hutch)',run:a=>{const q=a.join(' ').toLowerCase();const ex=EXAMPLES.find(e=>e.id===q)||EXAMPLES.find(e=>e.name.toLowerCase().includes(q));if(!ex)throw new Error(`no example “${q}”; ids: ${EXAMPLES.map(e=>e.id).join(', ')}`);fire('#exSel',ex.id);}},
@@ -7100,6 +7737,9 @@ const CMDS={
   points:{help:'points on|off — draw orbits as points',run:a=>{if(onoff(a[0],S.pp.points)!==S.pp.points)$('#tgPts').click();}},
   equal:{help:'equal on|off — equal axes',run:a=>{if(onoff(a[0],!!S.pp.equal)!==!!S.pp.equal)$('#tgEqual').click();}},
   erase:{help:'erase — remove all trajectories',run:()=>erase()},
+  last:{help:'last — set the initial values to the end of the active trajectory (the Last point → IC button)',run:()=>{if(!lastToIC())throw new Error('there is no trajectory to take the last point of');}},
+  reset:{help:'reset par|init — put the parameters (par) or the initial values (init) back to the values in the file (the Reset buttons)',run:a=>{const w=String(a[0]||'').toLowerCase();
+    if(w==='par'||w==='pars'||w==='parameters'){resetPars();liveUpdate();}else if(w==='init'||w==='ic'){resetIC();computeEquilibria();refreshEqList();}else throw new Error('use reset par or reset init');}},
   go:{help:'go [forward|backward|both] — integrate from the initial values',run:a=>{runIn(dirArg(a[0]),()=>runDir(S.ic,{noIcUpdate:true}));fitTC();requestRender();}},
   traj:{help:'traj x=1 y=0 [forward|backward|both] — a trajectory from this point (other variables keep their initial values)',run:a=>{const d=a.length&&!a[a.length-1].includes('=')?dirArg(a.pop()):null;const y=Float64Array.from(S.ic);for(const[k,v]of kv(a))y[varIndex(k)]=scrNum(v,k);runIn(d,()=>runDir(y,{noIcUpdate:true}));fitTC();requestRender();}},
   grid:{help:'grid [X lo hi n [Y lo hi n]] — run a grid of initial conditions (no arguments: 10 × 10 over the phase-plane window)',run:async a=>{
@@ -7127,7 +7767,9 @@ const CMDS={
     if(!sp.cyc&&sp.type==='PD'&&S.M.discrete){const n=S.bif.branches.length;runSwitch(sp,true);if(S.bif.branches.length===n)throw new Error($('#status').textContent);return;}
     if(!sp.cyc||sp.type!=='PD')throw new Error(`${sp.label} is not a period doubling`);runPODouble(sp);await waitIdle();}},
   pick:{help:'pick K NAME=value — pick the orbit of family K nearest that parameter value (becomes OR1, OR2, …)',run:a=>{const fam=S.bif.cycles.filter(c=>c.pi===S.bif.pi),cb=fam[scrNum(a[0],'K')-1];if(!cb)throw new Error(`there are ${fam.length} orbit families for this parameter`);const[[k,v]]=kv([a[1]]);if(parIndex(k)!==S.bif.pi)throw new Error(`orbits are parametrised by ${S.M.parNames[S.bif.pi]}`);const p=scrNum(v);let best=0;cb.pts.forEach((q,j)=>{if(Math.abs(q.p-p)<Math.abs(cb.pts[best].p-p))best=j;});grabCycle(cb,best,null,true);}},
-  tppar:{help:'tppar NAME [lo hi] — second parameter (and its range) for two-parameter curves',run:a=>{const i=parIndex(a[0]);if(i===S.bif.pi)throw new Error('the second parameter must differ from the first');fire('#tP2',i);if(a.length===3){fire('#tMin2',scrNum(a[1],'lo'));fire('#tMax2',scrNum(a[2],'hi'));}else if(a.length!==1)throw new Error('give both ends of the range');}},
+  tppar:{help:'tppar NAME [lo hi] [ds=…|ds=auto] — second parameter (and its range) for two-parameter curves, and their first step',run:a=>{const i=parIndex(a[0]);if(i===S.bif.pi)throw new Error('the second parameter must differ from the first');fire('#tP2',i);
+    const rest=a.slice(1).filter(x=>!x.includes('='));if(rest.length===2){fire('#tMin2',scrNum(rest[0],'lo'));fire('#tMax2',scrNum(rest[1],'hi'));}else if(rest.length)throw new Error('give both ends of the range');
+    for(const[k,v]of kv(a.slice(1).filter(x=>x.includes('=')))){if(k==='ds')fire('#tDs',/^auto$/i.test(v)?'':scrNum(v,'ds'));else throw new Error(`unknown option ${k}`);}}},
   follow:{help:'follow LABEL — follow HB1, LP1, LPC1, PD1 … in two parameters, or OR1 at constant period',run:async a=>{const sp=findSpecialLabel(a[0]);const n=S.tp.curves.length;if(sp.type==='OR')followConstT(sp);else runTwoPar(sp);await waitIdle();if(S.tp.curves.length===n)throw new Error($('#status').textContent);}},
   slowpoints:{help:'slowpoints max=2 threshold=5% — hi-slo-lo: at most max slow points on each periodic orbit, where the speed is below threshold percent of the fastest speed on the orbit',run:a=>{for(const[k,v]of kv(a)){if(k==='max'||k==='n')fire('#bSlowN',scrNum(v,'max'));else if(k==='threshold'||k==='thresh'||k==='r')fire('#bSlowR',scrNum(String(v).replace(/%$/,''),'threshold (in percent)'));else throw new Error(`unknown setting ${k}; use max= and threshold=`);}}},
   connect:{help:'connect FROM [TO] [backward] — find a homoclinic (TO = FROM, or no TO) or heteroclinic orbit in the bifurcation parameter. FROM and TO are equilibrium numbers, or end for the saddle found at the end of the last branch of periodic orbits whose period grew',run:async a=>{
@@ -7137,7 +7779,7 @@ const CMDS={
     const f=key(w[0]),t=w[1]?key(w[1]):f,cand=[f,t].map(k=>k[0]==='c'?S.bif.connCand[+k.slice(1)]:null).find(Boolean),rv=back||!!(cand&&cand.rev);
     await connFindRun(f,t,rv);}},
   clear:{help:'clear bif|tp — clear the bifurcation or two-parameter diagram',run:a=>{const w=String(a[0]||'').toLowerCase();if(w==='bif')$('#bClear').click();else if(w==='tp')$('#tClear').click();else throw new Error('clear bif or clear tp');}},
-  export:{help:'export svg|csv|dat [FILE] — save the current plot or its data',run:async a=>{const kind=String(a[0]||'').toLowerCase(),name=a[1];
+  export:{help:'export svg|csv|dat [FILE] — save the current plot (svg) or its data (csv, or dat: numbers only); in the phase plane, 3D and time course the data are the trajectories (dat: the active one)',run:async a=>{const kind=String(a[0]||'').toLowerCase(),name=a[1];
     const sink=SCRIPT.files,before=sink?sink.length:0;
     if(kind==='svg')exportSVG();else if(kind==='csv')exportCSV();else if(kind==='dat')await exportDAT();else throw new Error('export svg, csv or dat');
     await new Promise(r=>setTimeout(r,0));
@@ -7189,11 +7831,12 @@ function scrWords(line){const out=[];const re=/"([^"]*)"|(\S+)/g;let m;while((m=
 function scrParse(text){const L=[];text.split(/\r?\n/).forEach((raw,i)=>{const s=raw.replace(/(^|\s)#(?!@).*$/,'').trim();if(s)L.push({ln:i+1,s});});return L;}
 // the commands in an .ode file: lines of the form  #@do command
 const odeScript=txt=>txt.split(/\r?\n/).map(l=>/^\s*#@do\s+(.*)$/i.exec(l)).filter(Boolean).map(m=>m[1]).join('\n');
+function odeScriptBtn(){const b=document.getElementById('scrOde'),t=document.getElementById('odeText');if(b&&t)b.hidden=!odeScript(t.value).trim();}
 function scrLog(msg,cls){const box=$('#scrLog');const d=el('div',{class:cls||'',text:msg});box.append(d);box.scrollTop=box.scrollHeight;}
 // run one parsed line: true if it worked; errors and the line are written in the log
 async function scrExec(L){
   const w=scrWords(L.s),cmd=(w.shift()||'').toLowerCase(),C=CMDS[cmd];
-  if(!C){scrLog(`Line ${L.ln}: unknown command “${cmd}”. Press Commands for the list.`,'e');return false;}
+  if(!C){scrLog(`Line ${L.ln}: unknown command “${cmd}”. Supported script syntax, under the log, lists them all.`,'e');return false;}
   if(!S.M&&cmd!=='example'&&cmd!=='apply'){scrLog(`Line ${L.ln}: load a model first`,'e');return false;}
   try{await C.run(w,scrLog);await waitIdle();return true;}
   catch(e){scrLog(`Line ${L.ln}: ${L.s}\n  ${e.message}`,'e');return false;}
@@ -7305,7 +7948,7 @@ const recBif=()=>recOnce(`bifpar ${S.M.parNames[S.bif.pi]} ${recNum(S.bif.pmin)}
 function recWindow(){if(!SCRIPT.rec||SCRIPT.running||SCRIPT.mute||!S.M)return;
   if(is3()){const d=r=>Math.round(r*1800/Math.PI)/10;rec(`rotate ${d(S.p3.yaw)} ${d(S.p3.pitch)} ${recNum(+S.p3.zoom.toPrecision(3))}`,'rotate');return;}
   const w=curWin();rec(`window ${recNum(w.xlo)} ${recNum(w.xhi)} ${recNum(w.ylo)} ${recNum(w.yhi)}`,'window:'+S.view);}
-const recTp=()=>recOnce(`tppar ${S.M.parNames[S.tp.p2i]} ${recNum(S.tp.p2min)} ${recNum(S.tp.p2max)}`,'tppar');
+const recTp=()=>recOnce(`tppar ${S.M.parNames[S.tp.p2i]} ${recNum(S.tp.p2min)} ${recNum(S.tp.p2max)}${S.tp.ds?` ds=${recNum(S.tp.ds)}`:''}`,'tppar');
 function scriptWrap(){
   const bp=recBif,tpr=recTp;
   // actions are recorded where they happen, not on particular buttons, so the same action is recorded whichever
@@ -7350,7 +7993,17 @@ function scriptInit(){
   ta.addEventListener('input',()=>{if(SCRIPT.running)return;if(SCRIPT.stepper){SCRIPT.hl=null;scrShowNext();}else scrMark(null);});
   $('#scrStep1').addEventListener('click',stepScript);
   $('#scrRestart').addEventListener('click',scrRestart);
-  $('#scrOde').addEventListener('click',()=>{const t=odeScript($('#odeText').value);if(!t.trim()){status('The equations have no #@do lines',true);return;}runScript('apply\n'+t);});
+  // Load .ode script: the #@do lines of the equations go into the script box (after apply, which loads the equations)
+  $('#scrOde').addEventListener('click',async()=>{const t=odeScript($('#odeText').value);if(!t.trim()){status('The equations have no #@do lines',true);odeScriptBtn();return;}
+    const body=`# the script stored in the .ode file (its #@do lines)\napply\n${t}\n`;
+    if(ta.value.trim()&&ta.value.trim()!==body.trim()&&!(await askConfirm('Load the .ode script','Replace what is in the script box with the script stored in the equations?','Replace')))return;
+    if(SCRIPT.stepper)scrRestart();ta.value=body;store.set('xpps-script',ta.value);scrMark(null);$('#scrLog').replaceChildren();setTab('scr');
+    const n=t.split('\n').filter(l=>l.trim()).length;status(`Loaded the .ode script: ${n} command${n===1?'':'s'} after apply. Press Run, or Step through it`);});
+  $('#odeText').addEventListener('input',odeScriptBtn);odeScriptBtn();
+  // Supported script syntax: every command, from its help text
+  $('#scrSyntaxList').replaceChildren(
+    el('li',null,'One command per line. ',el('code',{text:'#'}),' starts a comment; ',el('code',{text:'"two words"'}),' keeps words together. Ctrl+Enter runs the script, Ctrl+Shift+Enter steps.'),
+    ...Object.values(CMDS).map(c=>{const k=c.help.indexOf(' — ');return el('li',null,el('code',{text:k>0?c.help.slice(0,k):c.help}),k>0?' — '+c.help.slice(k+3):'');}));
   // Record: ask what to do with commands already in the box, mark a new block if they are kept, and report what was recorded
   const askRecord=()=>new Promise(res=>{
     const sh=el('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':'Record into the script'});
@@ -7387,13 +8040,12 @@ function scriptInit(){
       status(msg);
     }
   });
-  $('#scrHelp').addEventListener('click',()=>{const box=$('#scrLog');box.replaceChildren(...Object.values(CMDS).map(c=>el('div',{class:'h',text:c.help})));});
   $('#scrEx').addEventListener('click',()=>{ta.value=SCRIPT_EXAMPLE;store.set('xpps-script',ta.value);});
   $('#scrRestore').addEventListener('click',async()=>{if(ta.value.trim()&&!(await askConfirm('Restore old script','Replace what is in the script box with the old script?','Replace')))return;ta.value=SCRIPT.cleared||'';store.set('xpps-script',ta.value);$('#scrRestore').hidden=true;status('Old script restored');});
   $('#scrInsert').addEventListener('click',()=>{const t=ta.value.trim();if(!t){status('The script is empty',true);return;}
     const body=t.split('\n').filter(l=>l.trim()&&!/^\s*#/.test(l)&&!/^\s*example\b/i.test(l)).map(l=>'#@do '+l.trim());
     const ot=$('#odeText'),src=ot.value.split('\n').filter(l=>!/^\s*#@do\s/i.test(l));let di=src.length;for(let k=src.length-1;k>=0;k--)if(/^\s*(done|d)\s*$/i.test(src[k])){di=k;break;}
-    src.splice(di,0,...body);ot.value=src.join('\n');store.set('xpps-text',ot.value);setTab('eq');status(`Wrote ${body.length} #@do line${body.length===1?'':'s'} into the equations; “Run file script” replays them`);});
+    src.splice(di,0,...body);ot.value=src.join('\n');store.set('xpps-text',ot.value);setTab('eq');odeScriptBtn();status(`Wrote ${body.length} #@do line${body.length===1?'':'s'} into the equations; “Load .ode script” brings them back into the script box`);});
   // recording hooks, attached alongside the normal handlers
   $('#exSel').addEventListener('change',e=>{if(e.target.value!=='custom')rec(`example ${e.target.value}`);});
   $('#applyBtn').addEventListener('click',()=>rec('apply'));
@@ -7412,10 +8064,12 @@ function scriptInit(){
   $('#bVar').addEventListener('change',()=>rec(`plot ${S.M.varNames[S.bif.vi]}`,'plot'));
   $('#bShow').addEventListener('change',e=>rec(`show ${({var:'hilo',S:'hi-slo-lo',N:'L2',T:'period',f:'frequency'})[e.target.value]}`,'show'));
   const tpr=recTp;
-  for(const id of['#tP2','#tMin2','#tMax2'])$(id).addEventListener('change',tpr);
+  for(const id of['#tP2','#tMin2','#tMax2','#tDs'])$(id).addEventListener('change',tpr);
   $('#bClear').addEventListener('click',()=>rec('clear bif'));$('#tClear').addEventListener('click',()=>rec('clear tp'));
-  $('#svgBtn').addEventListener('click',()=>rec('export svg'));$('#csvBtn').addEventListener('click',()=>rec('export csv'));$('#datBtn').addEventListener('click',()=>rec('export dat'));
   $('#writeState').addEventListener('click',()=>rec('writestate'));
+  $('#icLast').addEventListener('click',()=>{if(S.trajs.length)rec('last');});
+  $('#parReset').addEventListener('click',()=>rec('reset par'));
+  $('#icReset').addEventListener('click',()=>rec('reset init'));
 }
 const SCRIPT_EXAMPLE=`# A reproducible set of figures for the Morris-Lecar model.
 # Run makes every figure below and saves them together in one zip.
@@ -7444,7 +8098,7 @@ export svg ml-twopar.svg
 `;
 
 function init(){
-  scriptWrap();
+  scriptWrap();anInit();
   const exSel=$('#exSel');
   const og=(label,list)=>{const g=el('optgroup',{label});g.append(...list.map(e=>el('option',{value:e.id,text:e.name})));return g;};
   exSel.replaceChildren(og('Differential equations',EXAMPLES.filter(e=>!e.map)),og('Maps',EXAMPLES.filter(e=>e.map)),el('option',{value:'custom',text:'Custom (from editor)'}));
@@ -7456,7 +8110,7 @@ function init(){
   $('#copyOde').addEventListener('click',()=>copyText($('#odeText').value,'.ode text'));
   $('#writeState').addEventListener('click',writeState);
   $('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('#odeText').value=String(rd.result);applyEditor();status(`Opened ${f.name}`);};rd.readAsText(f);e.target.value='';});
-  $('#parReset').addEventListener('click',()=>{S.par0.forEach((v,i)=>{S.M.setParam(i,v);syncParamRow(i);});scheduleLive();status('Parameters reset to file values');});
+  $('#parReset').addEventListener('click',()=>{resetPars();scheduleLive();status('Parameters reset to file values');});
   $('#tgBVP').addEventListener('click',()=>{S.bvp=!S.bvp;
     if(S.bvp){S.bvpX=null;S.bvpPar=null;bvpSolve(true);}
     else{S.bvpOk=null;status('Initial value problems again: the initial values stay at the last solution');}
@@ -7464,8 +8118,17 @@ function init(){
   $('#gridGo').addEventListener('click',runGridIC);$('#gridWin').addEventListener('click',gridDefaults);$('#gridStop').addEventListener('click',()=>{if(gridRun)gridRun.stop=true;});
   $('#icDir').addEventListener('change',e=>{$('#nDir').value=e.target.value;$('#nDir').dispatchEvent(new Event('change'));});
   $('#icGo').addEventListener('click',()=>{goAsync();});
-  $('#icLast').addEventListener('click',()=>{const tr=activeTraj();if(!tr)return;const L=tr.t.length-1;S.ic=Float64Array.from(tr.cols.slice(0,S.M.n).map(c=>c[L]));for(let k=0;k<S.M.nm;k++){S.mkIC[k]=tr.cols[S.M.n+k][L];S.M.mk[k]=S.mkIC[k];}refreshIC();S.ver++;computeEquilibria();refreshEqList();requestRender();status('Initial condition set to the end of the active trajectory');});
-  $('#icReset').addEventListener('click',()=>{S.ic=Float64Array.from(S.ic0);if(S.mkIC0){S.mkIC=Float64Array.from(S.mkIC0);S.M.mk.set(S.mkIC);}refreshIC();S.ver++;requestRender();if(S.bvp)bvpSolve(false);});
+  $('#icLast').addEventListener('click',()=>{if(lastToIC())status('Initial condition set to the end of the active trajectory');else status('There is no trajectory to take the last point of',true);});
+  const fmSet=()=>{
+    const note=$('#fmNote'),r=fillIC(S.M,S.ic,$('#fmVars').value,$('#fmExpr').value,S.num.t0||0);
+    note.style.color=r.error?'#c0392b':'';
+    if(r.error){note.textContent=r.error;return;}
+    S.ic=r.ic;refreshIC();S.ver++;computeEquilibria();refreshEqList();requestRender();if(S.bvp)bvpSolve(false);icLiveSoon();
+    note.textContent=`Set ${r.n} initial condition${r.n===1?'':'s'}. Reset returns to the values in the file.`;
+  };
+  $('#fmGo').addEventListener('click',fmSet);
+  for(const id of['#fmVars','#fmExpr'])$(id).addEventListener('keydown',e=>{if(e.key==='Enter')fmSet();});
+  $('#icReset').addEventListener('click',resetIC);
   const numChange=()=>{
     const g=(id,d)=>{const v=parseFloat($(id).value);return Number.isFinite(v)&&v>0?v:d;};
     S.num.method=$('#nMeth').value;S.num.T=g('#nTotal',S.num.T);S.num.dt=g('#nDt',S.num.dt);S.num.tol=g('#nTol',S.num.tol);S.num.bound=g('#nBound',S.num.bound);
@@ -7491,7 +8154,7 @@ function init(){
   for(const id of['#cDs','#cEqDsmin','#cEqDsmax','#cEqNmax','#cPoNtst','#cPoDs','#cPoDsmax','#cPoNmax','#cTpNmax','#cTcNmax','#cEqTol','#cPoTol','#cTpTol','#cResTol','#cItMax','#cTGrow'])$(id).addEventListener('change',contChange);
   $('#cContReset').addEventListener('click',()=>{
     Object.assign(S.cont,S.contFile||{eqNmax:3000,eqDsmin:null,eqDsmax:null,poNtst:null,poDs:0.02,poDsmax:0.2,poNmax:400,tpNmax:3000,tcNmax:300});
-    const r=S.ranges[S.bif.pi];if(r)S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));$('#bDs').value=fmtIn(S.bif.ds);buildNumerics();
+    S.bif.dsHand=false;const r=S.ranges[S.bif.pi];if(r)S.bif.ds=S.bif.dsFile||+(((r.max-r.min)/150).toPrecision(3));$('#bDs').value=fmtIn(S.bif.ds);buildNumerics();
     const C=S.cont,v=x=>x==null?'auto':x;rec(`num ds=${S.bif.ds} dsmin=${v(C.eqDsmin)} dsmax=${v(C.eqDsmax)} nmax=${C.eqNmax} ntst=${v(C.poNtst)} pods=${C.poDs} podsmax=${C.poDsmax} ponmax=${C.poNmax} tpnmax=${C.tpNmax} tcnmax=${C.tcNmax}`,'contdef');
     status('Continuation steps and point limits back to the defaults for this model');});
   $('#cTolReset').addEventListener('click',()=>{Object.assign(CTOL,S.ctolFile||CTOL_DEF);buildNumerics();rec(`num eqtol=${CTOL.eqTol} potol=${CTOL.poTol} tptol=${CTOL.tpTol} restol=${CTOL.resTol} itmax=${CTOL.itMax??"auto"} tgrow=${CTOL.tGrow}`,'ctol');status('Continuation tolerances back to their defaults');});
@@ -7548,12 +8211,16 @@ function init(){
   $('#fitBtn').addEventListener('click',fit);
   $('#eqFind').addEventListener('click',findEquilibria);
   $('#winBtn').addEventListener('click',()=>openWinPop($('#winPop').hidden));
+  $('#stripVarsBtn').addEventListener('click',e=>{e.stopPropagation();openStripPop($('#stripPop').hidden);});
+  $('#stripPop').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();openStripPop(false);$('#stripVarsBtn').focus();}});
+  document.addEventListener('pointerdown',e=>{const p=$('#stripPop');if(!p.hidden&&!p.contains(e.target)&&e.target!==$('#stripVarsBtn'))openStripPop(false);
+    const q=$('#expPop');if(!q.hidden&&!q.contains(e.target)&&e.target!==$('#expBtn'))openExpPop(false);});
   $('#wClose').addEventListener('click',()=>openWinPop(false));
   $('#winPop').addEventListener('submit',e=>{e.preventDefault();applyWinPop();});
   $('#winPop').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();openWinPop(false);$('#winBtn').focus();}});
-  $('#svgBtn').addEventListener('click',exportSVG);
-  $('#csvBtn').addEventListener('click',exportCSV);
-  $('#datBtn').addEventListener('click',exportDAT);
+  $('#expBtn').addEventListener('click',e=>{e.stopPropagation();openExpPop($('#expPop').hidden);});
+  $('#expPop').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();openExpPop(false);$('#expBtn').focus();}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const b=[...$('#expPop').querySelectorAll('button:not(:disabled)')],k=b.indexOf(document.activeElement);b[(k+(e.key==='ArrowDown'?1:b.length-1))%b.length]?.focus();}});
   $('#saveDat').addEventListener('click',saveTrajDAT);
   $('#eraseBtn').addEventListener('click',erase);
   $('#histBtn').addEventListener('click',openHistory);
@@ -7562,7 +8229,7 @@ function init(){
   $('#goBtn').addEventListener('click',()=>{goAsync();});
   $('#tgAuto').addEventListener('change',()=>{
     S.auto=$('#tgAuto').checked;S.autoPref=S.auto;store.set('xpps-autooff',S.auto?'0':'1');updateRunUI();
-    status(S.auto?'Auto-update is on: changes update the trajectories at once':'Auto-update is off: change what you like, then press Run');
+    status(S.auto?'Auto-update is on: changes update the trajectories at once':'Auto-update is off: change what you like, then press Update');
     if(S.auto&&S.stale)runNow();});
   $('#runNow').addEventListener('click',()=>{runNow();});
   $('#setSel').addEventListener('change',e=>{const n=e.target.value;e.target.value='';if(!n)return;
@@ -7570,13 +8237,15 @@ function init(){
   $('#runStop').addEventListener('click',()=>{if(RUN.cur)RUN.cur.ctl.stop=true;});
   $('#copyCsv').addEventListener('click',()=>{const tr=activeTraj();if(!tr){status('No trajectory to copy',true);return;}
     const rows=['t,'+S.M.names.join(',')];for(let k=0;k<tr.t.length;k++){rows.push([tr.t[k],...tr.cols.map(c=>c[k])].map(v=>+v.toPrecision(9)).join(','));}copyText(rows.join('\n'),'Trajectory CSV');});
-  const setP1=v=>{const pk=()=>[S.bif.pi,S.tp.p2i].sort().join(),before=pk(),old=S.bif.pi;S.bif.pi=v;setBifRange();
+  const setP1=v=>{const pk=()=>[S.bif.pi,S.tp.p2i].sort().join(),before=pk(),old=S.bif.pi;if(v!==old)S.bif.dsHand=false;S.bif.pi=v;setBifRange();
     // choosing the second parameter of the pair as the first swaps the two, so the pair (and any stacked diagrams) stays
     if(S.tp.p2i===v&&S.M.parNames.length>1)setP2(old!==v?old:v===0?1:0);if(pk()!==before)S.bif.stack=false;S.tp.win.xlo=S.bif.pmin;S.tp.win.xhi=S.bif.pmax;S.lock.bif=S.lock.tp=false;buildBifControls();buildTpControls();fitBif(true);if(S.view==='tp')fitTP(true);requestRender();};
   $('#bPar').addEventListener('change',e=>setP1(+e.target.value));
   $('#tP1').addEventListener('change',e=>setP1(+e.target.value));
   $('#tP2').addEventListener('change',e=>{const q=+e.target.value;if(q===S.bif.pi){status('Parameter 2 must differ from parameter 1',true);$('#tP2').value=S.tp.p2i;return;}if(q!==S.tp.p2i)S.bif.stack=false;setP2(q);buildTpControls();S.lock.tp=false;fitTP(true);requestRender();});
   for(const id of['#tMin1','#tMax1','#tMin2','#tMax2'])$(id).addEventListener('change',()=>{readTpInputs();fitTP();requestRender();});
+  $('#tDs').addEventListener('change',()=>{const t=$('#tDs').value.trim(),d=parseFloat(t);S.tp.ds=t!==''&&Number.isFinite(d)&&d>0?d:null;$('#tDs').value=S.tp.ds?fmtIn(S.tp.ds):'';
+    status(S.tp.ds?`Two-parameter curves start with step ds = ${fmt(S.tp.ds,4)}; zooming leaves it as it is`:'Two-parameter step: automatic (1/100 of the smaller range when a curve starts)');});
   $('#tgTp3').addEventListener('click',()=>{S.tp.three=!S.tp.three;S.tp.box3=null;updateToolbar();requestRender();});
   $('#tP3').addEventListener('change',()=>{S.tp.p3i=parseInt($('#tP3').value,10);S.tp.box3=null;fillSliceRange(true);requestRender();});
   $('#tSlices').addEventListener('click',runSlices);
@@ -7593,6 +8262,8 @@ function init(){
     if(n>=1&&n<=8)S.bif.slowN=n;if(r>0&&r<=100)S.bif.slowR=r/100;const rp=+(S.bif.slowR*100).toPrecision(6);$('#bSlowN').value=S.bif.slowN;$('#bSlowR').value=rp;
     rec(`slowpoints max=${S.bif.slowN} threshold=${rp}%`,'slowpoints');requestRender();};
   $('#bSlowN').addEventListener('change',slowChange);$('#bSlowR').addEventListener('change',slowChange);
+  $('#bDs').addEventListener('change',()=>{const d=parseFloat($('#bDs').value);if(Number.isFinite(d)&&d>0)S.bif.dsHand=true;});
+  $('#cDs').addEventListener('change',()=>{const d=parseFloat($('#cDs').value);if(Number.isFinite(d)&&d>0)S.bif.dsHand=true;});
   for(const id of['#bMin','#bMax','#bDs'])$(id).addEventListener('change',()=>{readBifInputs();$('#cDs').value=fmtIn(S.bif.ds);if(!S.bif.branches.length)fitBif();requestRender();});
   $('#bStart').addEventListener('change',e=>{S.bif.start=+e.target.value;S.bif.userStart=true;});
   $('#bRun').addEventListener('click',runContinuation);
@@ -7631,7 +8302,8 @@ function init(){
     else if(k==='n')$('#tgNc').click();
     else if(k==='d')$('#tgField').click();
     else if(k==='f')fit();
-    else if(k==='1')setView('pp');else if(k==='2')setView('p3');else if(k==='3')setView('tc');else if(k==='4')setView('bif');else if(k==='5')setView('tp');else if(k==='6')setView('ph');
+    else if(k==='1')setView('pp');else if(k==='2')setView('p3');else if(k==='3')setView('tc');else if(k==='4')setView('bif');else if(k==='5')setView('tp');else if(k==='6')setView('ph');else if(k==='7')setView('an');
+    else if(k===' '&&S.view==='an'&&!(t.closest&&t.closest('button')))anPlay();
     else return;
     e.preventDefault();
   });
@@ -7643,13 +8315,16 @@ function init(){
 
   try{S.tableFiles=JSON.parse(store.get('xpps-tables')||'{}')||{};}catch(e){S.tableFiles={};}
   refreshTableList();
-  setTab('par');
+  setTab('eq');
   const saved=store.get('xpps-text');
   const text=saved&&saved.trim()?saved:EXAMPLES[0].text;
   $('#odeText').value=text;
   if(!loadModel(text)){$('#odeText').value=EXAMPLES[0].text;loadModel(EXAMPLES[0].text);}
   syncExampleSel($('#odeText').value);
   scriptInit();
+  // the status line is highlighted while anything is computing: a run, a continuation, a sweep, a grid, a script
+  {const busyNow=()=>!!(RUN.cur||(S.bif&&S.bif.busy)||(S.tp&&S.tp.running)||gridRun||SCRIPT.running||CONN.running);
+    setInterval(()=>{const st=$('#status');if(st)st.classList.toggle('busy',busyNow());},150);}
   $('#scrText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();if(e.shiftKey)stepScript();else runScript($('#scrText').value);}});
 }
 init();

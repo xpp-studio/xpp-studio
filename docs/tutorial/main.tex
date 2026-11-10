@@ -72,7 +72,7 @@
 \title{\XS\\[4pt]\large An introduction and tutorial}
 \author{Peter Ashwin and Bard Ermentrout\\[2pt]
   \small with Claude Opus 5.5 (Anthropic)}
-\date{Version 1.3, November 2026}
+\date{Version 1.4, November 2026}
 
 \begin{document}
 \maketitle
@@ -91,13 +91,17 @@
 \textbf{About this version.} Features have been added since many of the screenshots and figures in this document were made, and the earlier pictures have not been remade. The text is current and the pictures may differ from the program in small ways. The new features are described in the later tutorials rather than in the tour of the interface, in particular Tutorials~13 to~15. The most visible change is a sixth view, \ui{Phase reduction} (key \key{6}), which now holds the adjoint and the interaction function of coupled oscillators; the screenshots of the interface show five views, and the Bifurcation panel in them still has the \ui{Adjoint} row, which has since moved to the new view. Tutorial~15 (Section~\ref{sec:adjoint}) replaces the earlier tutorial on the adjoint, and adds the isostable functions, the second-order theory of weakly coupled oscillators, and an example with exact answers.
 \end{notebox}
 
+\begin{notebox}
+\textbf{New in version 1.4.} The button at the top that brings the display up to date is now called \ui{Update}, and the status line is highlighted while anything is being computed. A single \ui{Export\ldots} button offers CSV, SVG or DAT in every view (Section~\ref{sec:export}). The time series under the phase plane can show any variables and auxiliary functions (\ui{Variables}, Section~\ref{sec:tour}). The \ui{Special points} table is grouped under the values of the second parameter, with \ui{Follow} always the last button of a row. A continuation step \ui{Step ds} that you set yourself is no longer changed by zooming, and two-parameter curves have a step of their own. In the hi-slo-lo diagram the slow points fade out towards the speed threshold. In the Script tab, \ui{Load .ode script} replaces \ui{Run file script}, the list of commands is under \ui{Supported script syntax}, loading a different model asks whether to keep the script, and \ui{Last point $\to$ IC} and the \ui{Reset} buttons are recorded.
+\end{notebox}
+
 For more than thirty years \XPP{} \cite{ermentrout2002} has been one of the standard tools for simulating and analysing differential equations in mathematical biology, neuroscience and applied dynamical systems. Its strengths are a compact, readable model language, fast interactive phase-plane analysis, and a tight connection to the continuation package \textsf{AUTO} \cite{doedel2007}. \XS{} keeps that model language and that way of working, and puts them in a modern interface:
 
 \begin{itemize}
   \item \textbf{Same files.} Most \XPP{} \texttt{.ode} files load unchanged. Supported features include parameters, functions, fixed quantities, auxiliary variables, maps, Wiener noise, Markov variables, tables, periodic (folded) variables, arrays, Volterra integrals, delays, global flags and boundary conditions (Section~\ref{sec:language}).
   \item \textbf{Live analysis.} Dragging a parameter slider immediately recomputes trajectories, nullclines and equilibria. For large systems, or when you want to change several things before anything is recomputed, the \ui{Auto-update} box can be unticked (Section~\ref{sec:autorun}).
   \item \textbf{Built-in continuation.} Equilibria, periodic orbits and their bifurcations can be continued in one or two parameters without leaving the program. Detected points include folds, Hopf, period-doubling, torus, fold-of-cycles and codimension-two points.
-  \item \textbf{Publication output.} Every view can be exported as a vector SVG figure. Continuation data can be exported as CSV, and trajectories copied as CSV.
+  \item \textbf{Publication output.} Every view can be exported as a vector SVG figure, and its data as CSV or as plain DAT columns, from one \ui{Export\ldots} button.
 \end{itemize}
 
 \noindent The program is a single web page. To use it, open
@@ -114,41 +118,55 @@ in any recent browser. The source code, the example models and this tutorial are
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\textwidth]{ui-overview.png}
-  \caption{The \XS{} window with the Morris--Lecar example loaded. Left: tabs for equations, parameters, initial conditions and numerics. Centre: the plot, here the $(v,w)$ phase plane with nullclines, five trajectories and a stable focus, plus a time-course strip underneath. Right: the inspector, listing equilibria, the variables shown in the time course, and the trajectories.}
+  \caption{The \XS{} window with the Morris--Lecar example loaded. Left: tabs for equations, parameters, initial conditions and numerics. Centre: the plot, here the $(v,w)$ phase plane with nullclines, five trajectories and a stable focus, plus a time-series strip underneath, whose \ui{Variables} button chooses what it shows. Right: the inspector, listing equilibria, the variables of the time series, and the trajectories.}
   \label{fig:overview}
 \end{figure}
 
 The window (Figure~\ref{fig:overview}) has three columns.
 
-\paragraph{Left: the model.} Five tabs:
+\paragraph{Left: the model.} Six tabs:
 \begin{description}[font=\sffamily\bfseries]
   \item[Equations] The \texttt{.ode} text, which you can edit freely. \ui{Apply} (or \key{Ctrl}+\key{Enter}) reloads the model, and messages underneath report what was loaded and any errors, with line numbers. \ui{Open .ode} loads a file from disk, \ui{Copy text} copies the current text, \ui{Write state} writes the current parameters, initial conditions and settings into it (Section~\ref{sec:writestate}), and \ui{Table files} supplies data files used by \texttt{table} declarations. \ui{Reset all}, under the messages, puts \XS{} back as it is the first time it is opened: the default model (Morris--Lecar), view and settings, with no trajectories, diagrams or labels. It also forgets what the browser has kept between visits (your edited equations, the script, table files and display choices such as \ui{Legend}), so copy anything you want to keep first; it asks before it does anything. To go back to the values in the current file without losing the file, press \ui{Apply} instead.
   \item[Parameters] One row per parameter, with a value box and a slider whose limits you can edit. Drag a slider to see everything update live (unless \ui{Auto-update} is unticked, see below), and use \ui{Reset} to restore the values in the file. The up and down arrows on a value box, and the arrow keys on a slider, change the value by 1\% of the slider's range (10\% with \key{Shift}).
-  \item[Initial] Initial values of the state variables (and Markov states). \ui{Integrate} runs from here, and \ui{Last point $\to$ IC} copies the end of the current trajectory into the initial conditions.
+  \item[Initial] Initial values of the state variables (and Markov states). \ui{Integrate} runs from here, and \ui{Last point $\to$ IC} (in blue) copies the end of the current trajectory into the initial conditions; in a script this is the command \texttt{last}. \ui{Fill by formula}, at the top, sets a whole array at once, as \XPP{}'s \ui{Initialconds} formula does: with \texttt{u[0..49]} and \texttt{sin(2*pi*[j]/50)} it sets $u_j(0)=\sin(2\pi j/50)$ for $j=0,\ldots,49$. The formula may use \texttt{[j]}, the parameters as they are now, and \texttt{ran(1)}, which gives a new random value each time \ui{Set} is pressed. Unlike editing the file and pressing \ui{Apply}, this keeps the parameters you have changed. The section appears only when the model has an array of variables (three or more state variables with consecutive numbers, such as \texttt{u0}, \texttt{u1}, \texttt{u2}, \ldots).
   \item[Numerics] Integration method, total time, transient, step size, tolerance and bound, plus the continuation settings (Section~\ref{sec:numerics}).
   \item[Script] A list of commands that drives the interface, to make a set of figures again exactly, with one click (Section~\ref{sec:script}).
+  \item[Animate] An animation script for the model, in \XPP{}'s animation language, with \ui{Open .ani} to read an \texttt{.ani} file and \ui{Put in .ode} to keep the script in the equations (Section~\ref{sec:anim}).
 \end{description}
 
-\paragraph{Centre: the plot.} Six views, chosen with the buttons above the plot or with the keys \key{1}--\key{6}:
+\paragraph{Centre: the plot.} Seven views, chosen with the buttons above the plot or with the keys \key{1}--\key{7}:
 \begin{description}[font=\sffamily\bfseries]
-  \item[Phase plane] Any two variables (state, Markov, Volterra or auxiliary) against each other, with optional nullclines, direction field and equilibria. Nullclines are on when a planar system of differential equations is loaded, and off otherwise: in higher dimensions they are slices through the current values of the other variables, slower to draw and seldom what is wanted. Press \key{N} to show them. For a one-dimensional map this view shows a cobweb diagram. \ui{Equal axes} gives both axes the same scale. \ui{Run grid} in the Initial tab starts trajectories from a grid of points, by default covering the window (Section~\ref{sec:many}). Below the plane a strip shows the time series of the current trajectory.
+  \item[Phase plane] Any two variables (state, Markov, Volterra or auxiliary) against each other, with optional nullclines, direction field and equilibria. Nullclines are on when a planar system of differential equations is loaded, and off otherwise: in higher dimensions they are slices through the current values of the other variables, slower to draw and seldom what is wanted. Press \key{N} to show them. For a one-dimensional map this view shows a cobweb diagram. \ui{Equal axes} gives both axes the same scale. \ui{Run grid} in the Initial tab starts trajectories from a grid of points, by default covering the window (Section~\ref{sec:many}). Below the plane a strip shows the time series of the current trajectory. \ui{Variables}, at the top right of the strip, chooses what it shows: any of the variables and auxiliary functions, ticked in a small list (Figure~\ref{fig:stripvars}). The choice is the same as the chips under \emph{Time series below the plot} in the inspector, and as the variables of the Time course view.
   \item[3D] Three variables (or time) in a rotatable box: drag to rotate, scroll to zoom, \ui{Spin} to animate. \ui{Equilibria} shows or hides the equilibria; while they are hidden, the box fits the trajectories alone.
   \item[Time course] Chosen variables against $t$ (or the iteration number $n$ for maps). \ui{Spectrum} shows their power spectra instead, and \ui{Space-time} shows a row of indexed variables as an image (Section~\ref{sec:spacetime}).
   \item[Bifurcation] Branches of equilibria and periodic orbits, parameter sweeps, and homoclinic and heteroclinic orbits, against one parameter. The vertical axis is a variable, or the period or frequency of the periodic orbits.
   \item[Two-parameter] Curves of folds, Hopf points, period doublings and bifurcations of cycles in a parameter plane.
   \item[Phase reduction] The phase response (adjoint) of periodic orbits, the isostable response and Floquet eigenfunction of their slowest multiplier, and the interaction functions of two weakly coupled copies, to first and second order (Section~\ref{sec:adjoint}). Its controls are in the right-hand panel.
+  \item[Animate] The current trajectory played as a moving picture drawn by the animation script, with a time slider and export to GIF or WebM (Section~\ref{sec:anim}).
 \end{description}
-\paragraph{Across the top,} next to the model's title, are three controls that decide when things are computed and which values are used. \ui{Auto-update} is a tick box: while it is ticked, changing a parameter, an initial value or a numerical setting runs the trajectories again at once. When it is unticked, \ui{Run} brings the display up to date on demand. \ui{Sets} appears only when the file defines any, and applies a named collection of parameters, initial values and settings in one step (Section~\ref{sec:sets}). Section~\ref{sec:autorun} describes Auto-update and the handling of long computations.
+\paragraph{Across the top,} next to the model's title, are three controls that decide when things are computed and which values are used. \ui{Auto-update} is a tick box: while it is ticked, changing a parameter, an initial value or a numerical setting runs the trajectories again at once. When it is unticked, \ui{Update} brings the display up to date on demand. \ui{Sets} appears only when the file defines any, and applies a named collection of parameters, initial values and settings in one step (Section~\ref{sec:sets}). Section~\ref{sec:autorun} describes Auto-update and the handling of long computations.
 
-\paragraph{The status line} at the bottom of the window reports what the last action did: how many points a trajectory has, why a branch stopped, where a special point was found. \ui{History}, at its right-hand end, lists every message since the page was opened, each with its time, so that a report that has scrolled away can be read again. Progress reports during a long computation are kept as one line, the last one. \ui{Download} saves the list as a text file, \ui{Copy} copies it and \ui{Clear} empties it; in a script, \texttt{history save} does the same (Section~\ref{sec:script}).
+\paragraph{The status line} at the bottom of the window reports what the last action did, and is highlighted, with a pulsing dot, while anything is being computed (a run, a continuation, a sweep, a grid or a script): how many points a trajectory has, why a branch stopped, where a special point was found. \ui{History}, at its right-hand end, lists every message since the page was opened, each with its time, so that a report that has scrolled away can be read again. Progress reports during a long computation are kept as one line, the last one. \ui{Download} saves the list as a text file, \ui{Copy} copies it and \ui{Clear} empties it; in a script, \texttt{history save} does the same (Section~\ref{sec:script}).
 
-In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export SVG} saves the current view as a vector figure. \ui{Export CSV} saves the data behind the time course, bifurcation diagram or two-parameter diagram, and \ui{Export DAT} saves continuation data as plain columns of numbers (Section~\ref{sec:export}).
+In every view you drag to pan and scroll to zoom. \ui{Fit} rescales to the data, and \ui{Window} sets the axis limits by hand (they then stay fixed until you press \ui{Fit}). \ui{Points} draws trajectories as dots instead of lines, which is the default for maps. \ui{Export\ldots} asks what to save: \emph{CSV}, the data behind the view as a table; \emph{SVG}, the view as a vector figure; or \emph{DAT}, the data as plain columns of numbers (Figure~\ref{fig:export}, Section~\ref{sec:export}).
+
+\begin{figure}[!htbp]
+  \centering
+  \begin{minipage}[b]{0.36\textwidth}\centering
+    \includegraphics[width=\textwidth]{ui-export.png}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.58\textwidth}\centering
+    \includegraphics[width=\textwidth]{ui-stripvars.png}
+  \end{minipage}
+  \caption{Left: \ui{Export\ldots} in the phase plane, with what each format saves in this view. Right: \ui{Variables} on the time series under the phase plane, here showing $v$ and the auxiliary current \texttt{ica}.}
+  \label{fig:export}\label{fig:stripvars}
+\end{figure}
 
 \paragraph{Labelling a plot.}\label{sec:notes} The \ui{Add label} chip above the plot puts a text label on the figure. It appears in the phase plane, the time course (including the spectrum and the space-time plot), the Bifurcation view and the two-parameter plane, but not in the 3D views. Press it, click the plot where the label should go, and type the text in the small box that opens; a new line in the box starts a new line of text. The box also sets the size (small, medium or large) and the colour: the ordinary text colour, the accent, one of the colours used for curves and trajectories, or any colour from the colour picker. Close the box with \ui{Done}, \key{Ctrl}+\key{Enter}, \key{Esc} or a click elsewhere; a note with no text is discarded.
 \begin{itemize}
   \item \textbf{Move, edit, delete.} Drag a note to move it, double-click it to edit it, or click it to select it and press \key{Delete}. \ui{Delete} in the editing box removes it too.
   \item \textbf{Notes belong to a plot.} A note is placed in the data coordinates of the plot it was made on, so it stays on its feature when you pan and zoom. It is shown only on that plot: the phase plane of that pair of variables, the diagram for that continuation parameter and vertical axis, or that parameter plane. Switch to other axes and the note is hidden, and it comes back when you return. Loading another model removes all notes.
-  \item \textbf{In figures and scripts.} Notes are drawn in \ui{Export SVG}, in the colours of the light theme, along with the legend. A note you make while recording is written into the script as a \texttt{note} line (Section~\ref{sec:script}). Notes are not saved in the \texttt{.ode} file.
+  \item \textbf{In figures and scripts.} Notes are drawn in SVG exports, in the colours of the light theme, along with the legend. A note you make while recording is written into the script as a \texttt{note} line (Section~\ref{sec:script}). Notes are not saved in the \texttt{.ode} file.
 \end{itemize}
 
 \paragraph{Right: the inspector.} The inspector's contents depend on the view. In the phase plane it lists the equilibria (type, coordinates and eigenvalues, with buttons to make one the initial condition, start continuation from it, or draw its separatrices), the variables in the time course, and the trajectories. For large systems, and for boundary value problems, equilibria are not searched for automatically; \ui{Find connecting orbit} next to the list searches the visible window when you want them. In the Bifurcation view it holds the continuation controls, the search for homoclinic and heteroclinic orbits, and the table of special points. In the Two-parameter view it holds the two-parameter controls.
@@ -163,7 +181,7 @@ Key & Action\\
 \key{E} & erase all trajectories\\
 \key{N} / \key{D} & toggle nullclines / direction field\\
 \key{F} & fit the axes to the data\\
-\key{1}--\key{6} & phase plane, 3D, time course, bifurcation, two-parameter, phase reduction\\
+\key{1}--\key{7} & phase plane, 3D, time course, bifurcation, two-parameter, phase reduction, animation\\
 \key{Esc} & during continuation: skip to the other direction (``soft interrupt'')\\
 \key{Shift}+\key{Esc} & stop the continuation altogether\\
 click / shift-click & start a trajectory (shift: in both directions of time)\\
@@ -232,6 +250,9 @@ delay(x,tau) & delayed value $x(t-\tau)$; $\tau$ may depend on the state\\
 x(0)=0.5+0.2*cos(t) & history of a delay equation for $t<0$ (its value at $t=0$ is the initial condition)\\
 global 1 x-1 \{x=0;y=y+1\} & global flag: when \texttt{x-1} crosses zero upwards (1), downwards ($-1$) or either way (0), make the assignments; \texttt{arret=1} stops the run\\
 \#@range p lo hi & slider range for parameter \texttt{p}\\
+special bob=conv(periodic,50,10,w,u0) & a convolution with the table \texttt{w}; \texttt{bob(j)} is entry $j$. Also \texttt{mmult}; see Tutorial~8\\
+\#@ani line .5;.5;\ldots & one line of an animation script (Section~\ref{sec:anim}); \XPP{} reads it as a comment\\
+sum(0,50)of(shift(u0,i')) & the sum of \texttt{u0},\ldots,\texttt{u50}: $i'$ runs over the integers from the first limit to the second, and \texttt{shift(u0,k)} is the variable $k$ places after \texttt{u0} (fixed quantities and parameters too)\\
 \midrule
 @ total, t0, trans, dt, meth, toler, bound & integration (\texttt{t0} is the start time): duration, transient, step, method, tolerance, bound\\
 @ xp, yp, zp, axes=3, xlo, xhi, ylo, yhi & initial plot variables and window\\
@@ -256,7 +277,7 @@ global 1 x-1 \{x=0;y=y+1\} & global flag: when \texttt{x-1} crosses zero upwards
 set fast {a=4, b=2, x=0.5, total=50, dt=0.01}
 set slow {a=1, b=0.5, y=0.2, total=120}
 \end{lstlisting}
-\noindent When a file has sets, a \ui{Sets} menu appears at the top of the window. Choosing a set changes everything it lists at once and then runs \emph{once}, rather than once for each value. With \ui{Auto-update} ticked, the current curve is started again from the new initial values and the other curves are recomputed; with it unticked, the display is marked out of date and \ui{Run} computes it. The menu returns to \ui{Sets} after each choice, so the same set can be applied again after you have edited values by hand, and the status line lists what was changed.
+\noindent When a file has sets, a \ui{Sets} menu appears at the top of the window. Choosing a set changes everything it lists at once and then runs \emph{once}, rather than once for each value. With \ui{Auto-update} ticked, the current curve is started again from the new initial values and the other curves are recomputed; with it unticked, the display is marked out of date and \ui{Update} computes it. The menu returns to \ui{Sets} after each choice, so the same set can be applied again after you have edited values by hand, and the status line lists what was changed.
 \begin{itemize}
   \item A set may name parameters, state variables (Markov states too) and the integration settings of the Numerics tab: \texttt{total}, \texttt{dt}, \texttt{meth}, \texttt{trans}, \texttt{bound}, \texttt{tol} and so on. Only what a set mentions changes; everything else keeps its present value, and \ui{Reset} in the Parameters tab still restores the values in the file.
   \item \XPP{} files often put the plot itself into a set (\texttt{xlo}, \texttt{xhi}, \texttt{ylo}, \texttt{yhi}, \texttt{xp}, \texttt{yp}, \texttt{zp}). These are accepted but ignored: the plot stays as you have set it. The status line names them, and any other name it does not recognise.
@@ -277,7 +298,7 @@ Choose \texttt{firing} from the \ui{Sets} menu: the current curve is recomputed 
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.75\textwidth]{ml-phaseplane.pdf}
+  \includegraphics[width=0.62\textwidth]{ml-phaseplane.pdf}
   \caption{Morris--Lecar phase plane at $i=60$: the $v$-nullcline (orange), the $w$-nullcline (green), a stable focus (filled circle) and several trajectories. Open circles mark starting points.}
   \label{fig:mlpp}
 \end{figure}
@@ -329,12 +350,12 @@ By default the grid is $10\times10$ over the phase-plane window, using the two p
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{ml-bifurcation.pdf}
+  \includegraphics[width=0.6\textwidth]{ml-bifurcation.pdf}
   \caption{Bifurcation diagram of Morris--Lecar in the current~$i$. Black: equilibria (solid stable, dashed unstable). Green: maximum and minimum of $v$ along the periodic orbits born at the two Hopf points HB1 and HB2. Both Hopf bifurcations are subcritical. The orbit family turns at two folds of cycles, LPC1 and LPC2, giving bistability between rest and firing.}
   \label{fig:mlbif}
 \end{figure}
 
-Press \key{4} for the Bifurcation view. The inspector shows the continuation controls: the \ui{Parameter} to vary, the variable to \ui{Plot}, the parameter \ui{Range}, the initial step \ui{Step ds}, and the equilibrium to \ui{Start} from.
+Press \key{4} for the Bifurcation view. The inspector shows the continuation controls: the \ui{Parameter} to vary, the variable to \ui{Plot}, the parameter \ui{Range}, the initial step \ui{Step ds}, and the equilibrium to \ui{Start} from. A step you type in \ui{Step ds} (or in \ui{Ds} in the Numerics tab) stays as it is when you pan, zoom or change the range; it goes back to the automatic value when you choose another parameter or press \ui{Defaults} in the Numerics tab.
 
 \begin{tryit}
 \begin{enumerate}
@@ -344,7 +365,7 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
   \item Click any point of a branch to jump there. This sets the parameter and loads that equilibrium, or exactly one period of that orbit, as the current state. Clicking a row of the special-points table does the same. Clicking away from every curve moves the parameter to that value (the dashed line) without changing the initial condition, which is a quick way to look at the phase plane at a chosen value.
   \item \ui{Limit cycle} starts orbit continuation from the current trajectory instead. Integrate onto a stable cycle first (e.g.\ at $i=150$), then press it.
   \item \ui{Show} sets what the vertical axis measures for the variable chosen under \ui{Plot}. \emph{hi-lo} draws the maximum and minimum of the variable over each orbit. \emph{L2 norm} draws the norm of the whole solution, $\bigl(\frac1T\int_0^T |\mathbf{x}(t)|^2\,dt\bigr)^{1/2}$ over each orbit, where $|\mathbf{x}|^2$ is the sum of the squares of all the variables, and $|\mathbf{x}|$ at each equilibrium (\ui{Plot} is then greyed out), so a branch of orbits becomes a single curve that leaves the equilibrium branch at the Hopf point (Figure~\ref{fig:mll2}). The norms are computed the first time you choose this, by integrating one period of each orbit. \emph{Period} and \emph{frequency} draw the period of the orbits, or its inverse, against the parameter (Figure~\ref{fig:mlperiod}). The period grows from about 79 at HB1 to 135 at LPC1 and is about 42 at HB2. Sweeps show their periods too, where the oscillation is regular enough for one to be estimated. Changing \ui{Show} or \ui{Plot} refits only the vertical axis, to the data in the range of the parameter on screen, so a part of the diagram you have zoomed into stays in view as you switch between hi-lo, L2 norm and period.
-  \item \emph{hi-slo-lo}, the default for differential equations, is hi-lo with the \emph{slow points} of each periodic orbit added, in amber. One period of each orbit is integrated and its phase-space speed $|F(x)|$ is measured along it, each component scaled by the range of its variable over the orbit so that the units do not matter. A slow point is a local minimum of the speed that is below a threshold, a percentage of the fastest speed on the same orbit; the slowest are kept, at most a set number, and neighbouring minima that are really one place are counted once. They are drawn at the value of the plotted variable, between hi and lo, and joined from orbit to orbit along the branch. The line \ui{Slow points} in the panel sets the number (at most~2 by default) and the threshold (5\% by default); in a script, \texttt{show hi-slo-lo} and \texttt{slowpoints max=2 threshold=5\%}. A smaller threshold keeps only the places where the orbits nearly stop. An orbit whose speed hardly varies, such as a small orbit near a Hopf point, has none. The slow points show where a family of orbits starts to linger: near an equilibrium as the orbits approach a homoclinic orbit, or near the ghost of one as they approach a SNIC (Section~\ref{sec:conn}).
+  \item \emph{hi-slo-lo}, the default for differential equations, is hi-lo with the \emph{slow points} of each periodic orbit added, in amber. One period of each orbit is integrated and its phase-space speed $|F(x)|$ is measured along it, each component scaled by the range of its variable over the orbit so that the units do not matter. A slow point is a local minimum of the speed that is below a threshold, a percentage of the fastest speed on the same orbit; the slowest are kept, at most a set number, and neighbouring minima that are really one place are counted once. They are drawn at the value of the plotted variable, between hi and lo, and joined from orbit to orbit along the branch. Each is shaded by how slow it is: solid where the speed is zero, fading to transparent at the threshold, so the places where the orbits nearly stop stand out from those that only slow down. The line \ui{Slow points} in the panel sets the number (at most~2 by default) and the threshold (5\% by default); in a script, \texttt{show hi-slo-lo} and \texttt{slowpoints max=2 threshold=5\%}. A smaller threshold keeps only the places where the orbits nearly stop. An orbit whose speed hardly varies, such as a small orbit near a Hopf point, has none. The slow points show where a family of orbits starts to linger: near an equilibrium as the orbits approach a homoclinic orbit, or near the ghost of one as they approach a SNIC (Section~\ref{sec:conn}).
   \item Click a point on the orbit branch. As well as loading that orbit, this adds it to the \ui{Special points} table as OR1, marked on the diagram with an open circle (Figure~\ref{fig:mlorbits}). Click another point to add OR2, and so on. Each picked orbit has a \ui{Const.\ T} button, which follows it in two parameters at fixed period (Tutorial~3), and a \ui{Remove} button.
   \item \textbf{Deleting single curves.} Clicking a curve also selects it: the branch, orbit family, sweep or boundary-value branch is outlined in a blue halo (Figure~\ref{fig:select}), and the status line names it. \ui{Delete curve} under the continuation buttons, or the \key{Delete} key, removes that curve and its special points, while the rest of the diagram stays. \key{Esc} clears the selection. \ui{Clear diagram} still removes everything for the current parameter. The Two-parameter view works the same way, with its own \ui{Delete curve} button.
 \end{enumerate}
@@ -356,9 +377,9 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
     \includegraphics[width=\textwidth]{ml-bif-orbits.pdf}
   \end{minipage}\hfill
   \begin{minipage}[t]{0.46\textwidth}\centering
-    \includegraphics[width=\textwidth]{ui-special-or.png}
+    \includegraphics[width=0.72\textwidth]{ui-special-or.png}
   \end{minipage}
-  \caption{Left: two periodic orbits picked on the Morris--Lecar orbit branch, OR1 at $i\approx100$ ($T\approx84.0$) and OR2 at $i\approx200$ ($T\approx65.7$). Right: the \ui{Special points} table with the picked orbits at the bottom, each with \ui{Const.\ T} and \ui{Remove}.}
+  \caption{Left: two periodic orbits picked on the Morris--Lecar orbit branch, OR1 at $i\approx100$ ($T\approx84.0$) and OR2 at $i\approx200$ ($T\approx65.7$). Right: the \ui{Special points} table, grouped under the values of $\phi$ at which the branches were computed, with the picked orbits after the folds, each with \ui{Const.\ T} and \ui{Remove}. \ui{Follow} is always the last button of a row.}
   \label{fig:mlorbits}
 \end{figure}
 
@@ -376,7 +397,7 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{ml-bif-period.pdf}
+  \includegraphics[width=0.48\textwidth]{ml-bif-period.pdf}
   \caption{The same diagram with \ui{Plot} set to \ui{period}: the period of the periodic orbits against $i$, with the special points and the picked orbits.}
   \label{fig:mlperiod}
 \end{figure}
@@ -385,8 +406,8 @@ Press \key{4} for the Bifurcation view. The inspector shows the continuation con
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{ui-special.png}
-  \caption{The \ui{Special points} table after continuing equilibria of Morris--Lecar. Both Hopf points are tagged \emph{sub} (subcritical). \ui{Follow} continues a point in two parameters, and \ui{Cycles} continues the periodic orbits born there.}
+  \includegraphics[width=0.4\textwidth]{ui-special.png}
+  \caption{The \ui{Special points} table after continuing equilibria of Morris--Lecar. Both Hopf points are tagged \emph{sub} (subcritical). The points are listed under a heading with the value of the second parameter of the pair (here $\phi=0.04$); branches computed at several values of it give one group each, in increasing order. \ui{Cycles} continues the periodic orbits born at a point, and \ui{Follow}, always the last button, continues it in two parameters.}
   \label{fig:special}
 \end{figure}
 
@@ -425,6 +446,7 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
   \item Set the range of $\phi$ to $0$--$0.4$. Then press \ui{Follow} on HB1 (in the Bifurcation view, or choose HB1 under \ui{Start} and press \ui{Follow curve}). Hopf curves are computed from a bordered system with the bialternate product \cite{govaerts2000,kuznetsov2004}. Here a single closed arch joins HB1 to HB2, so following HB2 as well would only retrace it.
   \item The first Lyapunov coefficient $\ell_1$ is computed at every point of the Hopf curve, and the curve is coloured by its sign: purple for subcritical, red for supercritical (Figure~\ref{fig:mltp}). Where $\ell_1$ changes sign there is a \emph{generalised Hopf} or \emph{Bautin} point, labelled GH. For Morris--Lecar these are at about $(i,\phi)=(124.1,0.300)$ and $(165.9,0.253)$, so the Hopf bifurcations are supercritical only near the top of the arch. Bogdanov--Takens (BT), cusp (CP) and zero-Hopf (ZH) points are flagged in the same way. For maps, strong resonances R1 and R2 and fold--flip points are flagged too.
   \item Press \ui{Follow} on LPC1 to continue the fold of cycles. Its curve is computed by multiple shooting and is slower, typically 10--20 seconds. Bautin theory predicts that a curve of folds of cycles is born at every GH point, and here the LPC curve runs up the left side of the arch and ends at GH3 $\approx(124.4,0.306)$. This is the endpoint of the orbit computation and agrees closely with GH1 from $\ell_1$, an independent check of both.
+  \item \ui{Step ds} in the Two-parameter panel sets the first step along fold, Hopf and period-doubling curves. Left empty, it is 1/100 of the smaller of the two ranges when a curve is started; a value you type stays as it is when you pan or zoom (which changes the ranges).
   \item Each kind of curve has a colour swatch in the panel legend: fold, sub- and supercritical Hopf, neutral saddle, fold of cycles, constant period and period doubling. Click a swatch to choose a new colour. The choice applies at once, is used by \ui{Export SVG}, and is remembered in your browser. \ui{Default colours} goes back to the theme colours.
   \item Click a point on any curve to move to those parameter values. Then return to the phase plane or the bifurcation diagram to see the dynamics there.
   \item \textbf{Curves of constant period.} Pick one or more orbits on the bifurcation diagram (Tutorial~2) and press \ui{Const.\ T} on one of them, or choose it under \ui{Start} as ``OR1 (T=\ldots)'' and press \ui{Follow curve}. The orbit is continued in both parameters with its period held fixed: the unknowns are the orbit, $i$ and $\phi$, and the extra equation is $T=T_0$. In Figure~\ref{fig:mlcper} the two gold curves are the parameter values where Morris--Lecar oscillates with period 84.0 and with period 65.7. Each ends where the orbit shrinks onto an equilibrium at a Hopf point whose period $2\pi/\omega$ equals $T_0$, so constant-period curves end on the Hopf curve. Integrating at points along a curve gives the same period to within the output spacing.
@@ -433,7 +455,7 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{ml-cper.pdf}
+  \includegraphics[width=0.5\textwidth]{ml-cper.pdf}
   \caption{Curves of constant period (gold) for Morris--Lecar in $(i,\phi)$, traced from the picked orbits OR1 ($T\approx84.0$) and OR2 ($T\approx65.7$), together with the Hopf curve, coloured by criticality. Each constant-period curve ends on the Hopf curve, where the frequency of the Hopf point matches the fixed period.}
   \label{fig:mlcper}
 \end{figure}
@@ -442,7 +464,7 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.62\textwidth]{ml-slices.pdf}
+  \includegraphics[width=0.52\textwidth]{ml-slices.pdf}
   \caption{Slices: the Hopf curve of Morris--Lecar in $(i,\phi)$ followed at six values of $g_{Ca}$ from 3 to 5.5 and drawn in 3D, each curve at the height of its value of $g_{Ca}$. The generalised Hopf points (GH) and Bogdanov--Takens points (BT) on each slice trace out how they move with the third parameter.}
   \label{fig:slices}
 \end{figure}
@@ -457,7 +479,7 @@ Any special point in the table with a \ui{Follow} button can be continued in a s
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{snics-stack.pdf}
+  \includegraphics[width=0.6\textwidth]{snics-stack.pdf}
   \caption{Stacked diagrams: the equilibria of \ui{Interacting saddle-nodes} continued in $\mu$ at three values of $\gamma$, the second parameter of the pair $(\mu,\gamma)$. Each value has its own diagram and a tab above the stack; the diagram on top is the one at the current value, $\gamma=0.3$, and the branches at the other two values show faintly in grey on either side. Clicking the tabs shows that the fold LP moves to larger $\mu$ as $\gamma$ decreases.}
   \label{fig:stack}
 \end{figure}
@@ -521,7 +543,7 @@ A model is a map when its equations are written \texttt{x(t+1)=\ldots}. Trajecto
 \begin{figure}[!htbp]
   \centering
   \begin{minipage}[t]{0.5\textwidth}\centering
-    \includegraphics[width=\textwidth]{logistic-cascade.pdf}
+    \includegraphics[width=\textwidth]{logistic-cascade.png}
   \end{minipage}\hfill
   \begin{minipage}[t]{0.47\textwidth}\centering
     \includegraphics[width=\textwidth]{henon-pd.pdf}
@@ -604,11 +626,21 @@ init w[1..20]=-0.62
 \end{lstlisting}
 The block between \texttt{\%[1..20]} and \texttt{\%} is repeated for $j=1,\ldots,20$. Every \texttt{[expr]} is replaced by its integer value, so \texttt{v[j-1]} becomes \texttt{v3} when $j=4$, and \texttt{[j]} on its own becomes the number~$j$. A single line containing \texttt{[1..20]} is repeated the same way. The load message reports how many lines the file expanded to. The expanded model is an ordinary 40-dimensional system, so its equilibria, eigenvalues (computed by the QR algorithm) and continuation all work as usual. In Figure~\ref{fig:arrays} (left) the time course shows $v_1$, $v_{10}$ and $v_{20}$; choose them with the chips in the inspector.
 
+\paragraph{Sums and convolutions.} \texttt{sum(lo,hi)of(expr)} adds \texttt{expr} for $i'=\texttt{lo},\ldots,\texttt{hi}$, with $i'$ written \texttt{i'} in the expression, and \texttt{shift(u0,k)} is the variable $k$ places after \texttt{u0}. So \texttt{s=sum(0,49)of(shift(u0,i'))} adds $u_0,\ldots,u_{49}$. Coupling every cell to its neighbours this way costs one term for each pair of cells at every step. The \texttt{special} command does the same sum in one step:
+\begin{lstlisting}
+@ autoeval=1
+table w % 21 -10 10 exp(-abs(t)/sig)/(2*sig)
+special bob=conv(periodic,50,10,w,u0)
+par g=3,sig=4
+u[0..49]'=-u[j]+g*tanh(bob([j]))
+\end{lstlisting}
+Here \texttt{bob(j)} $=\sum_{i=-M}^{M}w(i)\,u_{j+i}$ for $j=0,\ldots,N-1$, with $N=50$ and $M=10$ above, and $w(i)$ is the entry of the table \texttt{w} in position $i+M$, so the table needs at least $2M+1$ points (its range does not matter). Outside $0,\ldots,N-1$, \texttt{bob(j)} is 0. The type, which can be shortened to its first letter, says what happens beyond the ends: \texttt{periodic} wraps around, \texttt{zero} (or \texttt{0}) uses 0, and \texttt{even} reflects about the first and last cells, so that $u_{-1}=u_1$ and $u_N=u_{N-2}$. The command \texttt{special bob=mmult(N,M,w,u0)} is a matrix product, $\texttt{bob(j)}=\sum_{i=0}^{N-1}w(i+Nj)\,u_i$, with the table \texttt{w} holding the $M$ rows of the matrix one after another. The variables $u_0,\ldots$ may be state variables or fixed quantities, so a neural field can convolve its firing rates \texttt{r[0..49]=f(u[j])}. Special functions are computed after all the fixed quantities, so a fixed quantity that calls \texttt{bob} sees the values from the previous step, and a warning says so. With the default \texttt{autoeval=1} a table is recomputed when a parameter changes; with \texttt{@ autoeval=0} it keeps the values it had when the file was loaded, as a random matrix should. Load \ui{Ring of 50 rate units with a convolution} and move the sliders for \texttt{g} and \texttt{sig}. In \ui{Wilson--Cowan wave front} a stimulus at the left end of a line of 100 cells recruits its neighbours, and the front crosses the line in about 15 time units; the example uses an \texttt{even} convolution and carries its own animation (Section~\ref{sec:anim}). In a test with 256 cells and two populations, one evaluation of the equations took 0.45~ms with \texttt{special conv} and 11~ms with the same sum written out by \texttt{sum} and \texttt{shift}.
+
 \paragraph{Space-time plots.}\label{sec:spacetime} For a chain or lattice it is often clearer to see all the cells at once, as in \XPP{}'s array plot. In the Time course view, \ui{Space-time} draws a row of indexed variables as an image, with time across and the cell index up (Figure~\ref{fig:spacetime}). Each point is coloured by its value, and a colour bar shows the range. A \emph{row} is any set of at least six variables with a common name and consecutive numbers, such as $v_1,\ldots,v_{20}$; when a model has several rows, \ui{show} chooses between them. \ui{colour min} and \ui{max} fix the colour range, and \ui{Auto} returns to the range of the run. In the chain the travelling pulses appear as stripes, and their slope is the propagation speed.
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.62\textwidth]{chain-spacetime.pdf}
+  \includegraphics[width=0.52\textwidth]{chain-spacetime.pdf}
   \caption{Space-time plot of $v_1,\ldots,v_{20}$ for the chain of FitzHugh--Nagumo cells. Each pulse starts at cell 1 and crosses the chain in about 20 time units.}
   \label{fig:spacetime}
 \end{figure}
@@ -665,7 +697,7 @@ x(0)=0.5+0.2*cos(3*t)
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.5\textwidth]{ui-history.png}
+  \includegraphics[width=0.36\textwidth]{ui-history.png}
   \caption{The Initial tab for a delay equation: the value at $t=0$ and, below it, the history for $t<0$ as a formula in $t$.}
   \label{fig:history}
 \end{figure}
@@ -741,7 +773,7 @@ global 1 v-1 {v=0;w=w+b}
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{lif-tc.pdf}
+  \includegraphics[width=0.48\textwidth]{lif-tc.pdf}
   \caption{Integrate-and-fire neuron with adaptation: $v$ (blue) is reset to 0 at each threshold crossing, while the adaptation current $w$ (red) builds up and lengthens the interspike interval.}
   \label{fig:lif}
 \end{figure}
@@ -753,7 +785,7 @@ global 1 v-1 {v=0;w=w+b}
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.55\textwidth]{bratu-bif.pdf}
+  \includegraphics[width=0.48\textwidth]{bratu-bif.pdf}
   \caption{Bratu's problem $u''=-\lambda e^u$, $u(0)=u(1)=0$, continued in $\lambda$ with \ui{Continue BVP}. The vertical axis is the slope $u'(0)$. The branch turns round the fold LP1 at $\lambda\approx3.5138$ onto the upper solutions.}
   \label{fig:bratu}
 \end{figure}
@@ -780,8 +812,8 @@ b u'
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=\textwidth]{ui-script.png}
-  \caption{The Script tab while the example script runs. The command being carried out, \texttt{cycles HB1}, is marked by a blue bar, and \ui{Run} has become \ui{Stop}; the diagram fills in as the orbits are continued. Errors and the files saved are reported in a log under the script.}
+  \includegraphics[width=0.78\textwidth]{ui-script.png}
+  \caption{The Script tab while the example script runs. The command being carried out, \texttt{cycles HB1}, is marked by a blue bar, and \ui{Run} has become \ui{Stop}; the diagram fills in as the orbits are continued. Errors and the files saved are reported in a log under the script, and \ui{Supported script syntax} below it lists every command.}
   \label{fig:script-ui}
 \end{figure}
 
@@ -829,7 +861,7 @@ export svg ml-twopar.svg
   \label{fig:script-out}
 \end{figure}
 
-\paragraph{The commands.} \ui{Commands} lists them all in the log. Names of variables, parameters and special points are those shown in the interface, and \texttt{\#} starts a comment.
+\paragraph{The commands.} \ui{Supported script syntax}, under the script, lists them all with a line on each. Names of variables, parameters and special points are those shown in the interface, and \texttt{\#} starts a comment.
 {\small
 \begin{longtable}{@{}p{0.38\textwidth}p{0.56\textwidth}@{}}
 \toprule
@@ -863,6 +895,8 @@ Command & Effect\\
 \texttt{notes clear} & remove the notes of the current plot\\
 \midrule
 \texttt{erase}, \texttt{go [both]} & erase; integrate from the initial values\\
+\texttt{last} & initial values from the end of the active trajectory (\ui{Last point $\to$ IC})\\
+\texttt{reset par}, \texttt{reset init} & parameters, or initial values, back to the file's values (the \ui{Reset} buttons)\\
 \texttt{traj v=-40 w=0.2 [backward]} & a trajectory from a given point\\
 \texttt{grid}, \texttt{grid v -60 40 5 w 0 0.5 5} & grid of initial conditions (default $10\times10$ over the window)\\
 \texttt{separatrices [k]} & separatrices of the $k$th saddle\\
@@ -874,19 +908,19 @@ Command & Effect\\
 \texttt{switch BP1} & the other branch through a branch point\\
 \texttt{period 3} & maps: continue period-3 orbits (also \texttt{bifpar \ldots{} period=3})\\
 \texttt{limitcycle}, \texttt{sweep} & continue the orbit reached by the trajectory; sweep the range\\
-\texttt{adjoint here [align=VAR]} & the adjoint, the isostable functions and $H$ of the limit cycle of the active trajectory at the present parameters, found again after each \ui{Run} that changes the cycle while the Phase reduction view is open; switches to the Phase reduction view; \texttt{adjoint follow=off} stops the following (Section~\ref{sec:adjoint})\\
+\texttt{adjoint here [align=VAR]} & the adjoint, the isostable functions and $H$ of the limit cycle of the active trajectory at the present parameters, found again after each \ui{Update} that changes the cycle while the Phase reduction view is open; switches to the Phase reduction view; \texttt{adjoint follow=off} stops the following (Section~\ref{sec:adjoint})\\
 \texttt{hfunction show=odd} & the interaction function $H$ of the \texttt{\#@coupling} lines, recomputed from the stored orbits; \texttt{show=all|H|even|odd}, or \texttt{off} (Section~\ref{sec:hfun})\\
 \texttt{hsecond eps=0.1 [show=odd]} & the second-order interaction function $H_2$: $H+\epsilon H_2$ and its parts (\texttt{show=all|H|even|odd}, or \texttt{rate} for $\phi'/\epsilon$), and $\gamma$; with \texttt{eps=0}, $H_2$ alone (Section~\ref{sec:hsecond})\\
 \texttt{phasefn orbit|Z|I|rho|B|H|H2} & which function the Phase reduction view draws\\
 \texttt{adjoint [K] n=8 range=100,200} & the adjoint (phase response) $Z(t)$ at $n$ orbits spread evenly in the parameter along orbit family $K$ (default: the latest continuation, both directions), within the range; also \texttt{at=v1,v2,\ldots}, \texttt{align=VAR|none}, \texttt{res=}; also computes the isostable functions when they exist (Section~\ref{sec:adjoint})\\
 \texttt{plot v}, \texttt{show L2} & variable, and hi-lo, L2 norm (of the whole solution), period or frequency\\
 \texttt{pick 1 i=150} & pick an orbit of family 1 (it becomes OR1, OR2, \ldots)\\
-\texttt{tppar phi 0 0.4}, \texttt{follow HB1} & second parameter; follow a special point (OR1: constant period)\\
+\texttt{tppar phi 0 0.4 [ds=0.01]}, \texttt{follow HB1} & second parameter (and the step of two-parameter curves); follow a special point (OR1: constant period)\\
 \texttt{slices HB1 gca 3 5.5 6} & follow HB1 at 6 values of a third parameter\\
 \texttt{connect 2}, \texttt{connect 3 1 [backward]}, \texttt{connect end} & find a homoclinic orbit of equilibrium 2, or a heteroclinic orbit from 3 to 1; \texttt{end} is the saddle found at the end of the last branch of orbits (Section~\ref{sec:conn}). \texttt{follow HOM1} follows it\\
 \texttt{clear bif}, \texttt{clear tp} & clear a diagram\\
 \midrule
-\texttt{export svg|csv|dat [file]} & save the current view or its data\\
+\texttt{export svg|csv|dat [file]} & save the current view or its data, as \ui{Export\ldots} does\\
 \texttt{writestate}, \texttt{echo}, \texttt{wait ms} & write the state into the file; note; pause\\
 \texttt{history save [file]}, \texttt{history clear} & save the status-line history as a text file (with the other exports), or empty it\\
 \end{longtable}}
@@ -913,9 +947,9 @@ go
   \item switching views, by button or key, gives a \texttt{view} line, and the chips above the plot (spectrum, space-time, legend, 3D, and the functions of the Phase reduction view) and the variables chosen for the time course are recorded as well.
   \item choosing a set from the \ui{Sets} menu gives one \texttt{use} line, not a line for each value in it;
 \end{itemize}
-Repeated changes of the same thing (dragging a slider, panning in several strokes) give a single line with the final value. Press \ui{Record} again to stop, then edit the result as you like.
+\ui{Last point $\to$ IC} gives a \texttt{last} line, and the \ui{Reset} buttons of the Parameters and Initial tabs give \texttt{reset par} and \texttt{reset init}, so a script can carry on from where a trajectory ended or start again from the file's values. Repeated changes of the same thing (dragging a slider, panning in several strokes) give a single line with the final value. Press \ui{Record} again to stop, then edit the result as you like.
 
-If the script box already holds commands when you press \ui{Record}, you are asked whether to clear them or to keep them and start a new block, marked by a dated comment line. A script belongs to a model: loading a different model clears the box, and \ui{Restore old script} brings the old one back.
+If the script box already holds commands when you press \ui{Record}, you are asked whether to clear them or to keep them and start a new block, marked by a dated comment line. A script belongs to a model. When you load a different model while the box holds a script, you are asked whether to keep it or clear it (and, if the new file carries a script of its own, whether to use that one instead); \ui{Restore old script} brings back a script that was cleared.
 
 \paragraph{Scripts inside \texttt{.ode} files.} \ui{Put in .ode} copies the script into the equations as lines starting \texttt{\#@do}, just before \texttt{done}:
 \begin{lstlisting}
@@ -927,7 +961,7 @@ If the script box already holds commands when you press \ui{Record}, you are ask
 #@do export svg bifurcation.svg
 done
 \end{lstlisting}
-\XPP{} reads these as comments. \ui{Run file script} in the Script tab reloads the model and replays them, so a single \texttt{.ode} file can carry both a model and the figures made from it.
+\XPP{} reads these as comments. When the equations hold \texttt{\#@do} lines, a \ui{Load .ode script} button appears in the Script tab. It puts them into the script box, after an \texttt{apply} line that reloads the model, ready to \ui{Run} or \ui{Step}, so a single \texttt{.ode} file can carry both a model and the figures made from it.
 
 % ==================================================================
 \section{Tutorial 13: a forced oscillator and Arnold tongues}\label{sec:torus}
@@ -965,7 +999,7 @@ Both variables are declared periodic with \texttt{@ fold=}. Plots break where th
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.78\textwidth]{tongues.pdf}
+  \includegraphics[width=0.6\textwidth]{tongues.pdf}
   \caption{The 1:1 and 1:2 Arnold tongues of the forced phase oscillator in $(\omega,b)$, as curves of folds of cycles. Each tongue has two edges, and the legend says which fold and which value of $\omega$ each curve was started from. The dashed lines mark the current parameter values.}
   \label{fig:tongues}
 \end{figure}
@@ -1068,7 +1102,7 @@ A limit cycle can be described by a single \emph{phase} $\theta$ that advances a
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.78\textwidth]{ml-adjoint.pdf}
+  \includegraphics[width=0.62\textwidth]{ml-adjoint.pdf}
   \caption{The adjoint $Z_v(t)$ of the Morris--Lecar limit cycle at eight values of the applied current $i$, from 150 (dark) to 198 (light), against the phase $t/T$ with phase 0 at the maximum of $v$. As $i$ increases the negative lobe deepens and moves later in the cycle. Made by the script on page~\pageref{lst:adjscript}.}
   \label{fig:adjoint}
 \end{figure}
@@ -1268,7 +1302,7 @@ so that $g_1=-2H_{\mathrm{odd}}$ and $g_2+g_3=-2\,\mathrm{odd}[H_2]$. The \ui{H$
   \item The menu has one more entry, $\phi'/\epsilon$, which draws $g_1+\epsilon(g_2+g_3)=-2\,\mathrm{odd}[H+\epsilon H_2]$, the rate of change of the phase difference as plotted in Figure~2 of \cite{wilson2019}, with $g_1$ dashed (at $\epsilon=0$ it draws $g_2+g_3$). A stable state is then a zero where the curve crosses downwards.
   \item Changing $\epsilon$ recombines functions that are already computed, so it is instant.
 \end{itemize}
-The \ui{Export CSV} file has $g_1$, $g_2$, $g_3$, $g_2+g_3$, the composite for the present $\epsilon$, the two parts $H_{24}(\phi,\phi)$ and $H_{34}(\phi,0)$ of $H_2$, and $H_2$ and $H+\epsilon H_2$; these are the functions themselves, without $\epsilon$, except for the two composite columns, which use the value in the field. A second file holds their Fourier coefficients. In a script, \texttt{hsecond eps=0.1 show=odd} and \texttt{phasefn H2} do the same; \texttt{show} takes \texttt{all}, \texttt{H}, \texttt{even}, \texttt{odd} or \texttt{rate}.
+The CSV file from \ui{Export\ldots} has $g_1$, $g_2$, $g_3$, $g_2+g_3$, the composite for the present $\epsilon$, the two parts $H_{24}(\phi,\phi)$ and $H_{34}(\phi,0)$ of $H_2$, and $H_2$ and $H+\epsilon H_2$; these are the functions themselves, without $\epsilon$, except for the two composite columns, which use the value in the field. A second file holds their Fourier coefficients. In a script, \texttt{hsecond eps=0.1 show=odd} and \texttt{phasefn H2} do the same; \texttt{show} takes \texttt{all}, \texttt{H}, \texttt{even}, \texttt{odd} or \texttt{rate}.
 
 \paragraph{The coefficient $\gamma$.} The legend gives
 \begin{equation}
@@ -1276,7 +1310,7 @@ The \ui{Export CSV} file has $g_1$, $g_2$, $g_3$, $g_2+g_3$, the composite for t
 \end{equation}
 for each orbit, and for a single orbit also the two numbers $-A'(0)$ and $-B_f'(0)$ from which it is made. For diffusive coupling $G(X,X')=D(X'-X)$ these are equal, and $\gamma$ is the coefficient of the fourth-derivative term in the Kuramoto--Sivashinsky equation $\phi_t=\epsilon(\beta\phi_x^2+\alpha\phi_{xx}+\gamma\phi_{xxxx})$ that describes a continuum of such oscillators \cite{wilson2019,kuramoto1984}. It is the term that matters when the diffusion coefficient $\alpha=H'(0)$ is small. The program reports both numbers, so that for other couplings you can see how far they differ: the equality is a property of diffusive coupling, and is a useful check on a model's coupling lines.
 
-\paragraph{Fourier coefficients, for networks.}\label{sec:fourier} To put these functions into a model of many oscillators it is easier to have them as formulas than as tables. \ui{Export CSV} in the $H$ or $H_2$ mode therefore writes a second file, with the same name and \texttt{-fourier} added, that holds the first 20 Fourier coefficients of the functions, for each orbit:
+\paragraph{Fourier coefficients, for networks.}\label{sec:fourier} To put these functions into a model of many oscillators it is easier to have them as formulas than as tables. CSV from \ui{Export\ldots} in the $H$ or $H_2$ mode therefore writes a second file, with the same name and \texttt{-fourier} added, that holds the first 20 Fourier coefficients of the functions, for each orbit:
 \begin{equation}
   F(\phi)=a_0+\sum_{k=1}^{20}\Bigl[a_k\cos\frac{2\pi k\phi}{T}+b_k\sin\frac{2\pi k\phi}{T}\Bigr],
 \end{equation}
@@ -1362,11 +1396,11 @@ export svg cgl-comp.svg
 \end{lstlisting}
 
 % ------------------------------------------------------------------
-\subsection*{A single orbit, in one press of \ui{Run}}\label{sec:adjhere}
+\subsection*{A single orbit, in one press of \ui{Update}}\label{sec:adjhere}
 
 To study one set of parameter values you do not need a family. In the Phase reduction view set the menu to \emph{Current periodic orbit} (the number of orbits and the range then disappear), integrate a trajectory until it has settled onto its limit cycle, and press \ui{Adjoint}; in a script, \texttt{adjoint here}. \XS{} finds the periodic orbit at the end of the active trajectory, as the first step of \ui{Limit cycle} does, but at the present parameters and without continuing it, and computes everything above for it.
 
-The choice then stays on, and \XS{} follows the trajectory \emph{while the Phase reduction view is open}. After a \ui{Run} (or an automatic run) that has changed the cycle, it finds the orbit again and recomputes $Z$, $I$, $\rho$, $B$, $H$ and $H_2$, so that setting parameters and pressing \ui{Run} gives everything at once, and the chip that you have chosen stays chosen. In the other views nothing is recomputed: the results are only marked as out of date, and are brought up to date once when you return to the Phase reduction view, so you can go on working in the phase plane without paying for them. To stop following altogether, untick \ui{Follow the trajectory} in the panel (in a script, \texttt{adjoint follow=off}, or \texttt{adjoint off}, which also hides the curves); the results then stay as they are until you press \ui{Adjoint} again. It decides whether the cycle has changed by sampling the right-hand side along the stored orbit: a change of a coupling parameter alone leaves the orbit as it is and only updates $H$ and $H_2$. When a slider is dragged the update waits until you pause, and with Auto-update unticked it is done by \ui{Run}. Pressing \ui{Adjoint} along a family replaces it. The trajectory must have settled onto a \emph{stable} limit cycle by the end of its total time, as for \ui{Limit cycle}, and if it has not the status line says so and the previous result is kept. An unstable orbit needs continuation from a Hopf point.
+The choice then stays on, and \XS{} follows the trajectory \emph{while the Phase reduction view is open}. After a \ui{Update} (or an automatic run) that has changed the cycle, it finds the orbit again and recomputes $Z$, $I$, $\rho$, $B$, $H$ and $H_2$, so that setting parameters and pressing \ui{Update} gives everything at once, and the chip that you have chosen stays chosen. In the other views nothing is recomputed: the results are only marked as out of date, and are brought up to date once when you return to the Phase reduction view, so you can go on working in the phase plane without paying for them. To stop following altogether, untick \ui{Follow the trajectory} in the panel (in a script, \texttt{adjoint follow=off}, or \texttt{adjoint off}, which also hides the curves); the results then stay as they are until you press \ui{Adjoint} again. It decides whether the cycle has changed by sampling the right-hand side along the stored orbit: a change of a coupling parameter alone leaves the orbit as it is and only updates $H$ and $H_2$. When a slider is dragged the update waits until you pause, and with Auto-update unticked it is done by \ui{Update}. Pressing \ui{Adjoint} along a family replaces it. The trajectory must have settled onto a \emph{stable} limit cycle by the end of its total time, as for \ui{Limit cycle}, and if it has not the status line says so and the previous result is kept. An unstable orbit needs continuation from a Hopf point.
 
 \noindent The Hodgkin--Huxley model of the squid axon, with coupling through the voltage, is in the Model menu; its equations are
 \begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
@@ -1389,7 +1423,7 @@ done
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.62\textwidth]{hh-h.pdf}
+  \includegraphics[width=0.52\textwidth]{hh-h.pdf}
   \caption{The interaction function of two Hodgkin--Huxley neurons coupled through the voltage, $H$ (solid), its even part (dashed) and odd part (dotted), at $i=10$ (period $14.64$\,ms). The odd part has stable zeros (filled) at $\phi/T=0$ and $\tfrac12$ and unstable ones (open) at $0.38$ and $0.62$.}
   \label{fig:hh}
 \end{figure}
@@ -1401,7 +1435,7 @@ done
   \item The period is $14.64$\,ms. The odd part has four zeros, so diffusive coupling through $v$ leaves both synchrony ($\phi=0$) and anti-phase ($\phi=T/2$) stable, with unstable states at $0.38T$ and $0.62T$ between them.
   \item The note on the right gives $\nu_1=0.074$ ($\kappa=-0.178$ per ms). The other multipliers are smaller than $\nu_1$ by a factor of order $10^{-11}$, so one isostable coordinate is exactly what is needed. Press \ui{H$_2$}: with $\epsilon=0$ the correction $g_2+g_3$ is small, and $\gamma=0.024$. With $\epsilon=0.05$ the unstable states have moved only from $0.380T$ and $0.620T$ to $0.384T$ and $0.616T$, and nothing has changed qualitatively. For this model, at these couplings, first order is a good guide.
   \item Open the Parameters tab and move the slider for $g$: $H$ follows at once and changes only in size, and the orbit is not computed again. Move the slider for $i$ to $15$ and pause: after a moment the period becomes $12.72$\,ms and the curves are recomputed for the new cycle.
-  \item Untick \ui{Auto-update}, change $i$ and press \ui{Run} once: the trajectory, the orbit and all the functions are brought up to date by that one press.
+  \item Untick \ui{Auto-update}, change $i$ and press \ui{Update} once: the trajectory, the orbit and all the functions are brought up to date by that one press.
 \end{enumerate}
 \end{tryit}
 
@@ -1444,11 +1478,63 @@ done
 \end{notebox}
 
 % ==================================================================
+\section{Tutorial 16: animating a model}\label{sec:anim}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ui-animate.png}
+  \caption{The Animate view, with the damped pendulum below. Left: the animation script, taken from the \texttt{\#@ani} lines of the model. Centre: the pendulum at $t=12$, with the last 60 points of its path as a trail; above it the controls for playing, and below it the time course, with a vertical line at the time shown.}
+  \label{fig:anim}
+\end{figure}
+
+An animation is a picture of the model that changes as the solution unfolds: a pendulum swinging, a wheel turning, a row of cells lighting up. \XS{} reads the animation language of \XPP{} \cite{ermentrout2002}, so existing \texttt{.ani} files can be used. A script is a list of simple shapes, one per line, whose positions and colours are formulas in the variables, the parameters and $t$. The picture is drawn again for each moment of the active trajectory.
+
+The script can be kept in the \texttt{.ode} file, one script line for each line that starts with \texttt{\#@ani}. \XPP{} reads these as comments, so the file still works there. For example:
+\begin{lstlisting}
+# a damped pendulum with its animation stored in the file
+th'=v
+v'=-mu*v-sin(th)
+par mu=0.15
+init th=2.6,v=0
+#@range mu 0 1
+@ total=40,dt=0.05
+#@ani permanent
+#@ani line 0;.5;1;.5;$BLACK;2
+#@ani transient
+#@ani comet .5+.4*sin(th);.5-.4*cos(th);-2;60;$ORANGE
+#@ani line .5;.5;.5+.4*sin(th);.5-.4*cos(th);$BLUE;3
+#@ani fcirc .5+.4*sin(th);.5-.4*cos(th);.05;$RED
+#@ani settext 1;rom;$BLACK
+#@ani vtext .05;.92;t=;t
+#@ani end
+done
+\end{lstlisting}
+\noindent The picture has its lower left corner at $(0,0)$ and its upper right corner at $(1,1)$, so the pivot of the pendulum is at $(0.5,0.5)$. \texttt{permanent} objects are drawn once and \texttt{transient} ones again for every frame. \texttt{line} takes the two end points, a colour and a thickness; \texttt{fcirc} is a filled circle given by its centre and radius; \texttt{comet} keeps the last $n$ points of a path (here 60, drawn as dots of radius 2); \texttt{vtext} writes a label followed by the value of a formula. A colour is either a name, such as \texttt{\$RED}, or a formula between 0 (red) and 1 (violet).
+
+\begin{tryit}
+\begin{enumerate}
+  \item Choose \ui{Damped pendulum with animation} in the \ui{Model} menu at the top of the window. (Or paste the model above into the \ui{Equations} tab and press \ui{Apply}.) The messages say that the file contains an animation.
+  \item Press \ui{Animate} above the plot (or the key \key{7}) and then \ui{Play}. Drag the slider to go to any time: the vertical line on the time course shows where you are. The menu sets the speed, and \ui{Loop} repeats the run.
+  \item Drag the slider for \texttt{mu} in the \ui{Parameters} tab: the swing, and the trail, change as you move it.
+  \item In the \ui{Animate} tab, change \texttt{\$RED} in the \texttt{fcirc} line to the formula \texttt{(th+3)/6} and press \ui{Apply}: the colour of the bob now follows the angle.
+  \item Press \ui{GIF / video\ldots} in the transport bar (or \ui{Export\ldots} and then \emph{GIF}), choose GIF or WebM, and press \ui{Make file}.
+\end{enumerate}
+\end{tryit}
+
+\paragraph{Using an existing \texttt{.ani} file.} Load the model it was written for, make sure a trajectory exists (press \ui{Integrate} for large systems, which are not run automatically), then press \ui{Open .ani} in the \ui{Animate} tab. The view switches to the animation at once. \ui{Put in .ode} copies the script into the equations as \texttt{\#@ani} lines, so that the next time the model is loaded the animation comes with it; loading a different model clears the script. Arrays work as in the model language, so that \texttt{fcirc .05+.04*[0..20];.5*(vv[j]+1);.02;1-w[j]} draws 21 circles. The \ui{Animation commands} entry in the tab lists the rest of the language.
+
+\paragraph{Saving the animation.} \ui{GIF / video\ldots} in the transport bar makes a file from any number of frames chosen evenly from the whole run. A \textbf{GIF} plays everywhere, including in slides, but is limited to 256 colours and can be large. A \textbf{WebM} video is much smaller and has full colour, but it is recorded in real time, so the tab must stay in view while it is made, and PowerPoint and Keynote may not play it (\texttt{ffmpeg -i file.webm file.mp4} converts it). \ui{Export SVG} saves the frame on the screen as a figure.
+
+\begin{notebox}
+\textbf{Differences from \XPP{}'s animation.} The picture keeps the proportions of its \texttt{dimension} box, so circles stay round, and it is drawn on a white background. Formulas may use auxiliary variables, which \XPP{} does not allow. The colour scale is a sweep of hue from red to violet. The \texttt{grab} command (dragging objects with the mouse) and the nullcline commands \texttt{xnull} and \texttt{ynull} are not supported yet: their lines are ignored, with a note.
+\end{notebox}
+
+% ==================================================================
 \section{Numerical settings}\label{sec:numerics}
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.42\textwidth]{ui-numerics.png}
+  \includegraphics[width=0.3\textwidth]{ui-numerics.png}
   \caption{The Numerics tab: integration settings at the top, continuation settings below, and the continuation tolerances (Section~\ref{sec:numerics}) further down.}
   \label{fig:numerics}
 \end{figure}
@@ -1469,20 +1555,20 @@ The \ui{Numerics} tab (Figure~\ref{fig:numerics}) collects the integration and c
   \item[Sweep samples] Sets the number of parameter values in \ui{Sweep max/min}.
 \end{description}
 
-\paragraph{Auto-update, Run and long computations.}\label{sec:autorun} By default, changing a parameter, an initial value or an integration setting runs the trajectories again at once, so that the figure always matches the values shown. That is what makes sliders so useful, but it is a nuisance in two situations: when you want to change three parameters and not wait for a run after the first, and when the system is large enough for a run to take seconds. Unticking the \ui{Auto-update} box at the top of the window turns it off.
+\paragraph{Auto-update, Update and long computations.}\label{sec:autorun} By default, changing a parameter, an initial value or an integration setting runs the trajectories again at once, so that the figure always matches the values shown. That is what makes sliders so useful, but it is a nuisance in two situations: when you want to change three parameters and not wait for a run after the first, and when the system is large enough for a run to take seconds. Unticking the \ui{Auto-update} box at the top of the window turns it off.
 \begin{itemize}
-  \item \textbf{With Auto-update unticked,} a change only marks the display as out of date. A label on the plot says \emph{Out of date: press Run} (or \emph{Not run yet} if nothing has been computed) and \ui{Run} is highlighted. Nullclines and the direction field still follow the parameters, because they are cheap; trajectories and equilibria wait for \ui{Run}.
-  \item \ui{Run} brings everything up to date: the active curve follows the new initial values, the other curves are recomputed with the new parameters and settings, and the equilibria are found again. If nothing is out of date it does what \ui{Integrate} does. Ticking Auto-update again while the display is out of date runs at once.
+  \item \textbf{With Auto-update unticked,} a change only marks the display as out of date. A label on the plot says \emph{Out of date: press Update} (or \emph{Not run yet} if nothing has been computed) and \ui{Update} is highlighted. Nullclines and the direction field still follow the parameters, because they are cheap; trajectories and equilibria wait for \ui{Update}.
+  \item \ui{Update} brings everything up to date: the active curve follows the new initial values, the other curves are recomputed with the new parameters and settings, and the equilibria are found again. If nothing is out of date it does what \ui{Integrate} does. Ticking Auto-update again while the display is out of date runs at once.
   \item \ui{Integrate} (or \key{G}) still adds a new trajectory from the initial values; if the other curves are out of date, they are recomputed first, so a new curve never sits next to curves made with other parameters.
-  \item \textbf{The default depends on the size of the system.} Auto-update is ticked for up to 40 variables, the same limit above which equilibria are no longer searched for automatically, and off above it. Loading a chain of 200 cells (400 variables) therefore computes nothing until you press \ui{Run}, and the status line says so. You can tick it for such a model if you wish. Your choice to untick it is remembered between sessions, and \ui{Reset all} ticks it again.
+  \item \textbf{The default depends on the size of the system.} Auto-update is ticked for up to 40 variables, the same limit above which equilibria are no longer searched for automatically, and off above it. Loading a chain of 200 cells (400 variables) therefore computes nothing until you press \ui{Update}, and the status line says so. You can tick it for such a model if you wish. Your choice to untick it is remembered between sessions, and \ui{Reset all} ticks it again.
 \end{itemize}
 \noindent A run that takes more than a fraction of a second shows its progress in the status line, for example \emph{Running\ldots{} 34\%, t = 340}, with a \ui{Stop} button at its right-hand end, and the percentage is also shown in the title of the browser tab, so you can watch it from another tab. \ui{Stop} ends the run where it is and keeps the part already computed. If you change something while a run is going, the old run is abandoned and a new one starts with the new values, so dragging a slider on a large system always ends with curves that match its final position. Short runs finish before any of this appears, so small systems behave exactly as before.
 
 \begin{notebox}
-Only ordinary differential equations are run in this way. Maps, delay equations, Volterra equations, models with Markov or Wiener variables, and models with global flags are always computed in one piece, as before; they have no progress line or \ui{Stop}, although Auto-update and \ui{Run} work for them. The time is dominated by the right-hand side: a chain of 200 FitzHugh--Nagumo cells with \texttt{meth=euler} and many thousands of steps can take several seconds, mostly in evaluating the equations. Raising \texttt{dt}, lowering the total time or plotting fewer steps helps more than any setting.
+Only ordinary differential equations are run in this way. Maps, delay equations, Volterra equations, models with Markov or Wiener variables, and models with global flags are always computed in one piece, as before; they have no progress line or \ui{Stop}, although Auto-update and \ui{Update} work for them. The time is dominated by the right-hand side: a chain of 200 FitzHugh--Nagumo cells with \texttt{meth=euler} and many thousands of steps can take several seconds, mostly in evaluating the equations. Raising \texttt{dt}, lowering the total time or plotting fewer steps helps more than any setting.
 \end{notebox}
 
-\paragraph{Continuation.} These settings correspond to the entries of \XPP{}'s \textsf{AUTO} numerics window and can be set in the file with \texttt{@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax}. Leave a box empty to use the automatic choice. \ui{Defaults}, next to the heading, puts them back to the model's defaults: the values its file sets, otherwise the built-in ones. A step set with \texttt{@ ds} applies to every parameter; otherwise Ds is a $1/150$ of the parameter's range. The \ui{Wilson--Cowan} example sets \texttt{@ ds=0.01}, since its branches have sharp folds that a larger step cuts across.
+\paragraph{Continuation.} These settings correspond to the entries of \XPP{}'s \textsf{AUTO} numerics window and can be set in the file with \texttt{@ ds, dsmin, dsmax, nmax, ntst, parmin, parmax}. Leave a box empty to use the automatic choice. \ui{Defaults}, next to the heading, puts them back to the model's defaults: the values its file sets, otherwise the built-in ones. A step set with \texttt{@ ds} applies to every parameter; otherwise Ds is $1/150$ of the parameter's range. A Ds you set yourself is kept until you change the bifurcation parameter or press \ui{Defaults}. The \ui{Wilson--Cowan} example sets \texttt{@ ds=0.01}, since its branches have sharp folds that a larger step cuts across.
 \begin{center}\small
 \begin{tabularx}{0.95\textwidth}{@{}lX@{}}
 \toprule
@@ -1519,16 +1605,18 @@ If a branch stops early, the status line says why: for example, it reached the p
 % ==================================================================
 \section{Saving and exporting results}\label{sec:export}
 
+\ui{Export\ldots}, above the plot, opens a small menu with three choices (Figure~\ref{fig:export}); each says what it will save in the view you are in, and one that has nothing to save yet is greyed out. In a script, \texttt{export svg}, \texttt{export csv} and \texttt{export dat} do the same.
 \begin{description}[font=\sffamily\bfseries]
-  \item[Export SVG] Saves the current view as a vector figure with light-theme colours, ready for a paper or for editing in Inkscape or Illustrator. Legends and notes are included; the dashed lines (and the dot) that mark the current values of the parameters are left out. All the plots in this document were made this way.
-  \item[Export CSV] Available in the Time course, Bifurcation and Two-parameter views.
+  \item[SVG] Saves the current view as a vector figure with light-theme colours, ready for a paper or for editing in Inkscape or Illustrator. Legends and notes are included; the dashed lines (and the dot) that mark the current values of the parameters are left out. All the plots in this document were made this way.
+  \item[CSV] Available in every view.
   \begin{itemize}
-    \item The time-course table has every trajectory on screen, one row per stored point, with the trajectory number, its kind (trajectory or manifold), its direction (forward or backward), $t$ and every variable.
+    \item In the phase plane, 3D, Time course and Animate views the table has every trajectory on screen, one row per stored point, with the trajectory number, its kind (trajectory or manifold), its direction (forward or backward), $t$ and every variable and auxiliary function.
     \item The bifurcation table has one row per computed point, with these columns: curve, kind (equilibrium, periodic orbit, sweep or special), label (HB1, LPC2, \ldots), parameter name and value, stability, number of unstable directions, period, the state, and the maximum and minimum of each variable along an orbit.
     \item The two-parameter table has the two parameter values, the period where relevant, the state, and labelled rows for codimension-two points. Hopf curves also get columns for $\ell_1$ and for criticality (subcritical, supercritical or neutral saddle).
     \item In the bifurcation table, special rows for Hopf points give $\ell_1$, and the stability column says subcritical or supercritical.
   \end{itemize}
-  \item[Export DAT] In the Bifurcation and Two-parameter views, saves the same continuation data as \texttt{.dat} files: numbers only, no header and space-separated columns, the form \XPP{} and gnuplot read. The bifurcation diagram gives one file each for equilibria, periodic orbits and sweeps. The status line lists the columns, and text fields become numeric codes.
+  \item[DAT] In the phase plane, 3D, Time course and Animate views, saves the active trajectory as a \texttt{.dat} file (as \ui{Save DAT} in the trajectory list does). In the Bifurcation and Two-parameter views, saves the same continuation data as \texttt{.dat} files: numbers only, no header and space-separated columns, the form \XPP{} and gnuplot read. The bifurcation diagram gives one file each for equilibria, periodic orbits and sweeps. The status line lists the columns, and text fields become numeric codes.
+  \item[GIF] In the Animate view only: opens the controls that save the animation as a GIF or a WebM video (Section~\ref{sec:anim}).
   \item[Copy CSV, Save DAT] In the trajectory list, copy the current trajectory (time, variables and auxiliaries) to the clipboard, or save it as a \texttt{.dat} file.
   \item[Copy text] Copies the \texttt{.ode} file, including any edits, so that it can be saved or used in \XPP{}.
 \end{description}
@@ -1561,7 +1649,9 @@ Pressing \ui{Write state} again replaces this block rather than adding another, 
   \item \textbf{Global flags} can set state and Markov variables and \texttt{arret}. The XPP output flag \texttt{out\_put} is accepted and ignored.
   \item \textbf{Sets.} \XPP{}'s \texttt{set name \{\ldots\}} lines are read and offered in the \ui{Sets} menu (Section~\ref{sec:sets}), except that the plot settings in them (axis limits and plotted variables) are ignored.
   \item \textbf{The adjoint} (Section~\ref{sec:adjoint}) is found from the monodromy matrix of the orbit rather than by integrating the adjoint equation backwards over many periods as in \XPP{}. It works for unstable orbits as well, it is computed along a whole family at once, and it is limited to differential equations with at most 60 variables. The isostable response, Floquet eigenfunction and the second-order interaction functions have no counterpart in \XPP{}; they are computed for a real, positive slowest multiplier only. The interaction function $H$ (Section~\ref{sec:hfun}) is computed from \texttt{\#@coupling} lines in the file, which \XPP{} reads as comments, rather than from \XPP{}'s averaging window.
-  \item \textbf{Not supported:} \texttt{special} and \texttt{export} declarations.
+  \item \textbf{Animation} (Section~\ref{sec:anim}) reads \XPP{}'s \texttt{.ani} files. The commands \texttt{grab}, \texttt{xnull} and \texttt{ynull} are ignored. The animation can also be stored in the model file as \texttt{\#@ani} lines and saved as a GIF or WebM file.
+  \item \textbf{Special functions.} \texttt{special} reads \texttt{conv} and \texttt{mmult} (Tutorial~8). Other kinds of \texttt{special} are skipped with a warning.
+  \item \textbf{Not supported:} \texttt{export} declarations.
   \item \textbf{Two-parameter Hopf curves} are limited to 12 variables, because the bialternate product grows quadratically with dimension.
   \item \textbf{Homoclinic and heteroclinic orbits} (Section~\ref{sec:conn}) are found by shooting along the one-dimensional unstable manifold of a saddle, not by \textsf{AUTO}'s \textsf{HomCont} projection boundary conditions, so they are limited to saddles with one real unstable direction (or one real stable direction, with time running backwards).
   \item \textbf{Volterra models} cannot be continued, since their state is infinite-dimensional.

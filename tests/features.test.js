@@ -299,7 +299,8 @@ test('Morris–Lecar class 1: the orbits end in a SNIC at the fold of the equili
 test('button names and the Lorenz 84 example', async () => {
   const P = await openPage();
   try {
-    assert.equal(P.$('#datBtn').textContent, 'Export DAT');
+    assert.equal(P.$('#expBtn').textContent, 'Export…');
+    assert.equal(P.$('#runNow').textContent, 'Update');
     assert.equal(P.$('#saveDat').textContent, 'Save DAT');
     assert.equal(P.$('#cFind').textContent, 'Find connecting orbit');
     await P.run('example lorenz84\ngo\nview bif\ncontinue');
@@ -365,10 +366,10 @@ test('Reset all forgets everything stored and starts afresh; About names the ver
     assert.equal(P.app('S.view'), 'pp');
     assert.equal(P.app('S.legend'), false);
     assert.equal(P.$('#scrText').value, P.app('SCRIPT_EXAMPLE'));
-    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script').length"), 0, 'stored choices are forgotten');
+    assert.equal(P.app("Object.keys(localStorage).filter(k=>k.startsWith('xpps-')&&k!=='xpps-text'&&k!=='xpps-script'&&k!=='xpps-ani').length"), 0, 'stored choices are forgotten');
     assert.match(P.status(), /Reset/);
     P.$('#aboutBtn').click();
-    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.3');
+    assert.equal(P.$('#aboutTitle').textContent, 'XPP Studio v1.4');
   } finally { P.close(); }
 });
 
@@ -470,8 +471,9 @@ test('Stacked bifurcation diagrams: one panel for each value of the second param
     // one tab for each value; the diagram on top is the one at the current value (gamma = 0)
     assert.deepEqual(J(P, 'S.bifTabs.map(t=>t.v)'), [0, 0.6]);
     assert.equal(J(P, 'S.bifPanels[0].v'), 0);
-    // the special points are listed in increasing order of gamma, with a column for it
-    assert.deepEqual(J(P, "[...document.querySelectorAll('#spList tr')].slice(1).map(r=>+r.children[1].textContent)"), [0, 0, 0.6, 0.6]);
+    // the special points are grouped under a heading for each value of gamma, in increasing order
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#spList tr.grp')].map(r=>r.textContent)"), ['gamma = 0', 'gamma = 0.6']);
+    assert.deepEqual(J(P, "[...document.querySelectorAll('#spList tr')].slice(1).map(r=>r.classList.contains('grp')?'h':'p')"), ['h', 'p', 'p', 'h', 'p', 'p']);
     // clicking the other tab sets gamma to its value and brings its diagram to the top
     const [x, y] = J(P, '(()=>{const t=S.bifTabs[1];return[(t.x0+t.x1)/2,(t.y0+t.y1)/2];})()');
     P.app(`onPlotClick(${x},${y},false)`);
