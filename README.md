@@ -1,4 +1,4 @@
-# XPP Studio
+# XPP Studio 1.4
 
 A browser workbench for differential equations, maps and stochastic models that reads [XPPAUT](https://sites.pitt.edu/~phase/bard/bardware/xpp/xpp.html) `.ode` files. Everything runs in a single web page, with nothing to install, and no data leaves your browser.
 
