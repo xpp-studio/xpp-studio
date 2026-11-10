@@ -4,6 +4,8 @@ A browser workbench for differential equations, maps and stochastic models that 
 
 **Try it:** https://xpp-studio.github.io/xpp-studio/
 
+**Cite it:** [![DOI](https://zenodo.org/badge/1427268640.svg)](https://doi.org/10.5281/zenodo.24111916)
+
 ## Features
 
 - **Phase planes and plots:** phase planes with nullclines, direction fields, equilibria and separatrices (recomputed as parameters change); trajectories forward, backward or both ways, grids of initial conditions (by default 10 × 10 over the phase-plane window); 3D views; time courses with power spectra and space-time plots; equal-axes option.
@@ -45,6 +47,8 @@ npm test
 ```
 
 The app itself needs no build step: `index.html` is the whole program.
+
+[![DOI](https://zenodo.org/badge/1427268640.svg)](https://doi.org/10.5281/zenodo.24111916)
 
 ## Credits
 
