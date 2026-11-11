@@ -54,7 +54,7 @@ The app itself needs no build step: `index.html` is the whole program.
 
 XPP Studio is inspired by, and reads the model files of, XPPAUT by G. Bard Ermentrout (University of Pittsburgh). Its continuation methods follow the ideas of AUTO (E. J. Doedel and colleagues) and MatCont. No XPPAUT or AUTO source code is included.
 
-This version (October 2026) was created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5 (Anthropic).
+This version (November 2026) was created by Peter Ashwin and Bard Ermentrout in collaboration with Claude Opus 5.5 (Anthropic).
 
 ## Licence
 
